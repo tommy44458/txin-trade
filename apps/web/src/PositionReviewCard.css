@@ -36,3 +36,73 @@
 .position-review-advice small {
   color: var(--text-secondary);
 }
+.exit-plan {
+  margin-top: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+}
+.exit-plan h4 {
+  margin: 0 0 8px;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+}
+.exit-plan dl {
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+.exit-plan dl > div {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 12px;
+  align-items: baseline;
+}
+.exit-plan dt {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.exit-plan dd {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+  align-items: baseline;
+  color: var(--text);
+  font-size: 14px;
+}
+.exit-plan dd b {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.exit-plan-rule dd b {
+  color: var(--negative);
+}
+.exit-plan dd span {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.exit-plan ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.exit-plan li {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+}
+.exit-plan > small,
+.exit-plan-missing {
+  display: block;
+  margin-top: 8px;
+  color: var(--text-tertiary);
+  font-size: 12px;
+}
+@media (max-width: 540px) {
+  .exit-plan dl > div {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+}

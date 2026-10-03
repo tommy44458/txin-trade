@@ -50,7 +50,7 @@ The chart shows the support and resistance zones from the analysis, where the cu
 
 ### Advice on the positions you already hold
 
-Import your open positions from Binance or BingX with a read-only key, or enter them by hand. Select one or more and txinTrade tells you whether to hold or close, why, and what would change its mind, with risk estimates for reference.
+Import your open positions from Binance or BingX with a read-only key, or enter them by hand. Select one or more and txinTrade tells you whether to hold or close, why, and what would change its mind, with risk estimates for reference. Every hold comes with an exit plan: the price that ends the hold, a suggested stop, and where to take profit.
 
 ![Your open positions, ready for analysis](assets/readme/en/positions.jpg)
 

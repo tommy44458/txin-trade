@@ -88,7 +88,8 @@ def test_secondary_zone_position_reason_passes_model_and_saved_report_checks(mon
     decision = analyze_with_tools(request, candles, quote, context, positions, prepared_trace=trace)
     report = build_report(request, candles, quote, positions, decision, context)
     validate_report(report)
-    assert report["position_reviews"][0]["agent_decision"] == payload["position_decisions"]["p1"]
+    # A hold without an exit plan is kept; its plan is reported as absent.
+    assert report["position_reviews"][0]["agent_decision"] == payload["position_decisions"]["p1"] | {"exit_plan": None}
 
 
 def test_position_reason_excludes_missing_protection_and_venue_caveats():

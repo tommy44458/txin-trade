@@ -70,7 +70,7 @@ def test_twelve_selected_positions_reach_preparation_model_and_each_report_revie
     report = build_report(request, candles, quote, selected, decision)
     assert [item["id"] for item in report["position_snapshot"]] == ids
     assert [item["position_id"] for item in report["position_reviews"]] == ids
-    assert all(item["agent_decision"] == decisions[item["position_id"]]
+    assert all(item["agent_decision"] == decisions[item["position_id"]] | {"exit_plan": None}
                for item in report["position_reviews"])
     validate_report(report)
     incomplete = deepcopy(report)

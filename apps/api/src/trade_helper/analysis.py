@@ -1,6 +1,7 @@
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
+from .exit_plan import sanitize_exit_plan
 from .macro_context import build_macro_context
 from .macro_interpretation import saved_macro_outlook
 from .model_report import entry_cost_reference
@@ -183,6 +184,20 @@ def _reported_macro_outlook(state: dict | None, model_outlook: dict | None,
     return saved
 
 
+def _with_exit_plan(agent_decision: object, position: dict, price: Decimal, quote: dict,
+                    metrics: dict) -> object:
+    """A hold carries the checked parts of its exit plan; closing now needs none."""
+    if not isinstance(agent_decision, dict):
+        return agent_decision
+    plan = None
+    if agent_decision.get("decision") == "hold":
+        plan = sanitize_exit_plan(
+            agent_decision.get("exit_plan"), side=position["side"], price=price,
+            tick=Decimal(str(quote["tick_size"])), atr=Decimal(metrics["atr14"]),
+            levels=metrics["levels"])
+    return {key: value for key, value in agent_decision.items() if key != "exit_plan"} | {"exit_plan": plan}
+
+
 def build_report(request: dict, candles: list[dict], quote: dict, positions: list[dict],
                  decision: dict, context_candles: list[dict] | None = None, events: dict | None = None,
                  news: dict | None = None) -> dict:
@@ -222,6 +237,7 @@ def build_report(request: dict, candles: list[dict], quote: dict, positions: lis
     cost_assumptions = quote.get("cost_scenario") or configured_cost_scenario()
     position_snapshot = compact_positions(positions)
     position_reviews = []
+    agent_decisions = {}
     if positions:
         options = build_position_options(position_snapshot, quote, metrics["levels"],
                                          market_state, Decimal(metrics["atr14"]),
@@ -241,11 +257,17 @@ def build_report(request: dict, candles: list[dict], quote: dict, positions: lis
             review["advice"] = selected | {"selection_source": "python_reference"}
             review["available_actions"] = item["candidates"]
             if decision["mode"] == "openai_assisted":
-                review["agent_decision"] = decision.get("position_decisions", {}).get(position["id"])
+                agent_decision = _with_exit_plan(
+                    decision.get("position_decisions", {}).get(position["id"]), position,
+                    Decimal(options["valuation_price"]), quote, metrics)
+                review["agent_decision"] = agent_decisions[position["id"]] = agent_decision
             position_reviews.append(review)
     entry_plan = decision["reasoning"].get("entry_decision") if decision["mode"] == "openai_assisted" else None
     entry_risk_reference = entry_cost_reference(entry_plan, quote, request.get("leverage", 5))
     reasoning = dict(decision["reasoning"])
+    if agent_decisions:
+        # The saved reasoning and each review carry the same checked exit plan.
+        reasoning["position_decisions"] = {**(reasoning.get("position_decisions") or {}), **agent_decisions}
     if "macro_interpretation" in quote:
         reasoning["macro_outlook"] = _reported_macro_outlook(
             quote["macro_interpretation"], reasoning.get("macro_outlook"),
