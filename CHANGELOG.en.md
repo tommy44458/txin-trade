@@ -7,6 +7,13 @@ The product version is managed in `version.json`. Dates record release preparati
 ### Added
 
 - When a position analysis recommends holding, it now includes an exit plan with the price that ends the hold, a suggested stop, and take-profit levels.
+- New ChatGPT plan (official) option uses your Plus or Pro plan through OpenAI's official Sign in with ChatGPT.
+- New Claude API (API key) option uses Claude with your own Anthropic API key, billed per use to your account.
+- New OpenAI API (API key) option analyzes with your own OpenAI key and lists the models it can use.
+
+### Changed
+
+- Choosing Claude Code or Codex in Settings now explains how that connection relates to the provider's terms.
 
 ## [1.0.8] - 2026-10-03
 

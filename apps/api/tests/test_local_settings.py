@@ -11,7 +11,7 @@ from trade_helper.api import app
 from trade_helper.db import connect, database_path
 from trade_helper.news_classification_worker import run_once
 
-ALL_FALSE_INTEGRATIONS = {name: {"configured": False} for name in ("bingx", "binance", "jev", "jblanked", "openai")}
+ALL_FALSE_INTEGRATIONS = {name: {"configured": False} for name in ("bingx", "binance", "jev", "jblanked", "openai", "anthropic")}
 
 
 @pytest.fixture
@@ -306,7 +306,7 @@ def test_user_preferences_are_isolated_by_local_user_id(monkeypatch, credentials
     assert local_settings.favorite_market_ids() == ["binance:perp:BTCUSDT"]
 
 
-@pytest.mark.parametrize("name,env_key", [("jblanked", "JBLANKED_API_KEY"), ("openai", "OPENAI_API_KEY")])
+@pytest.mark.parametrize("name,env_key", [("jblanked", "JBLANKED_API_KEY"), ("openai", "OPENAI_API_KEY"), ("anthropic", "ANTHROPIC_API_KEY")])
 def test_optional_calendar_and_legacy_model_keys_save_without_changing_context_and_clear_without_resurrection(
         monkeypatch, credentials, name, env_key):
     monkeypatch.setenv("APP_DESKTOP", "1")
@@ -353,7 +353,7 @@ def test_calendar_and_legacy_model_key_validation_never_echoes_secrets(credentia
     assert credentials == {}
 
 
-@pytest.mark.parametrize("name,env_key", [("jblanked", "JBLANKED_API_KEY"), ("openai", "OPENAI_API_KEY")])
+@pytest.mark.parametrize("name,env_key", [("jblanked", "JBLANKED_API_KEY"), ("openai", "OPENAI_API_KEY"), ("anthropic", "ANTHROPIC_API_KEY")])
 def test_browser_optional_key_environment_fallback_is_never_imported_into_sqlite(monkeypatch, credentials, name, env_key):
     monkeypatch.setenv("APP_DESKTOP", "0")
     monkeypatch.setenv(env_key, "developer-key")

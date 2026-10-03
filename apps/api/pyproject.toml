@@ -13,6 +13,7 @@ dependencies = [
   "websockets>=15",
   # Windows has no IANA time zone database; zoneinfo reads it from this package.
   "tzdata>=2024.1; sys_platform == 'win32'",
+  "anthropic>=1",
 ]
 
 [project.optional-dependencies]

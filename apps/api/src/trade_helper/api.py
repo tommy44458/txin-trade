@@ -13,12 +13,14 @@ from fastapi import FastAPI, Header, HTTPException, Query, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
+from .anthropic_api_bridge import router as anthropic_auth_router
 from .binance import BinanceError
 from .binance import test_connection as test_binance_connection
 from .binance_sync import BinanceAccountChangedError, BinanceSyncSupersededError
 from .binance_sync import sync_positions as sync_binance_positions
 from .bingx import BingXError
 from .bingx_sync import sync_positions as sync_bingx_positions
+from .chatgpt_plan_auth import router as chatgpt_plan_auth_router
 from .claude_code_bridge import router as claude_code_auth_router
 from .cloud_account import router as cloud_account_router
 from .cloud_account import signed_in_profile
@@ -62,6 +64,7 @@ from .market_catalog import (
 )
 from .models import AnalysisRequest, PositionInput, PositionUpdate
 from .news import news_snapshot
+from .openai_api_bridge import router as openai_auth_router
 from .position_chart_snapshot import router as position_chart_snapshot_router
 from .product_version import product_version
 from .smart_money import router as smart_money_router
@@ -87,6 +90,9 @@ app = FastAPI(title="txinTrade local API", version=product_version(), lifespan=l
 app.include_router(settings_router)
 app.include_router(credential_migration_router)
 app.include_router(claude_code_auth_router)
+app.include_router(anthropic_auth_router)
+app.include_router(chatgpt_plan_auth_router)
+app.include_router(openai_auth_router)
 # Cloud account and remote access routes are never described in API documentation.
 app.include_router(cloud_remote_router, include_in_schema=False)
 app.include_router(cloud_account_router, include_in_schema=False)

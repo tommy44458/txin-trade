@@ -8,7 +8,7 @@ from threading import Event, Thread
 from time import monotonic
 from types import SimpleNamespace
 
-from . import claude_code_bridge
+from . import anthropic_api_bridge, chatgpt_plan_auth, claude_code_bridge, openai_api_bridge
 from .codex_bridge import CodexRpc, require_authorized
 from .codex_bridge import models as codex_models
 from .local_settings import integration_credentials, provider_configuration
@@ -200,7 +200,7 @@ def tool_name(name: str) -> str:
     return name.removeprefix("indicators.")
 
 
-LOCAL_AGENT_PROVIDERS = frozenset({"codex", "claude_code"})
+LOCAL_AGENT_PROVIDERS = frozenset({"codex", "claude_code", "anthropic", "chatgpt_plan"})
 
 
 class ModelSession:
@@ -211,6 +211,8 @@ class ModelSession:
         if self.provider == "openai":
             credentials = integration_credentials("openai")
             key = credentials.get("api_key") if credentials else None
+            # Without a chosen model, use the first one Settings found for this key.
+            self.model = self.model or openai_api_bridge.default_model() or ""
             if not key or not self.model:
                 # Retain the old dev-mode exception contract for existing callers.
                 raise RuntimeError("OPENAI_API_KEY and OPENAI_MODEL are required for Agent analysis")
@@ -218,6 +220,18 @@ class ModelSession:
         elif self.provider == "claude_code":
             # An empty model uses Claude Code's own default for the signed-in account.
             claude_code_bridge.require_authorized()
+        elif self.provider == "anthropic":
+            self.anthropic_key = anthropic_api_bridge.require_authorized()
+            self.model = self.model or anthropic_api_bridge.DEFAULT_MODEL
+        elif self.provider == "chatgpt_plan":
+            # Access tokens last an hour; each analysis starts Codex with a current one.
+            self.plan_token = chatgpt_plan_auth.require_authorized()
+            if not self.model:
+                saved = chatgpt_plan_auth.cached_models()["data"] or chatgpt_plan_auth.models()["data"]
+                selected = next((item for item in saved if item.get("isDefault")), saved[0] if saved else None)
+                if not selected:
+                    raise ModelProviderError("ChatGPT 方案沒有可用模型。")
+                self.model = selected.get("model") or selected["id"]
         else:
             self.isolated_codex = require_authorized()
             if not self.model:
@@ -239,6 +253,12 @@ class ModelSession:
         if self.provider == "claude_code":
             label, effort = "Claude Code", claude_code_effort()
             runner = claude_code_bridge.ClaudeCodeSession()
+        elif self.provider == "anthropic":
+            label, effort = "Claude", claude_code_effort()
+            runner = anthropic_api_bridge.AnthropicApiSession(self.anthropic_key)
+        elif self.provider == "chatgpt_plan":
+            label, effort = "ChatGPT", codex_reasoning_effort()
+            runner = CodexRpc(plan_token=self.plan_token)
         else:
             label, effort = "Codex", codex_reasoning_effort()
             runner = CodexRpc(isolated=self.isolated_codex)

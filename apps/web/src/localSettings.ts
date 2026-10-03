@@ -1,7 +1,7 @@
 import { uiText } from "./i18n/index.ts";
 import { applyUiTheme, normalizeUiTheme, type UiTheme } from "./uiTheme.ts";
 import { apiFetch, isRemoteMode } from "./transport.ts";
-export type ModelProvider = "codex" | "claude_code" | "openai";
+export type ModelProvider = "codex" | "claude_code" | "openai" | "anthropic" | "chatgpt_plan";
 export type InitialIndicatorCatalogItem = {
   name: string;
   tool: string;
@@ -49,6 +49,7 @@ export type LocalSettings = {
     jev: IntegrationStatus;
     jblanked?: IntegrationStatus;
     openai?: IntegrationStatus;
+    anthropic?: IntegrationStatus;
   };
 };
 export type ModelAuthStatus = {
@@ -91,11 +92,6 @@ export async function settingsRequest<T>(
 
 export async function readModelConnection() {
   const settings = await settingsRequest<LocalSettings>("/settings");
-  if (settings.model_provider === "openai") return {
-    settings,
-    ready: settings.integrations.openai?.configured ?? true,
-    error: null,
-  };
   const status = await settingsRequest<ModelAuthStatus>(
     `/auth/${settings.model_provider}/check`,
     { method: "POST" },

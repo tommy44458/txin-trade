@@ -33,11 +33,12 @@ router = APIRouter(prefix="/api/v1/settings", tags=["Local settings"])
 _PREFERENCES_LOCK = RLock()
 _INITIALIZED_DATABASES: set[tuple[int, str]] = set()
 _INITIALIZED_PREFERENCES: set[tuple[int, str, str]] = set()
-INTEGRATION_NAMES = ("bingx", "binance", "jev", "jblanked", "openai")
-_API_KEY_ENVIRONMENT = {"jev": "TYPESAFE_API_KEY", "jblanked": "JBLANKED_API_KEY", "openai": "OPENAI_API_KEY"}
+INTEGRATION_NAMES = ("bingx", "binance", "jev", "jblanked", "openai", "anthropic")
+_API_KEY_ENVIRONMENT = {"jev": "TYPESAFE_API_KEY", "jblanked": "JBLANKED_API_KEY", "openai": "OPENAI_API_KEY",
+                        "anthropic": "ANTHROPIC_API_KEY"}
 UiTheme = Literal["system", "light", "dark"]
-ModelProvider = Literal["claude_code", "codex", "openai"]
-MODEL_PROVIDERS = frozenset({"claude_code", "codex", "openai"})
+ModelProvider = Literal["claude_code", "codex", "openai", "anthropic", "chatgpt_plan"]
+MODEL_PROVIDERS = frozenset({"claude_code", "codex", "openai", "anthropic", "chatgpt_plan"})
 
 
 def desktop_mode() -> bool:
@@ -68,7 +69,7 @@ def _nonsecret_object(value: dict) -> dict:
                  "password", "passwords", "secret", "token", "tokens", "clientsecret",
                  "authorization", "apitoken", "privatekey", "secretkey", "bingxapikey",
                  "bingxapisecret", "binanceapikey", "binanceapisecret", "binancesecretkey",
-                 "jevapikey", "typesafeapikey", "jblankedapikey", "openaiapikey"}
+                 "jevapikey", "typesafeapikey", "jblankedapikey", "openaiapikey", "anthropicapikey"}
 
     def clean(item):
         if isinstance(item, dict):
@@ -331,11 +332,13 @@ class SettingsUpdate(BaseModel):
     jev_api_key: SecretStr | None = None
     jblanked_api_key: SecretStr | None = None
     openai_api_key: SecretStr | None = None
+    anthropic_api_key: SecretStr | None = None
     clear_bingx: bool = False
     clear_binance: bool = False
     clear_jev: bool = False
     clear_jblanked: bool = False
     clear_openai: bool = False
+    clear_anthropic: bool = False
 
     @field_validator("initial_indicators")
     @classmethod
@@ -369,13 +372,14 @@ class SettingsUpdate(BaseModel):
                     if (not text.isascii() or not text.isprintable()
                             or any(character.isspace() for character in text)):
                         raise ValueError("Binance 金鑰不可包含非 ASCII 字元、空白或控制字元")
-        for name, label in (("jev", "Jev"), ("jblanked", "JBlanked"), ("openai", "OpenAI")):
+        for name, label in (("jev", "Jev"), ("jblanked", "JBlanked"), ("openai", "OpenAI"), ("anthropic", "Anthropic")):
             value = getattr(self, f"{name}_api_key")
             if getattr(self, f"clear_{name}") and value and value.get_secret_value().strip():
                 raise ValueError(f"清除與更新 {label} 金鑰不能同時進行")
         for value in (self.bingx_api_key, self.bingx_api_secret,
                       self.binance_api_key, self.binance_api_secret,
-                      self.jev_api_key, self.jblanked_api_key, self.openai_api_key):
+                      self.jev_api_key, self.jblanked_api_key, self.openai_api_key,
+                      self.anthropic_api_key):
             if value and len(value.get_secret_value()) > 4096:
                 raise ValueError("金鑰長度超過限制")
         return self
@@ -425,7 +429,7 @@ def _write_settings(body: SettingsUpdate):
                 "api_secret": body.bingx_api_secret.get_secret_value().strip(),
             })
             credential_updates["bingx"] = True
-        for name in ("jev", "jblanked", "openai"):
+        for name in ("jev", "jblanked", "openai", "anthropic"):
             key = getattr(body, f"{name}_api_key")
             if getattr(body, f"clear_{name}"):
                 delete_credentials(name)
