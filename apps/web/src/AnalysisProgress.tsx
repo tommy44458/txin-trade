@@ -59,7 +59,8 @@ const trendLabel = (trend?: string | null) =>
 function Step({ done, active, label }: { done: boolean; active: boolean; label: string }) {
   return (
     <li className={done ? "is-done" : active ? "is-active" : undefined}>
-      {active && !done ? <AnalysisSpinner /> : <span className="analysis-step-mark" aria-hidden="true" />}
+      {/* One spinner, in the card's heading, is enough; the current step is a dot. */}
+      <span className="analysis-step-mark" aria-hidden="true" />
       <span>{label}</span>
     </li>
   );

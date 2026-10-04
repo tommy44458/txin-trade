@@ -1214,7 +1214,6 @@ function App({ remoteSection, remoteIdentity, remoteMenu, remoteStatus }: {
                     aria-busy={marketBusy}
                     onClick={() => analyze("market")}
                   >
-                    {marketBusy && <AnalysisSpinner />}{" "}
                     {busy ? busyLabel : uiText("開始市場分析")}{" "}
                     {!busy && <Icon name="arrow" />}
                   </button>
@@ -1563,7 +1562,6 @@ function App({ remoteSection, remoteIdentity, remoteMenu, remoteStatus }: {
                     aria-busy={positionsBusy}
                     onClick={() => analyze("positions")}
                   >
-                    {positionsBusy && <AnalysisSpinner />}{" "}
                     {busy ? busyLabel : uiText("分析已選持倉（{{p0}}）", { p0: selectedPositionIds.length })}
                   </button>
                   {report && job?.submitted_input.kind === "positions" && (
