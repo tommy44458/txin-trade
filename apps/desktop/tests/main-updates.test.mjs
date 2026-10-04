@@ -136,6 +136,9 @@ async function harness(options = {}) {
         throw new Error("isolated backend exited");
       }
     },
+    createUpdateLog: () => ({ info() {}, warn() {}, error() {}, debug() {} }), fs: {},
+    // Timers main sets itself (the pending-prompt fallback), run by the test when it chooses.
+    setTimeout: (fn, ms) => { calls.timeouts ??= []; calls.timeouts.push([fn, ms]); return { unref() {} }; },
     backupDatabaseFiles: (dataDir, version) => {
       calls.backups ??= [];
       calls.backups.push([dataDir, version]);
@@ -176,7 +179,7 @@ async function harness(options = {}) {
   const source = stripImports(mainSource)
     .replaceAll("import.meta.url", '"file:///isolated/apps/desktop/main.mjs"')
     .replace('import("electron-updater")', "loadUpdaterEngine()")
-    + "\nglobalThis.main = { showUpdateDialog, checkForUpdates, installUpdate, updateNativeMenu,"
+    + "\nglobalThis.main = { showUpdateDialog, checkForUpdates, installUpdate, updateNativeMenu, showStartup,"
     + " updateStateChanged, startBackend, get flags() { return { closing, quitting, cleanupComplete, updateDialogOpen }; } };";
   const context = { ...bindings };
   runInNewContext(source, context, { filename: "isolated-main.mjs" });
@@ -463,3 +466,52 @@ test("the update window checks first when nothing has been found yet", async () 
   assert.equal(h.calls.dialogs.at(-1).buttons[0], "Download Update");
 });
 
+
+test("an update found while the loading page shows is offered once the app page can show it", async () => {
+  // Windows starts its backend slowly: the first check can finish before the app page loads.
+  const h = await harness({ locale: "en-US" });
+  await h.main.showStartup();
+  const dialogs = h.calls.dialogs.length;
+  await h.calls.updater.check();
+  await flush();
+  assert.equal(h.calls.updater.state.status, "available");
+  assert.equal(h.calls.dialogs.length, dialogs, "no native dialog on a page about to be replaced");
+  // The app page loads, then registers its update window: the prompt opens there.
+  await h.main.startBackend();
+  await flush();
+  h.invoke("desktop:update-prompt-ready");
+  await flush();
+  const prompts = h.calls.sent.filter(([name]) => name === "desktop:update-prompt");
+  assert.equal(prompts.length, 1);
+  assert.equal(prompts[0][1].action, "download");
+  assert.equal(h.calls.dialogs.length, dialogs);
+  // Offered once: the fallback timer finds nothing left to show.
+  for (const [fn] of h.calls.timeouts ?? []) fn();
+  await flush();
+  assert.equal(h.calls.sent.filter(([name]) => name === "desktop:update-prompt").length, 1);
+});
+
+test("a pending update falls back to a native dialog when the page never registers", async () => {
+  const h = await harness({ locale: "en-US" });
+  await h.main.showStartup();
+  await h.calls.updater.check();
+  await flush();
+  const dialogs = h.calls.dialogs.length;
+  await h.main.startBackend();
+  await flush();
+  for (const [fn] of h.calls.timeouts ?? []) fn();
+  await flush();
+  assert.equal(h.calls.dialogs.length, dialogs + 1);
+  assert.equal(h.calls.dialogs.at(-1).buttons[0], "Download Update");
+});
+
+test("a pending update is offered on a failed start, which never reaches the app page", async () => {
+  const h = await harness({ locale: "en-US" });
+  await h.main.showStartup();
+  await h.calls.updater.check();
+  await flush();
+  const dialogs = h.calls.dialogs.length;
+  await h.main.showStartup("failed");
+  await flush();
+  assert.equal(h.calls.dialogs.length, dialogs + 1);
+});
