@@ -69,13 +69,17 @@ export function backendCommand({ packaged, resourcesDir, repoDir, pythonPath }) 
 }
 
 export function spawnBackend(spec, { port, webDir, env, platform = process.platform }) {
-  return spawn(spec.command, [...spec.args, "--port", String(port), "--web-dir", webDir], {
+  const child = spawn(spec.command, [...spec.args, "--port", String(port), "--web-dir", webDir], {
     cwd: spec.cwd, env,
     // On Windows the open stdin pipe is the backend's lifeline: closing it, or
     // this app ending in any way, tells the backend to stop.
     stdio: [platform === "win32" ? "pipe" : "ignore", "pipe", "pipe"],
     detached: platform !== "win32", windowsHide: true,
   });
+  // A pipe may fail while the backend exits ("write EOF" or EPIPE on Windows when its
+  // lifeline closes). That is expected; unhandled, it would show a JavaScript error on quit.
+  for (const stream of [child.stdin, child.stdout, child.stderr]) stream?.on("error", () => {});
+  return child;
 }
 
 export async function waitForBackend(child, origin, token, timeoutMs = 60_000) {

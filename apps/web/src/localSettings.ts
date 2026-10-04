@@ -90,12 +90,23 @@ export async function settingsRequest<T>(
   return body as T;
 }
 
+// Providers added in 1.0.9. A computer on 1.0.11 or earlier refuses the remote
+// sign-in check for them, so the remote page lets the analysis itself report it.
+const PROVIDERS_NEWER_THAN_RELAY = new Set(["chatgpt_plan", "anthropic", "openai"]);
+
 export async function readModelConnection() {
   const settings = await settingsRequest<LocalSettings>("/settings");
-  const status = await settingsRequest<ModelAuthStatus>(
-    `/auth/${settings.model_provider}/check`,
-    { method: "POST" },
-  );
+  let status: ModelAuthStatus;
+  try {
+    status = await settingsRequest<ModelAuthStatus>(
+      `/auth/${settings.model_provider}/check`,
+      { method: "POST" },
+    );
+  } catch (reason) {
+    if (!isRemoteMode() || !PROVIDERS_NEWER_THAN_RELAY.has(settings.model_provider)) throw reason;
+    // The computer checks the AI connection again when the analysis starts.
+    return { settings, error: null, ready: true };
+  }
   return {
     settings,
     error: status.error ?? null,

@@ -52,7 +52,7 @@ def test_first_chunk_is_saved_before_completion_and_disconnect_does_not_cancel_w
             db.execute("SELECT count(*) AS n FROM discussion_messages")
         kwargs["on_text"]("First visible sentence.")
         emitted.set()
-        if not finish.wait(5):
+        if not finish.wait(30):
             raise TimeoutError("test model was never released")
         kwargs["on_text"]("First visible sentence. Final answer.")
         return SimpleNamespace(output_text="First visible sentence. Final answer.",
@@ -64,7 +64,8 @@ def test_first_chunk_is_saved_before_completion_and_disconnect_does_not_cancel_w
     with ThreadPoolExecutor(max_workers=1) as pool:
         pending = pool.submit(discussions.run_once)
         try:
-            assert emitted.wait(2)
+            # Upper bounds only: a slow Windows runner may take seconds to reach the model.
+            assert emitted.wait(15)
             partial = assistant(client)
             assert partial["content"] == "First visible sentence."
             assert partial["status"] == "running" and not pending.done()
@@ -87,7 +88,7 @@ def test_first_chunk_is_saved_before_completion_and_disconnect_does_not_cancel_w
                 state = event_state(await anext(reconnected))
                 assert state["messages"][-1]["content"] == partial["content"]
                 finish.set()
-                assert pending.result(timeout=2)
+                assert pending.result(timeout=15)
                 state = event_state(await anext(reconnected))
                 assert not state["busy"]
                 assert state["messages"][-1]["status"] == "completed"

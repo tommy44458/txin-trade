@@ -105,7 +105,7 @@ async function harness(options = {}) {
     nativeTheme: Object.assign(new EventEmitter(), { shouldUseDarkColors: false }),
     shell: { openPath: async () => {}, openExternal: async () => {} },
     randomBytes: () => ({ toString: () => "isolated-bearer-token" }),
-    createWriteStream: () => ({ end() { calls.logEnds += 1; } }),
+    createWriteStream: () => ({ on() {}, end() { calls.logEnds += 1; } }),
     mkdirSync: path => assert.equal(path, "/isolated/user-data/data"),
     readFileSync: path => {
       calls.reads.push(path);
@@ -118,7 +118,7 @@ async function harness(options = {}) {
     backendEnvironment: value => value, developmentConfig: () => ({}), externalUrl: value => value,
     spawnBackend: () => {
       const child = Object.assign(new EventEmitter(), { exitCode: null, signalCode: null,
-        stdout: { pipe() {} }, stderr: { pipe() {} } });
+        stdout: { pipe() {}, unpipe() {} }, stderr: { pipe() {}, unpipe() {} } });
       calls.spawns.push(child);
       return child;
     },

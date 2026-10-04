@@ -9,13 +9,15 @@ import re
 
 # A segment of dots alone would walk up this computer's path ("/positions/../close").
 _ID = r"(?!\.+(?:/|$))[A-Za-z0-9_.:-]{1,128}"
+# Every AI the computer can analyze with; their status and check never return keys.
+_PROVIDERS = "(codex|claude_code|chatgpt_plan|anthropic|openai)"
 _ROUTES: tuple[tuple[str, re.Pattern[str]], ...] = tuple((method, re.compile(pattern)) for method, pattern in (
     ("GET", r"/api/v1/(session|settings|markets|market-context|candles|quotes|news|events|positions|analyses)"),
     ("GET", r"/api/v1/events/macro-interpretation"),
     ("GET", r"/api/v1/integrations/(binance|bingx)"),
-    ("GET", r"/api/v1/auth/(codex|claude_code)/status"),
+    ("GET", rf"/api/v1/auth/{_PROVIDERS}/status"),
     # Checks the AI sign-in before an analysis; it never signs in or out.
-    ("POST", r"/api/v1/auth/(codex|claude_code)/check"),
+    ("POST", rf"/api/v1/auth/{_PROVIDERS}/check"),
     ("GET", r"/api/v1/analyses/latest"),
     ("GET", rf"/api/v1/analyses/{_ID}(/chart-snapshot|/level-shadow|/level-shadow/v4)?"),
     ("GET", rf"/api/v1/discussions/(analysis|macro|fund_flows)/{_ID}"),
