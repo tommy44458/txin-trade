@@ -4,6 +4,8 @@ The product version is managed in `version.json`. Dates record release preparati
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-10-04
+
 ### Added
 
 - After a report is made, the app reconciles it in the background on later 5-minute candles, recording wins, losses and R.
