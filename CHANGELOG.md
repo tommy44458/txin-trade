@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+## [1.0.12] - 2026-10-04
+
 ### 修正
 
 - 使用 ChatGPT 方案、Claude API 或 OpenAI API 時，遠端網頁也能進行 AI 分析。
