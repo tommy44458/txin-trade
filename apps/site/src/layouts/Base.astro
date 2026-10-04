@@ -96,6 +96,29 @@ const canonical = new URL(path, Astro.site).href;
   </body>
 </html>
 
+<script>
+  // A download is counted with the host name of the site that led to this page (worker/index.js);
+  // nothing is stored, so a visit that moved between pages first counts as "internal".
+  const referrer = (() => {
+    try {
+      const host = new URL(document.referrer).hostname;
+      return host === location.hostname || host === "www.txintrade.com" ? "internal" : host;
+    } catch {
+      return "direct";
+    }
+  })();
+  // Capture phase: the link is tagged before the Windows notice copies it.
+  const tag = (event: Event) => {
+    const link = (event.target as Element | null)?.closest?.<HTMLAnchorElement>('a[href^="/get/"]');
+    if (!link) return;
+    const url = new URL(link.href);
+    url.searchParams.set("ref", referrer);
+    link.setAttribute("href", url.pathname + url.search);
+  };
+  document.addEventListener("click", tag, true);
+  document.addEventListener("auxclick", tag, true);
+</script>
+
 <style>
   .skip { position: absolute; left: 16px; top: -48px; z-index: 20; padding: 8px 14px; border-radius: 999px; background: var(--button); color: var(--button-text); }
   .skip:focus { top: 12px; }

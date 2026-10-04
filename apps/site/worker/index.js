@@ -10,6 +10,14 @@ const SOURCES = new Set(["home", "download"]);
 const LOCALES = new Set(["en", "zh-TW"]);
 // Link previews, crawlers and scripts follow links too; they are not people downloading.
 const AUTOMATED = /bot|crawl|spider|slurp|preview|facebookexternalhit|curl|wget|python|headless/i;
+// The page adds the host name of the site the visitor came from (see Base.astro); nothing else of the address.
+const HOST = /^[a-z0-9-]+(\.[a-z0-9-]+)+$/;
+
+function referrerOf(value) {
+  const host = (value ?? "").toLowerCase().replace(/^www\./, "");
+  if (host === "direct" || host === "internal") return host;
+  return host.length <= 100 && HOST.test(host) ? host : "unknown";
+}
 
 async function countDownload(env, request, url, platform) {
   const agent = request.headers.get("user-agent") ?? "";
@@ -17,12 +25,12 @@ async function countDownload(env, request, url, platform) {
   const source = url.searchParams.get("from");
   const locale = url.searchParams.get("lang");
   await env.DB.prepare(
-    `INSERT INTO site_downloads (day, platform, source, locale, country, count) VALUES (?, ?, ?, ?, ?, 1)
-     ON CONFLICT (day, platform, source, locale, country) DO UPDATE SET count = count + 1`,
+    `INSERT INTO site_downloads (day, platform, source, locale, country, referrer, count) VALUES (?, ?, ?, ?, ?, ?, 1)
+     ON CONFLICT (day, platform, source, locale, country, referrer) DO UPDATE SET count = count + 1`,
   ).bind(
     new Date().toISOString().slice(0, 10), platform,
     SOURCES.has(source) ? source : "other", LOCALES.has(locale) ? locale : "other",
-    request.cf?.country ?? "XX",
+    request.cf?.country ?? "XX", referrerOf(url.searchParams.get("ref")),
   ).run();
 }
 

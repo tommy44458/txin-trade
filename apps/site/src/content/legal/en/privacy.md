@@ -37,7 +37,7 @@ Payments are processed by our third-party payment provider, which handles paymen
 
 ## Cookies
 
-This website (txintrade.com) uses no cookies. To understand which pages are useful, it uses Cloudflare Web Analytics, which counts visits in aggregate: the page, the referring site, the country, and the browser and device type. It does not use cookies or store anything on your device, does not build a profile of you, and does not track you across other sites. When you choose a download button, the site also adds one to a daily count of downloads by platform, page, language and country; it records nothing else about you. The remote web page (`app.txintrade.com`) uses no analytics.
+This website (txintrade.com) uses no cookies. To understand which pages are useful, it uses Cloudflare Web Analytics, which counts visits in aggregate: the page, the referring site, the country, and the browser and device type. It does not use cookies or store anything on your device, does not build a profile of you, and does not track you across other sites. When you choose a download button, the site also adds one to a daily count of downloads by platform, page, language, country and the name of the site that led you there (for example google.com, never the full address); it records nothing else about you. The remote web page (`app.txintrade.com`) uses no analytics.
 
 The cloud service sets one essential cookie on `api.txintrade.com` to keep you signed in, and a short-lived one during Google sign-in. Neither is used for advertising or analytics.
 
