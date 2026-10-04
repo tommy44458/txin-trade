@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 import { availablePort, backendCommand, backendEnvironment, developmentConfig, externalUrl,
-  stopBackend } from "../runtime.mjs";
+  spawnBackend, stopBackend } from "../runtime.mjs";
 
 test("desktop fixes SQLite to its private data directory and ignores legacy database credentials", () => {
   const env = backendEnvironment({
@@ -184,4 +184,15 @@ test("an update without the local service backs up the database with its WAL, pr
     assert.equal(statSync(joinPath(dataDir, "backups")).mode & 0o777, 0o700);
   }
   assert.throws(() => backupDatabaseFiles(joinPath(dataDir, "missing"), "1.0.6"), /UPDATE_BACKUP_FAILED/);
+});
+
+test("a backend pipe that fails while the backend exits never becomes an uncaught error", async () => {
+  // Like Windows: stdin is the lifeline pipe, and closing it can fail with "write EOF".
+  const child = spawnBackend({ command: process.execPath, args: ["-e", "setTimeout(() => {}, 200)"], cwd: tmpdir() },
+    { port: 1, webDir: tmpdir(), env: process.env, platform: "win32" });
+  for (const stream of [child.stdin, child.stdout, child.stderr]) {
+    assert.doesNotThrow(() => stream.emit("error", Object.assign(new Error("write EOF"), { code: "EOF" })));
+  }
+  child.stdin.end();
+  await once(child, "exit");
 });

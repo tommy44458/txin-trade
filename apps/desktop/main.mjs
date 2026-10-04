@@ -387,8 +387,7 @@ async function initializeUpdater() {
     stopBackend: async () => {
       closing = true;
       await stopBackend(backend);
-      backendLog?.end();
-      backendLog = undefined;
+      closeBackendLog();
       cleanupComplete = true;
     },
     onState: updateStateChanged,
@@ -397,8 +396,20 @@ async function initializeUpdater() {
   await updater.start();
 }
 
+/** Stop copying backend output into the log, then close it; output after quitting is dropped. */
+function closeBackendLog() {
+  if (!backendLog) return;
+  for (const stream of [backend?.stdout, backend?.stderr]) {
+    try { stream?.unpipe(backendLog); } catch { /* Already detached. */ }
+  }
+  backendLog.end();
+  backendLog = undefined;
+}
+
 async function showStartup(failure = null) {
   startupFailed = failure !== null;
+  // Closing the window while the backend starts or fails leaves nothing to show.
+  if (!window || window.isDestroyed()) return;
   await window.loadURL(`data:text/html;charset=UTF-8,${encodeURIComponent(startupPage(failure))}`);
   window.show();
 }
@@ -429,7 +440,11 @@ async function startBackend() {
     const spec = backendCommand({ packaged: app.isPackaged, resourcesDir, repoDir,
       pythonPath: process.env.TRADE_HELPER_PYTHON });
     backend = spawnBackend(spec, { port, webDir, env });
-    backendLog ||= createWriteStream(join(userData, "backend.log"), { flags: "a", mode: 0o600 });
+    if (!backendLog) {
+      backendLog = createWriteStream(join(userData, "backend.log"), { flags: "a", mode: 0o600 });
+      // A log that cannot be written must never interrupt the app or its quit.
+      backendLog.on("error", () => {});
+    }
     backend.stdout.pipe(backendLog, { end: false });
     backend.stderr.pipe(backendLog, { end: false });
     let spawnError;
@@ -554,7 +569,7 @@ app.whenReady().then(async () => {
   ipcMain.handle("desktop:update-theme", (event, theme) => {
     trustedSender(event);
     nativeTheme.themeSource = validateTheme(theme);
-    window.setBackgroundColor(nativeTheme.shouldUseDarkColors ? "#151517" : "#f5f5f7");
+    if (window && !window.isDestroyed()) window.setBackgroundColor(nativeTheme.shouldUseDarkColors ? "#151517" : "#f5f5f7");
   });
   nativeTheme.on("updated", () => {
     if (window && !window.isDestroyed()) {
@@ -580,7 +595,7 @@ app.on("before-quit", event => {
   closing = true;
   // Release a pending update drain before stopping the private backend on normal quit.
   Promise.resolve(updater?.dispose()).catch(() => {}).then(() => stopBackend(backend)).finally(() => {
-    backendLog?.end();
+    closeBackendLog();
     cleanupComplete = true;
     app.quit();
   });

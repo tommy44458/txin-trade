@@ -7,6 +7,7 @@ The product version is managed in `version.json`. Dates record release preparati
 ### Fixed
 
 - The remote web page can run AI analyses with the ChatGPT plan, Claude API or OpenAI API too.
+- Closing the Windows app no longer sometimes shows a JavaScript error window.
 
 ## [1.0.11] - 2026-10-04
 
