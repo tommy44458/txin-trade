@@ -130,6 +130,9 @@ def read_model_report(raw: str, trace: list[dict], *, output_locale: str = "zh-T
         result['entry_decision']['trigger_rule'] = trigger_rule(plan.get('trigger_rule'))
         if result['entry_decision']['action'] != 'wait_for_entry':
             result['entry_decision']['trigger_rule'] = None
+        result['entry_decision']['invalidation_rule'] = (
+            invalidation_rule(plan.get('invalidation_rule'))
+            if result['entry_decision']['action'] in ('open_now', 'wait_for_entry') else None)
     else:
         result['entry_decision'] = None
     supplied_directions = value.get('direction_assessment')
@@ -159,6 +162,17 @@ def trigger_rule(value) -> dict | None:
     except (DecimalException, ValueError, TypeError):
         return None
     return {'type': value['type'], 'price': str(price)} if price.is_finite() and price > 0 else None
+
+
+def invalidation_rule(value) -> dict | None:
+    """The price at which an entry plan ends before its stop, or None; never invented."""
+    if not isinstance(value, dict) or value.get('confirmation') not in ('close', 'touch'):
+        return None
+    try:
+        price = Decimal(str(value.get('price')))
+    except (DecimalException, ValueError, TypeError):
+        return None
+    return {'price': str(price), 'confirmation': value['confirmation']} if price.is_finite() and price > 0 else None
 
 
 def entry_cost_reference(plan: dict | None, quote: dict, leverage: int) -> dict | None:

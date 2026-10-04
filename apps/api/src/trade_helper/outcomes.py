@@ -68,9 +68,17 @@ def items_for(report: dict) -> list[dict]:
             trigger = ({"type": rule["type"], "price": str(_price(rule.get("price")))}
                        if isinstance(rule, dict) and rule.get("type") in TRIGGERS and _price(rule.get("price"))
                        else None)
+            rule = plan.get("invalidation_rule")
+            exit_price = _price(rule.get("price")) if isinstance(rule, dict) else None
+            # Only a rule between entry and stop can end the plan before the stop.
+            exit_rule = ({"price": str(exit_price), "confirmation": rule["confirmation"]}
+                         if exit_price and rule.get("confirmation") in {"close", "touch"}
+                         and (stop <= exit_price < entry if side == "long" else entry < exit_price <= stop)
+                         else None)
             items.append(base | {
                 "key": "entry", "kind": "entry", "action": plan["action"], "side": side,
                 "entry": str(entry), "stop": str(stop), "target": str(target), "trigger": trigger,
+                "exit_rule": exit_rule,
                 # Older plans described their condition only in words: no price rule to check.
                 "unverifiable": waiting and trigger is None,
                 "wait_until": _window(start, timeframe, WAIT_CANDLES, WAIT_MIN).isoformat() if waiting else None,
@@ -134,6 +142,13 @@ def _finish(state: dict, result: str, at: str, **details) -> dict:
     return state | {"done": True, "result": result, "resolved_at": at, **details}
 
 
+def _closed(item: dict, state: dict, at: str, exit_price: Decimal, reason: str) -> dict:
+    """A trade ended by its stop, target or invalidation rule: a win or loss by the sign of R."""
+    r = _r(item, exit_price, state.get("fill"))
+    return _finish(state, "win" if Decimal(r) > 0 else "loss", at, exit_price=str(exit_price),
+                   r_multiple=r, exit_reason=reason)
+
+
 def _closes_primary(candle: dict, timeframe: str) -> bool:
     """True when this 5-minute candle is the last one of a primary-timeframe candle."""
     ends = _at(candle["open_time"]) + STEP
@@ -186,11 +201,23 @@ def _close_trigger(item, state, candle, close):
                     "high": None, "low": None}
 
 
+def _rule_exit(item: dict, candle_closes_primary: bool, high, low, close) -> Decimal | None:
+    """Where the plan's invalidation rule ends the trade in this candle, if it does."""
+    rule = item.get("exit_rule")
+    if not rule:
+        return None
+    level, long = Decimal(rule["price"]), item["side"] == "long"
+    if rule["confirmation"] == "touch":
+        return level if ((low <= level) if long else (high >= level)) else None
+    if candle_closes_primary and ((close < level) if long else (close > level)):
+        return close
+    return None
+
+
 def _entry_candle(item, state, opened, high, low, close):
     entry, stop, target = Decimal(item["entry"]), Decimal(item["stop"]), Decimal(item["target"])
     long = item["side"] == "long"
     at = (opened + STEP).isoformat()
-    fill = state.get("fill")
     if state["entered_at"] is None:
         if item["wait_until"] and opened >= _at(item["wait_until"]):
             return _finish(state, "not_triggered", item["wait_until"])
@@ -200,19 +227,30 @@ def _entry_candle(item, state, opened, high, low, close):
             return state
         state = state | {"entered_at": opened.isoformat()}
         # On the entry candle the order of prices is unknown: its stop counts, its target does not.
+        state = _extremes(state, high, low, close)
+        # A touch rule lies between entry and stop, so price reaches it first.
+        ruled = _rule_exit(item, False, high, low, close)
+        if ruled is not None:
+            return _closed(item, state, at, ruled, "invalidation")
         if (low <= stop) if long else (high >= stop):
-            return _finish(_extremes(state, high, low, close), "loss", at, exit_price=str(stop),
-                           r_multiple=_r(item, stop))
-        return _extremes(state, high, low, close)
+            return _closed(item, state, at, stop, "stop")
+        return state
     if opened < _at(state["entered_at"]):
         return state  # The confirming candle itself: the trade starts at its close.
     state = _extremes(state, high, low, close)
+    touched = (item.get("exit_rule") or {}).get("confirmation") == "touch"
+    ruled = _rule_exit(item, _closes_primary({"open_time": opened.isoformat()}, item["timeframe"]),
+                       high, low, close)
     stopped = (low <= stop) if long else (high >= stop)
     reached = (high >= target) if long else (low <= target)
+    if ruled is not None and touched:  # Before the stop, and ahead of a target in the same candle.
+        return _closed(item, state, at, ruled, "invalidation")
     if stopped:  # Also when both were touched in this candle.
-        return _finish(state, "loss", at, exit_price=str(stop), r_multiple=_r(item, stop, fill))
+        return _closed(item, state, at, stop, "stop")
     if reached:
-        return _finish(state, "win", at, exit_price=str(target), r_multiple=_r(item, target, fill))
+        return _closed(item, state, at, target, "target")
+    if ruled is not None:  # A close beyond the rule, after the candle's highs and lows.
+        return _closed(item, state, at, ruled, "invalidation")
     return state
 
 

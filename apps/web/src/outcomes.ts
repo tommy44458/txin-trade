@@ -22,6 +22,7 @@ export type Outcome = {
   exit_price: string | null;
   fill: string | null;
   trigger: { type: "touch" | "close_above" | "close_below"; price: string } | null;
+  exit_reason?: "target" | "stop" | "invalidation" | null;
   max_up_pct: string | null;
   max_down_pct: string | null;
   end_pct: string | null;
@@ -65,7 +66,7 @@ export function signedPct(value: string | null): string {
 }
 
 /** The result in a word, and whether it reads as good, bad or neither. */
-export function outcomeLabel(outcome: Pick<Outcome, "status" | "result" | "kind" | "entered_at">):
+export function outcomeLabel(outcome: Pick<Outcome, "status" | "result" | "kind" | "entered_at" | "exit_reason">):
   { text: string; tone: "good" | "bad" | "neutral" | "pending" } {
   if (outcome.status === "unavailable") return { text: uiText("無法對帳"), tone: "neutral" };
   if (outcome.status === "pending") {
@@ -73,8 +74,8 @@ export function outcomeLabel(outcome: Pick<Outcome, "status" | "result" | "kind"
     return { text: entered ? uiText("追蹤中") : uiText("等待觸發"), tone: "pending" };
   }
   switch (outcome.result) {
-    case "win": return { text: uiText("贏"), tone: "good" };
-    case "loss": return { text: uiText("輸"), tone: "bad" };
+    case "win": return { text: outcome.exit_reason === "invalidation" ? uiText("贏（失效出場）") : uiText("贏"), tone: "good" };
+    case "loss": return { text: outcome.exit_reason === "invalidation" ? uiText("輸（失效出場）") : uiText("輸"), tone: "bad" };
     case "expired": return { text: uiText("到期未分勝負"), tone: "neutral" };
     case "not_triggered": return { text: uiText("未觸發，已過期"), tone: "neutral" };
     case "unverifiable": return { text: uiText("條件無法判斷"), tone: "neutral" };

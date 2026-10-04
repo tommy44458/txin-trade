@@ -4,6 +4,10 @@ The product version is managed in `version.json`. Dates record release preparati
 
 ## [Unreleased]
 
+### Changed
+
+- Entry plans include a checkable invalidation rule, and reconciliation settles on whichever comes first: target, stop or invalidation.
+
 ## [1.1.1] - 2026-10-04
 
 ### Fixed

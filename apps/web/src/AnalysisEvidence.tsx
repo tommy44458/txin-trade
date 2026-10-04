@@ -41,6 +41,8 @@ export type EntryDecision = {
   trigger: string | null;
   // The price-checkable part of a waiting entry's condition; absent in older reports.
   trigger_rule?: { type: "touch" | "close_above" | "close_below"; price: string } | null;
+  // The price at which the plan ends before its stop; absent in older reports.
+  invalidation_rule?: { price: string; confirmation: "close" | "touch" } | null;
   invalidation: string | null;
   reason: string;
   basis_level_ids: string[];
@@ -349,6 +351,13 @@ export default function AnalysisEvidence({
               <div>
                 <span>{uiText("方案失效")}</span>
                 <p lang={entryDecision.invalidation ? outputLocale : uiLocale()}>{entryDecision.invalidation || uiText("模型未提供")}</p>
+                {entryDecision.invalidation_rule && <small className="plan-trigger-rule">{
+                  entryDecision.invalidation_rule.confirmation === "touch"
+                    ? uiText("失效規則：盤中觸及 {{p0}} 即出場", { p0: planPrice(entryDecision.invalidation_rule.price) })
+                    : entryDecision.side === "short"
+                      ? uiText("失效規則：收盤高於 {{p0}} 即出場", { p0: planPrice(entryDecision.invalidation_rule.price) })
+                      : uiText("失效規則：收盤低於 {{p0}} 即出場", { p0: planPrice(entryDecision.invalidation_rule.price) })
+                }</small>}
               </div>
             </div>
             {/* A high tolerance asks for room: say what that costs when the stop is hit. */}

@@ -100,7 +100,7 @@ def _public(row) -> dict:
         "entry": item.get("entry"), "stop": item.get("stop"), "target": item.get("target"),
         "reference": item.get("reference"), "invalidation": item.get("invalidation"),
         "entered_at": state.get("entered_at"), "exit_price": state.get("exit_price"),
-        "fill": state.get("fill"), "trigger": item.get("trigger"),
+        "fill": state.get("fill"), "trigger": item.get("trigger"), "exit_reason": state.get("exit_reason"),
         "max_up_pct": state.get("max_up_pct"), "max_down_pct": state.get("max_down_pct"),
         "end_pct": state.get("end_pct"),
     }
