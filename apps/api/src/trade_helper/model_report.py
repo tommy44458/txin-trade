@@ -13,6 +13,9 @@ REPORT_FIELDS = frozenset({
 })
 
 
+# A waiting entry starts on a touch of its price, or on a primary close beyond it.
+TRIGGER_TYPES = ('touch', 'close_above', 'close_below')
+
 def _closing(text: str) -> str | None:
     """The brackets an object left open, or None when it ends inside a string."""
     stack, in_string, escaped = [], False, False
@@ -124,6 +127,9 @@ def read_model_report(raw: str, trace: list[dict], *, output_locale: str = "zh-T
             except (DecimalException, ValueError, TypeError):
                 result['entry_decision'][key] = None
         result['entry_decision']['basis_level_ids'] = plan.get('basis_level_ids') if isinstance(plan.get('basis_level_ids'), list) else []
+        result['entry_decision']['trigger_rule'] = trigger_rule(plan.get('trigger_rule'))
+        if result['entry_decision']['action'] != 'wait_for_entry':
+            result['entry_decision']['trigger_rule'] = None
     else:
         result['entry_decision'] = None
     supplied_directions = value.get('direction_assessment')
@@ -142,6 +148,17 @@ def read_model_report(raw: str, trace: list[dict], *, output_locale: str = "zh-T
     result['position_choices'] = {item['position_id']: item['default_action_id']
         for run in trace if run['tool'] == 'evaluate_positions' for item in run['result']['positions']}
     return result
+
+
+def trigger_rule(value) -> dict | None:
+    """The checkable part of a waiting entry's condition, or None; never invented."""
+    if not isinstance(value, dict) or value.get('type') not in TRIGGER_TYPES:
+        return None
+    try:
+        price = Decimal(str(value.get('price')))
+    except (DecimalException, ValueError, TypeError):
+        return None
+    return {'type': value['type'], 'price': str(price)} if price.is_finite() and price > 0 else None
 
 
 def entry_cost_reference(plan: dict | None, quote: dict, leverage: int) -> dict | None:

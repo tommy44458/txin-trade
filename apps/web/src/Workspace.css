@@ -423,6 +423,13 @@
   font-size: 13px;
   font-weight: 600;
 }
+.plan-trigger-rule {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
 .plan-conditions p {
   font-size: 13px;
   line-height: 1.85;

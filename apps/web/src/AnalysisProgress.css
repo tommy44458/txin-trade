@@ -10,8 +10,7 @@
 }
 
 .analysis-progress {
-  display: flex;
-  align-items: center;
+  display: grid;
   gap: var(--space-4);
   padding: var(--space-5);
   margin-bottom: var(--space-4);
@@ -20,14 +19,137 @@
   border-radius: var(--radius-md);
 }
 
-.analysis-progress > .analysis-spinner {
+.analysis-progress-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.analysis-progress-head > .analysis-spinner {
   width: 24px;
   height: 24px;
   color: var(--accent);
 }
 
-.analysis-progress > div {
+.analysis-progress-head > div {
   min-width: 0;
+}
+
+/* Each step ticks off as it finishes, so the wait has visible progress. */
+.analysis-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+  color: var(--text-tertiary);
+}
+.analysis-steps li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.analysis-step-mark {
+  width: 12px;
+  height: 12px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: 50%;
+}
+.analysis-steps .is-active {
+  color: var(--text);
+}
+.analysis-steps .is-active .analysis-step-mark {
+  border-color: var(--accent);
+  background: var(--accent);
+  animation: analysis-step-pulse 1.6s ease-in-out infinite;
+}
+.analysis-steps .is-done {
+  color: var(--text-secondary);
+}
+.analysis-steps .is-done .analysis-step-mark {
+  border-color: var(--positive);
+  background: var(--positive);
+  box-shadow: inset 0 0 0 2px var(--surface);
+}
+
+.analysis-live-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-6);
+  margin: 0;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
+}
+.analysis-live-facts dt {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+.analysis-live-facts dd {
+  margin: 2px 0 0;
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.analysis-live-facts .analysis-live-price {
+  font-size: 18px;
+}
+.analysis-live-zones dd {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  font-weight: 500;
+}
+
+/* The AI's sections appear as they are written; the report replaces them. */
+.analysis-live-draft {
+  display: grid;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
+}
+.analysis-live-draft section {
+  display: grid;
+  gap: 4px;
+}
+.analysis-live-draft h3 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+.analysis-live-draft p {
+  margin: 0;
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.85;
+  white-space: pre-wrap;
+}
+.analysis-live-draft .is-writing::after {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 1em;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  background: var(--accent);
+  animation: analysis-caret 1s steps(2, start) infinite;
+}
+.analysis-live-draft small {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+@keyframes analysis-step-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@keyframes analysis-caret {
+  to {
+    visibility: hidden;
+  }
 }
 
 .analysis-progress strong {
@@ -57,7 +179,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .analysis-spinner {
+  .analysis-spinner,
+  .analysis-steps .is-active .analysis-step-mark,
+  .analysis-live-draft .is-writing::after {
     animation: none;
   }
 }

@@ -1,4 +1,6 @@
 import { pythonReferenceText } from "./pythonReferenceText";
+import { OutcomeLine } from "./TrackRecord";
+import type { Outcome } from "./outcomes";
 import { uiText, uiLocale, type UiLocale } from "./i18n/index.ts";
 import { timeframeCode } from "./timeframes";
 import './PositionReviewCard.css'
@@ -81,8 +83,9 @@ function ExitPlanSection({ plan, side, timeframe, currentStop, outputLocale, ris
   </section>
 }
 
-export default function PositionReviewCard({ review, timeframe, outputLocale = "zh-TW", riskTolerance }: {
+export default function PositionReviewCard({ review, timeframe, outputLocale = "zh-TW", riskTolerance, outcome }: {
   review: PositionReview; timeframe: string; outputLocale?: UiLocale; riskTolerance?: string | null
+  outcome?: Outcome
 }) {
   const advice = review.advice
   const decision = review.agent_decision
@@ -95,6 +98,7 @@ export default function PositionReviewCard({ review, timeframe, outputLocale = "
       ? <ExitPlanSection plan={decision.exit_plan} side={review.side} timeframe={timeframe} currentStop={advice?.current_stop} outputLocale={outputLocale} riskTolerance={riskTolerance} />
       // Reports from before exit plans have no exit_plan field at all; only say it is missing when it was checked.
       : decision.exit_plan === null && <small className="exit-plan-missing">{uiText("這筆續抱建議沒有附上可核對的離場計畫。")}</small>)}
+    {outcome && <OutcomeLine outcome={outcome} />}
     {!review.agent_decision && <small>{uiText("這筆持倉尚未有 AI 的續抱／平倉建議，請重新分析。")}</small>}
     {advice && <details><summary>{uiText("查看風險估算參考")}</summary><p>{labels[advice.kind]}：{advice.selection_source === "python_reference" || advice.selection_source === "rules_only" ? pythonReferenceText(advice.reason, { kind: advice.kind, origin: "python" }) : advice.reason}</p>
       {advice.proposed_stop && <p>{uiText("規則估算止損 $")}{fmt(advice.current_stop)} → ${fmt(advice.proposed_stop)}{uiText("；風險變化") + " "}{fmt(advice.risk_change_usdt)}{" " + uiText("USDT。這不是 Agent 的最終決定，也不會更改訂單。")}</p>}

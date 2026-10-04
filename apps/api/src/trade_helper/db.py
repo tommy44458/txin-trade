@@ -14,7 +14,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
 
-SCHEMA_VERSION = 10
+SCHEMA_VERSION = 12
 BUSY_TIMEOUT_MS = 15_000
 
 
@@ -561,6 +561,35 @@ def _migration_10(db: Database) -> None:
             raise RuntimeError("Rebuilding discussion sessions broke a reference")
 
 
+def _migration_11(db: Database) -> None:
+    # A running analysis shows each finished step (quote, levels, the AI's sections
+    # as written) before its report is complete. Display-only; NULL for older rows.
+    columns = {row["name"] for row in db.execute("PRAGMA table_info(analyses)").fetchall()}
+    if "progress_json" not in columns:
+        db.execute("ALTER TABLE analyses ADD COLUMN progress_json TEXT "
+                   "CHECK(progress_json IS NULL OR json_valid(progress_json))")
+
+
+def _migration_12(db: Database) -> None:
+    # Reconciliation of finished reports with the candles that followed them. Reports
+    # stay unchanged; each judged item (entry plan, stand-aside, each position decision)
+    # keeps its frozen terms, its progress and its result under a rules version.
+    db.execute("""CREATE TABLE IF NOT EXISTS analysis_outcomes (
+        id TEXT PRIMARY KEY, user_id TEXT NOT NULL, analysis_id TEXT NOT NULL,
+        item_key TEXT NOT NULL, kind TEXT NOT NULL, rules_version TEXT NOT NULL,
+        status TEXT NOT NULL CHECK(status IN ('pending','resolved','unavailable')),
+        result TEXT, r_multiple TEXT,
+        item_json TEXT NOT NULL CHECK(json_valid(item_json)),
+        state_json TEXT NOT NULL CHECK(json_valid(state_json)),
+        next_check_at TEXT, resolved_at TEXT, uploaded_at TEXT,
+        created_at TEXT NOT NULL, updated_at TEXT NOT NULL,
+        UNIQUE(analysis_id,item_key,rules_version),
+        FOREIGN KEY(analysis_id,user_id) REFERENCES analyses(id,user_id) ON DELETE CASCADE
+    )""")
+    db.execute("CREATE INDEX IF NOT EXISTS analysis_outcomes_pending "
+               "ON analysis_outcomes(status,next_check_at)")
+
+
 class DatabaseFromNewerVersion(RuntimeError):
     """The database was upgraded by a newer txinTrade; this version must not touch it."""
 
@@ -583,7 +612,8 @@ def init_db() -> None:
         for migration_version, migration in (
             (1, _migration_1), (2, _migration_2), (3, _migration_3), (4, _migration_4),
             (5, _migration_5), (6, _migration_6), (7, _migration_7), (8, _migration_8),
-            (9, _migration_9), (10, _migration_10),
+            (9, _migration_9), (10, _migration_10), (11, _migration_11),
+            (12, _migration_12),
         ):
             if version < migration_version:
                 migration(db)
@@ -635,6 +665,9 @@ def public_job(row: sqlite3.Row | dict) -> dict:
         "report": json.loads(row["report_json"]) if row["report_json"] else None,
         "v4_status": row["v4_status"],
         "v4_shadow": json.loads(row["v4_json"]) if row["v4_json"] else None,
+        # What a running analysis can already show; the finished report replaces it.
+        "progress": (json.loads(row["progress_json"]) if row.get("progress_json")
+                     and row["status"] in {"queued", "running"} else None),
     }
     if row["error_code"]:
         result["error"] = {"code": row["error_code"], "message": row["error_message"]}

@@ -43,6 +43,8 @@ export type LocalSettings = {
   initial_indicators?: string[];
   initial_indicator_catalog?: InitialIndicatorCatalogItem[];
   trading_preferences?: TradingPreferences;
+  // Opt-in sharing of reconciled outcomes with the txinTrade cloud.
+  share_outcomes?: boolean;
   integrations: {
     bingx: IntegrationStatus;
     binance?: IntegrationStatus;

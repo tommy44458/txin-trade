@@ -65,6 +65,8 @@ from .market_catalog import (
 from .models import AnalysisRequest, PositionInput, PositionUpdate
 from .news import news_snapshot
 from .openai_api_bridge import router as openai_auth_router
+from .outcome_api import router as outcome_router
+from .outcome_upload import router as outcome_sharing_router
 from .position_chart_snapshot import router as position_chart_snapshot_router
 from .product_version import product_version
 from .smart_money import router as smart_money_router
@@ -104,6 +106,8 @@ app.include_router(discussions_router)
 app.include_router(desktop_updates_router)
 app.include_router(smart_money_router)
 app.include_router(fund_flow_snapshots_router)
+app.include_router(outcome_router)
+app.include_router(outcome_sharing_router)
 
 
 @app.exception_handler(RequestValidationError)

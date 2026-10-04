@@ -241,6 +241,7 @@ def public_settings() -> dict:
             "trading_preferences": trading_preferences(),
             "initial_indicators": initial_indicators(),
             "initial_indicator_catalog": initial_indicator_catalog(),
+            "share_outcomes": preferences().get("share_outcomes") is True,
             "integrations": {name: integration_status(name)
                              for name in INTEGRATION_NAMES}}
 
@@ -325,6 +326,8 @@ class SettingsUpdate(BaseModel):
     favorite_market_ids: list[str] | None = Field(default=None, max_length=1000)
     trading_preferences: TradingPreferencesUpdate | None = None
     initial_indicators: list[InitialIndicatorName] | None = Field(default=None, max_length=100)
+    # Opt-in sharing of reconciled outcomes with the txinTrade cloud; never set remotely.
+    share_outcomes: bool | None = None
     bingx_api_key: SecretStr | None = None
     bingx_api_secret: SecretStr | None = None
     binance_api_key: SecretStr | None = None
@@ -466,6 +469,8 @@ def _write_settings(body: SettingsUpdate):
                 target.update(body.trading_preferences.model_dump(exclude_unset=True))
             if body.initial_indicators is not None:
                 saved["initial_indicators"] = body.initial_indicators
+            if body.share_outcomes is not None:
+                saved["share_outcomes"] = body.share_outcomes
             _save_preferences(db, saved)
         return public_settings()
     except CredentialStoreError as exc:

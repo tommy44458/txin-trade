@@ -5,6 +5,7 @@ import { AnalysisSpinner } from "./AnalysisProgress";
 import SelectControl from "./SelectControl";
 import BinanceSettingsPanel from "./BinanceSettingsPanel";
 import CliSetupDialog, { type CliSetupReason } from "./CliSetupDialog";
+import OutcomeSharingSection from "./OutcomeSharingSection";
 import { openAuthorization } from "./desktop";
 import { applyUiTheme, currentUiTheme, isUiTheme, normalizeUiTheme, type UiTheme } from "./uiTheme";
 import { isRemoteMode } from "./transport.ts";
@@ -821,6 +822,8 @@ export default function SettingsPanel({
                 </p>}
             </div>
           </section>
+          {!remote && <OutcomeSharingSection enabled={!!settings.share_outcomes}
+            onChanged={(next) => setSettings(shownSettings(next))} />}
           {!remote && (<>
           <section
             className="panel settings-section"

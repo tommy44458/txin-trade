@@ -61,12 +61,21 @@ def test_analysis_idempotency_and_position_snapshot(monkeypatch, tmp_path):
 
         monkeypatch.setattr("trade_helper.worker.fetch_higher_timeframe_candles", higher_with_context)
 
-        def fake_agent(request, candles, quote, context_candles, selected_positions, *, prepared_trace, prompt_bundle):
+        def fake_agent(request, candles, quote, context_candles, selected_positions, *, prepared_trace, prompt_bundle,
+                       on_text=None):
             assert prompt_bundle.response_locale == request['output_locale'] == 'zh-TW'
             with connect() as db:
                 job = db.execute("SELECT lease_until FROM analyses WHERE status='running'").fetchone()
             lease_remaining = datetime.fromisoformat(job["lease_until"]) - datetime.now(UTC)
             assert lease_remaining.total_seconds() > 580
+            # While the AI writes, the screen already has the quote, the levels and its first section.
+            on_text('{"market": "價格在 120 附近，\\"多空\\"拉鋸', )
+            running = client.get(f"/api/v1/analyses/{first.json()['id']}").json()
+            assert running["status"] == "running" and running["report"] is None
+            assert running["progress"]["market"]["price"] == "120"
+            assert running["progress"]["evidence"]["trend"] in {"bullish", "bearish", "neutral", "mixed"}
+            assert running["progress"]["draft"]["market"] == {"text": '價格在 120 附近，"多空"拉鋸',
+                                                              "complete": False}
             decision = fallback_analysis(request, candles, quote,
                                          context_candles=context_candles,
                                          positions=selected_positions)
@@ -92,6 +101,7 @@ def test_analysis_idempotency_and_position_snapshot(monkeypatch, tmp_path):
         assert run_once()
         result = client.get(f"/api/v1/analyses/{first.json()['id']}").json()
         assert result["status"] == "completed"
+        assert result["progress"] is None  # The finished report replaces the progress.
         assert result["report"]["position_reviews"][0]["version"] == 1
         assert result["report"]["position_reviews"][0]["leverage"] == 10
         assert result["report"]["position_reviews"][0]["unrealized_pnl_usdt"] == "-38"
@@ -104,8 +114,9 @@ def test_analysis_idempotency_and_position_snapshot(monkeypatch, tmp_path):
         saved = next(item for item in history if item["id"] == result["id"])
         assert saved["report"] == result["report"]
         assert saved["status"] == "completed"
-        assert client.get(f"/api/v1/analyses/{first.json()['id']}/outcomes").status_code == 404
-        assert client.get("/api/v1/outcomes/summary").status_code == 404
+        # Reconciliation is a separate record; the report itself never changes.
+        assert client.get(f"/api/v1/analyses/{first.json()['id']}/outcomes").json() == {"items": []}
+        assert client.get("/api/v1/outcomes/summary").json()["overall"]["total"] == 0
         assert result["report"]["position_reviews"][0]["agent_decision"]["decision"] == "close_now"
         assert result["submitted_input"]["trading_style"] == "right"
         assert result["report"]["preference_assessment"]["trading_style"] == "right"

@@ -4,7 +4,7 @@ txinTrade is operated by **Hsin Chuan Huang** ("we"). This policy explains what 
 
 ## The app keeps your data on your computer
 
-The txinTrade desktop app stores your positions, preferences, analysis history, conversations and any keys you enter in a local database on your computer. We do not receive this data, and the app sends us no usage statistics.
+The txinTrade desktop app stores your positions, preferences, analysis history, conversations and any keys you enter in a local database on your computer. We do not receive this data, and the app sends us no usage statistics. The only exception is sharing results, which you can turn on in Settings, described below.
 
 To work, the app connects directly from your computer to:
 
@@ -22,6 +22,14 @@ Signing in is optional and only needed for remote access. When you sign in with 
 - Your remote access subscription status.
 
 When you use remote access, your requests pass from your browser through our service to your computer, and the answers travel back the same way. We do not store the content of screens, reports or positions you view remotely. Results of short status commands are kept for at most 24 hours to deliver them reliably, then deleted.
+
+## Sharing results (optional, off by default)
+
+On your computer, the app judges each AI report's result from the prices that followed it. Only when you turn on "Share results to improve the AI" in Settings and are signed in does the app upload settled results to us, to compare how AI models and prompt versions actually perform and improve the analysis.
+
+Each uploaded record contains only: the pair, timeframe, report type and direction, the result and its R, the largest later price moves, the risk tolerance and trading style you chose, the AI model and prompt version, the app version, and the report date. Report text, entry and position prices, sizes, account equity, exchanges and keys are never uploaded.
+
+You can turn sharing off at any time. "Delete uploaded data" in Settings deletes all your results from the cloud and stops sharing. Deleting your cloud account deletes them too.
 
 ## Payments
 
@@ -53,4 +61,4 @@ We will post changes to this policy on this page and update the date below.
 
 [support@txintrade.com](mailto:support@txintrade.com)
 
-_Last updated: October 3, 2026_
+_Last updated: October 5, 2026_

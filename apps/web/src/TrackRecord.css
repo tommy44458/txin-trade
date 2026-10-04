@@ -1,0 +1,197 @@
+.track-record {
+  display: grid;
+  gap: var(--space-5);
+}
+.track-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+.track-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.track-group select {
+  min-height: 36px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-control);
+  color: var(--text);
+  font: inherit;
+  padding: 0 8px;
+}
+
+.track-overview {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+.track-card {
+  display: grid;
+  gap: var(--space-4);
+  align-content: start;
+}
+.track-card h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+.track-card dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3) var(--space-4);
+  margin: 0;
+}
+.track-card dt {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+.track-card dd {
+  display: grid;
+  margin: 2px 0 0;
+  font-size: 18px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+.track-card dd small {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+.track-sample {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--warning);
+}
+
+.track-table {
+  display: grid;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.track-table > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) repeat(4, minmax(0, 1fr));
+  gap: var(--space-3);
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+}
+.track-table > .track-table-head {
+  border-top: 0;
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+.track-table span {
+  overflow-wrap: anywhere;
+}
+
+.track-result {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+  font-variant-numeric: tabular-nums;
+}
+.track-result small {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.track-badge {
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--surface-subtle);
+  color: var(--text-secondary);
+}
+.track-good {
+  color: var(--positive);
+}
+.track-bad {
+  color: var(--negative);
+}
+.track-pending {
+  color: var(--accent);
+}
+.track-pages {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  padding-top: var(--space-3);
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.track-pages button {
+  min-height: 32px;
+  padding: 4px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--accent);
+  font: inherit;
+}
+.track-pages button:disabled {
+  color: var(--text-tertiary);
+}
+.track-assumptions {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--text-tertiary);
+}
+
+/* The result next to a report: one line under its plan. */
+.outcome-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.outcome-line small {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+@media (max-width: 900px) {
+  .track-overview {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .track-table > div {
+    grid-template-columns: minmax(0, 1.4fr) repeat(2, minmax(0, 1fr));
+  }
+  .track-table > div > :nth-child(n + 4) {
+    display: none;
+  }
+}
+.history-switch {
+  width: fit-content;
+  margin-bottom: var(--space-5);
+}
+.track-current {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.track-current input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+}
+.track-current small {
+  margin-left: 6px;
+  color: var(--text-tertiary);
+}

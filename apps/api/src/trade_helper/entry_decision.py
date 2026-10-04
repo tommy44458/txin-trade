@@ -59,6 +59,11 @@ def validate_entry_decision(plan: dict, quote: dict, levels: list[dict], atr: st
     volatility = _price(str(atr))
     if any(price % tick != 0 for price in (entry, stop, target)):
         raise ValueError("Agent entry prices do not match market tick size")
+    rule = plan.get("trigger_rule")
+    if action == "wait_for_entry" and rule is not None and (
+            not isinstance(rule, dict) or rule.get("type") not in {"touch", "close_above", "close_below"}
+            or _price(rule.get("price")) % tick != 0):
+        raise ValueError("Agent trigger rule is invalid")
     if action == "open_now" and entry != quote_price:
         raise ValueError("Immediate entry must use the analysis quote")
     if action == "wait_for_entry" and abs(entry - quote_price) > max(

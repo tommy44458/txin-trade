@@ -1,6 +1,7 @@
 """Bounded agent loop. Only whitelisted Python indicator functions can be called."""
 
 import json
+from collections.abc import Callable
 from datetime import datetime
 from time import monotonic
 
@@ -416,13 +417,14 @@ def analyze_with_tools(request: dict, candles: list[dict], quote: dict,
                        context_candles: list[dict] | None = None,
                        positions: list[dict] | None = None, *,
                        prepared_trace: list[dict] | None = None,
-                       prompt_bundle: PromptBundle | None = None) -> dict:
+                       prompt_bundle: PromptBundle | None = None,
+                       on_text: Callable[[str], None] | None = None) -> dict:
     deadline = monotonic() + analysis_timeout_seconds()
     session = ModelSession(openai_factory=OpenAI)
     try:
         return _analyze_with_session(request, candles, quote, context_candles, positions,
                                      prepared_trace=prepared_trace, session=session, deadline=deadline,
-                                     prompt_bundle=prompt_bundle)
+                                     prompt_bundle=prompt_bundle, on_text=on_text)
     finally:
         session.close()
 
@@ -431,7 +433,8 @@ def _analyze_with_session(request: dict, candles: list[dict], quote: dict,
                          context_candles: list[dict] | None,
                          positions: list[dict] | None, *,
                          prepared_trace: list[dict] | None, session: ModelSession,
-                         deadline: float, prompt_bundle: PromptBundle | None = None) -> dict:
+                         deadline: float, prompt_bundle: PromptBundle | None = None,
+                         on_text: Callable[[str], None] | None = None) -> dict:
     model = session.model
 
     # A multi-tool analysis may need several model turns; the quote remains an as-of snapshot.
@@ -472,7 +475,7 @@ def _analyze_with_session(request: dict, candles: list[dict], quote: dict,
 
             response = session.analyze_local_agent(instructions=instructions,
                 context=inputs[0]["content"], tools=additional_tool_schemas(snapshot),
-                tool_handler=run_indicator, timeout=remaining)
+                tool_handler=run_indicator, timeout=remaining, on_text=on_text)
         else:
             response = client.responses.create(
                 timeout=min(90, remaining),

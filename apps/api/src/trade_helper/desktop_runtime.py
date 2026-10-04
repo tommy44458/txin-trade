@@ -22,7 +22,7 @@ from .product_version import product_version
 DATABASE_FROM_NEWER_VERSION_EXIT = 65
 SERVICES = (
     "worker", "shadow_v4", "event_sync", "macro_actual_sync", "news_sync",
-    "sec_news_sync", "news_classification_worker",
+    "sec_news_sync", "news_classification_worker", "outcome_worker",
 )
 
 
