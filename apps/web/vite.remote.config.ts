@@ -27,6 +27,8 @@ const remoteIndex = (): Plugin => ({
     writeFileSync(resolve(OUT_DIR, '_headers'), [
       '/*', `  Content-Security-Policy: ${csp}`, '  X-Content-Type-Options: nosniff',
       '  Referrer-Policy: no-referrer', '  Permissions-Policy: camera=(), microphone=(), geolocation=()',
+      // Browsers that have seen the page once go straight to HTTPS afterwards.
+      '  Strict-Transport-Security: max-age=31536000; includeSubDomains',
       // The default revalidation, plus no-transform: Cloudflare must not inject its analytics beacon.
       '  Cache-Control: public, max-age=0, must-revalidate, no-transform', '',
     ].join('\n'))
