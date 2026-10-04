@@ -31,7 +31,7 @@ export const copy = {
       ],
       faqTitle: "Questions",
       faq: [
-        ["Which AI does it use, and is my account at risk?", "Your ChatGPT Plus or Pro plan connects through OpenAI's official Sign in with ChatGPT, and you set how much of it txinTrade may use. Claude and OpenAI connect with your own API key, billed by the provider. txinTrade never charges for AI usage. Claude Code and Codex sign-ins still work, but Anthropic's Consumer Terms limit Claude Free, Pro and Max sign-in to Anthropic's own apps, so connecting Claude Code with a subscription may conflict with them."],
+        ["Which AI does it use, and is my account at risk?", "Only one connection carries a risk: Claude Code signed in with a Claude Free, Pro or Max subscription. Anthropic's Consumer Terms limit that sign-in to Anthropic's own apps, so using it through txinTrade may conflict with them. Everything else works as normal: your ChatGPT Plus or Pro plan through OpenAI's official Sign in with ChatGPT, a Claude or OpenAI API key billed by the provider, and Codex. txinTrade never charges for AI usage."],
         ["Does txinTrade place trades?", "No. It provides analysis only. Positions are imported read-only, and it never places orders, changes leverage or moves funds."],
         ["How does it help me decide when to exit?", "Select your open positions and the AI tells you whether to hold or close now and why. A hold comes with an exit plan: the price that ends the hold, a suggested stop, and where to take profit."],
         ["Where are my exchange API keys stored?", "Only on your computer. Use read-only keys from Binance or BingX; trading, transfer and withdrawal permissions are never needed."],
@@ -104,7 +104,7 @@ export const copy = {
       ],
       faqTitle: "常見問題",
       faq: [
-        ["使用哪種 AI？我的帳號會有風險嗎？", "你的 ChatGPT Plus 或 Pro 方案透過 OpenAI 官方的 Sign in with ChatGPT 連接，txinTrade 可使用的比例由你決定。Claude 與 OpenAI 則以你自己的 API 金鑰連接，由該服務計費。txinTrade 不會向你收取 AI 使用費用。Claude Code 與 Codex 的登入方式仍可使用，但 Anthropic 的消費者條款將 Claude Free、Pro、Max 方案的登入限定於 Anthropic 自家的 App，因此以訂閱方案連接 Claude Code 可能與其條款衝突。"],
+        ["使用哪種 AI？我的帳號會有風險嗎？", "只有一種連線方式有風險：以 Claude Free、Pro 或 Max 訂閱登入的 Claude Code。Anthropic 的消費者條款將這種登入限定於 Anthropic 自家的 App，透過 txinTrade 使用可能與條款衝突。其他方式都正常可用：透過 OpenAI 官方的 Sign in with ChatGPT 連接你的 ChatGPT Plus 或 Pro 方案、由該服務計費的 Claude 或 OpenAI API 金鑰，以及 Codex。txinTrade 不會向你收取 AI 使用費用。"],
         ["txinTrade 會幫我下單嗎？", "不會。它只提供分析，持倉以唯讀方式匯入，不會下單、調整槓桿或移動資金。"],
         ["它怎麼幫我判斷何時離場？", "選擇你的持倉，AI 會告訴你該續抱還是現在平倉，以及原因。續抱建議會附上離場計畫：何時不再續抱、建議止損，以及分批止盈的價位。"],
         ["交易所 API 金鑰存在哪裡？", "只存在你的電腦。請使用幣安或 BingX 的唯讀金鑰，不需要交易、轉帳或提款權限。"],
