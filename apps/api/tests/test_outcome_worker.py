@@ -110,3 +110,44 @@ def test_market_data_that_keeps_failing_ends_the_item_as_unavailable():
     with connect() as db:
         assert db.execute("SELECT status FROM analysis_outcomes").fetchone()["status"] == "unavailable"
     assert utc_now()
+
+
+def test_sharing_is_off_until_turned_on_and_sends_only_results_and_versions(monkeypatch):
+    import httpx
+
+    from trade_helper import outcome_upload
+    from trade_helper.local_settings import patch_preferences
+
+    add_report("ana_share", market_report({"action": "open_now", "side": "long", "entry_price": "100",
+                                           "stop_loss": "98", "take_profit": "104"}))
+    fetch, _ = fake_market(lambda index: (105, 99.5, 104))
+    monkeypatch.setattr(outcome_upload, "session_record", lambda: {"session_token": "st_x"})
+    monkeypatch.setattr(outcome_upload, "cloud_origin", lambda: "https://cloud.test")
+    sent = []
+
+    def post(url, *, json, headers, timeout):
+        sent.append((url, json, headers))
+        return httpx.Response(200, json={"received": len(json["records"])}, request=httpx.Request("POST", url))
+
+    outcome_worker.run_once(now=OBSERVED + timedelta(hours=1), fetch=fetch)
+    assert outcome_upload.upload_once(post=post) == 0 and sent == []  # Off by default.
+    patch_preferences({"share_outcomes": True})
+    assert TestClient(app).get("/api/v1/settings").json()["share_outcomes"] is True
+    assert outcome_upload.upload_once(post=post) == 1
+    url, body, headers = sent[0]
+    assert url == "https://cloud.test/api/v1/outcomes" and headers == {"Authorization": "Bearer st_x"}
+    [record] = body["records"]
+    assert set(record) == {"outcome_id", "rules_version", "kind", "action", "side", "result", "r_multiple",
+                           "max_up_pct", "max_down_pct", "end_pct", "risk_tolerance", "trading_style",
+                           "market_id", "timeframe", "model", "provider", "prompt_version", "policy_version",
+                           "app_version", "report_day", "resolved_at"}
+    assert record["result"] == "win" and record["prompt_version"] == "contract_strategy_v33"
+    assert "100" not in json.dumps(record)  # No entry or position prices.
+    assert outcome_upload.upload_once(post=post) == 0  # Each outcome is shared once.
+
+    deleted = []
+    monkeypatch.setattr(outcome_upload.httpx, "request", lambda method, url, **kwargs: deleted.append(method)
+                        or httpx.Response(200, json={"deleted": 1}, request=httpx.Request(method, url)))
+    result = TestClient(app).post("/api/v1/outcomes/sharing/delete").json()
+    assert result == {"enabled": False, "shared": 0, "deleted": 1} and deleted == ["DELETE"]
+    assert TestClient(app).get("/api/v1/outcomes/sharing").json() == {"enabled": False, "shared": 0}

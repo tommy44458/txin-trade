@@ -685,3 +685,17 @@
   color: var(--warning);
 }
 .settings-inline-key { margin-top: 12px; }
+.settings-sharing-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.settings-sharing-toggle input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+}

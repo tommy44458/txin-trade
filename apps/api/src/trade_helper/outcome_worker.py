@@ -16,6 +16,7 @@ import httpx
 from .config import assert_local_mode
 from .db import connect, init_db, new_id, utc_now
 from .market import fetch_candles_range
+from .outcome_upload import upload_once
 from .outcomes import RESOLUTION, RULES_VERSION, STEP, due, items_for, new_state, settle, step
 from .timeframes import candle_open
 
@@ -106,6 +107,10 @@ def run_once(now: datetime | None = None, fetch=fetch_candles_range) -> bool:
                  None if status != "pending" else _iso(later),
                  state.get("resolved_at") if state["done"] else None, utc_now(), row["id"]))
             db.commit()
+    try:
+        upload_once()
+    except Exception as exc:  # noqa: BLE001 - sharing retries next cycle; judging never depends on it
+        _LOG.warning("outcome_upload_failed exception=%s", type(exc).__name__)
     return bool(enrolled == ENROLL_BATCH or more)
 
 
