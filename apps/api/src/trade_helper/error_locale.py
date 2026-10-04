@@ -202,6 +202,10 @@ MODEL_MESSAGES = {
         "OpenAI 沒有回傳完整的授權資料，請重新連線 ChatGPT。",
         "OpenAI did not return complete authorization data. Reconnect ChatGPT.",
     ),
+    "ChatGPT 方案透過這台電腦的 Codex 執行分析，但找不到 Codex。請到設定依說明安裝後重試。": (
+        "ChatGPT 方案透過這台電腦的 Codex 執行分析，但找不到 Codex。請到設定依說明安裝後重試。",
+        "The ChatGPT plan runs analysis through Codex on this computer, but Codex was not found. Install it as shown in Settings, then try again.",
+    ),
     "ChatGPT 方案沒有可用模型。": (
         "ChatGPT 方案沒有可用模型。",
         "No models are available for the ChatGPT plan.",

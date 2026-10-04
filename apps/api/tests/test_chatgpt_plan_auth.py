@@ -131,7 +131,8 @@ def test_a_revoked_refresh_token_signs_out_but_keeps_the_issued_client():
     assert plan.status()["authenticated"] is False
 
 
-def test_without_tokens_analysis_asks_to_connect():
+def test_without_tokens_analysis_asks_to_connect(monkeypatch):
+    monkeypatch.setattr(codex_bridge, "cli_installed", lambda: True)
     with pytest.raises(plan.ChatGPTPlanError, match="連線 ChatGPT"):
         plan.require_authorized()
 
@@ -172,3 +173,20 @@ def test_ordinary_codex_keeps_its_own_provider(fake_codex):  # noqa: F811
         assert "openai_chatgpt_plan" not in " ".join(captured[0].command)
     finally:
         rpc.close()
+
+
+def test_without_codex_settings_ask_for_it_before_sign_in_and_analysis_explains(monkeypatch):
+    # The plan token only authorizes; analysis itself runs in the local Codex app-server.
+    monkeypatch.setattr(codex_bridge, "cli_installed", lambda: False)
+    status = plan.status()
+    assert status["cli_installed"] is False and status["available"] is False
+    started = plan.login()
+    assert started["auth_url"] is None and started["status"]["cli_installed"] is False
+    assert plan._pending is None or plan._pending.done.is_set()
+    with pytest.raises(plan.ChatGPTPlanError, match="找不到 Codex"):
+        plan.require_authorized()
+
+
+def test_with_codex_installed_the_status_says_so(monkeypatch):
+    monkeypatch.setattr(codex_bridge, "cli_installed", lambda: True)
+    assert plan.status()["cli_installed"] is True

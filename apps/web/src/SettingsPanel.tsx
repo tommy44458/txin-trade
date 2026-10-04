@@ -368,7 +368,8 @@ export default function SettingsPanel({
         setCliSetup("signin");
       } else {
         setCliSetup(null);
-        setNotice(uiText("已偵測到 Codex CLI，請按「連線 Codex」完成登入。"));
+        setNotice(provider === "chatgpt_plan" ? uiText("已偵測到 Codex CLI，請按「連線 ChatGPT」完成授權。")
+          : uiText("已偵測到 Codex CLI，請按「連線 Codex」完成登入。"));
       }
     } catch (reason) {
       if (mounted.current) setCliError((reason as Error).message);
@@ -451,7 +452,7 @@ export default function SettingsPanel({
   return (
     <div className="local-settings">
       {cliSetup && provider !== "openai" && provider !== "anthropic" && (
-        <CliSetupDialog provider={provider === "chatgpt_plan" ? "codex" : provider} reason={cliSetup} checking={cliChecking} error={cliError}
+        <CliSetupDialog provider={provider} reason={cliSetup} checking={cliChecking} error={cliError}
           onRecheck={() => void recheckCli()} onClose={() => setCliSetup(null)} />
       )}
       <div className="page-title">
@@ -630,6 +631,18 @@ export default function SettingsPanel({
                       )}
                     </div>
                   </form>
+                )}
+                {/* Stays visible after the setup dialog is closed, until Codex or Claude Code is found. */}
+                {auth?.cli_installed === false && !keyProvider && (
+                  <div className="settings-cli-missing" role="status">
+                    <p>{provider === "claude_code"
+                      ? uiText("這台電腦還沒有安裝 Claude Code 命令列工具，安裝後才能分析。")
+                      : provider === "chatgpt_plan"
+                        ? uiText("這台電腦還沒有安裝 Codex。ChatGPT 方案透過 Codex 執行分析，請先安裝 Codex 再連線 ChatGPT。")
+                        : uiText("這台電腦還沒有安裝 Codex 命令列工具，安裝後才能分析。")}</p>
+                    <button type="button" className="settings-secondary" onClick={() => openCliSetup("install")}>
+                      {uiText("查看安裝步驟")}</button>
+                  </div>
                 )}
                 {auth?.error && (
                   <p className="settings-inline-error" role="status">

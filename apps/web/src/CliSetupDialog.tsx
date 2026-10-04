@@ -4,7 +4,8 @@ import Icon from "./Icon";
 import { AnalysisSpinner } from "./AnalysisProgress";
 import "./CliSetupDialog.css";
 
-export type CliSetupProvider = "codex" | "claude_code";
+// The ChatGPT plan analyzes through Codex, so it needs the same install.
+export type CliSetupProvider = "codex" | "claude_code" | "chatgpt_plan";
 export type CliSetupReason = "install" | "signin";
 
 type Platform = "windows" | "posix";
@@ -110,7 +111,9 @@ export default function CliSetupDialog({ provider, reason, checking, error, onRe
           ? uiText("Claude Code 已安裝，但尚未登入 Claude 帳號。請依下列步驟完成後重新檢查。")
           : claude
             ? uiText("使用 Claude Code 分析，需要在這台電腦安裝 Claude Code 命令列工具，並登入付費的 Claude 帳號（Pro、Max、Team 或 Enterprise；免費方案不含 Claude Code）。")
-            : uiText("使用 Codex 分析，需要在這台電腦安裝 Codex 命令列工具，之後在 txinTrade 裡用 ChatGPT 帳號登入。")}
+            : provider === "chatgpt_plan"
+              ? uiText("「ChatGPT 方案（官方授權）」透過這台電腦的 Codex 命令列工具執行分析，需要先安裝 Codex，再回到設定按「連線 ChatGPT」授權。只授權 ChatGPT、沒有安裝 Codex，無法進行分析。")
+              : uiText("使用 Codex 分析，需要在這台電腦安裝 Codex 命令列工具，之後在 txinTrade 裡用 ChatGPT 帳號登入。")}
       </p>
       {install && (claude || windows) && (
         <p className="cli-setup-note">
