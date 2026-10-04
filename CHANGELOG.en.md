@@ -4,6 +4,10 @@ The product version is managed in `version.json`. Dates record release preparati
 
 ## [Unreleased]
 
+### Fixed
+
+- On Windows, an update found while the app starts is now offered once the app has loaded.
+
 ## [1.1.1] - 2026-10-04
 
 ### Fixed
