@@ -1,5 +1,6 @@
 import { pythonReferenceText } from "./pythonReferenceText";
 import { uiText, uiLocale, type UiLocale } from "./i18n/index.ts";
+import { timeframeCode } from "./timeframes";
 import './PositionReviewCard.css'
 
 export type PositionAction = {
@@ -26,7 +27,16 @@ export type PositionReview = {
   stop_price_exposure_usdt?: string | null; stop_price_exposure_pct_of_equity?: string | null
   messages: string[]; note: string
   advice?: PositionAction; available_actions?: PositionAction[]
-  agent_decision?: { decision: 'hold' | 'close_now'; reason: string }
+  agent_decision?: { decision: 'hold' | 'close_now'; reason: string; exit_plan?: ExitPlan | null }
+}
+
+/** When a held position stops being worth holding, as checked against the analysis snapshot. */
+export type ExitPlan = {
+  version: string
+  invalidation: { price: string; confirmation: 'close' | 'touch'; condition: string | null }
+  protective_stop: string | null
+  take_profits: { price: string; portion_pct: number | null }[]
+  basis_level_ids: string[]
 }
 
 const labels: Record<PositionAction['kind'], string> = {
@@ -38,13 +48,48 @@ const labels: Record<PositionAction['kind'], string> = {
 }
 const fmt = (value: string | number | null | undefined) => value == null ? '—' : Number(value).toLocaleString('en-US', { maximumFractionDigits: 8 })
 
-export default function PositionReviewCard({ review, outputLocale = "zh-TW" }: { review: PositionReview; outputLocale?: UiLocale }) {
+function ExitPlanSection({ plan, side, timeframe, currentStop, outputLocale }: {
+  plan: ExitPlan; side: string; timeframe: string; currentStop: string | null | undefined; outputLocale: UiLocale
+}) {
+  const long = side === 'long'
+  const exitPrice = fmt(plan.invalidation.price)
+  const rule = plan.invalidation.confirmation === 'close'
+    ? uiText(long ? "{{p0}} 收盤低於 ${{p1}}" : "{{p0}} 收盤高於 ${{p1}}", { p0: timeframeCode(timeframe), p1: exitPrice })
+    : uiText(long ? "盤中跌破 ${{p0}}" : "盤中突破 ${{p0}}", { p0: exitPrice })
+  return <section className="exit-plan" aria-label={uiText("離場計畫")}>
+    <h4>{uiText("離場計畫")}</h4>
+    <dl>
+      <div className="exit-plan-rule">
+        <dt>{uiText("失效時離場")}</dt>
+        <dd><b>{rule}</b>{plan.invalidation.condition && <span lang={outputLocale}>{plan.invalidation.condition}</span>}</dd>
+      </div>
+      {plan.protective_stop && <div>
+        <dt>{uiText("建議止損")}</dt>
+        <dd><b>${fmt(plan.protective_stop)}</b><span>{currentStop ? uiText("目前 ${{p0}}", { p0: fmt(currentStop) }) : uiText("目前未設定")}</span></dd>
+      </div>}
+      {plan.take_profits.length > 0 && <div>
+        <dt>{uiText("分批止盈")}</dt>
+        <dd><ol>{plan.take_profits.map((target) => <li key={target.price}>
+          <b>${fmt(target.price)}</b>{target.portion_pct != null && <span>{uiText("減碼 {{p0}}%", { p0: target.portion_pct })}</span>}
+        </li>)}</ol></dd>
+      </div>}
+    </dl>
+    <small>{uiText("AI 建議，不會更改你的交易所訂單。")}</small>
+  </section>
+}
+
+export default function PositionReviewCard({ review, timeframe, outputLocale = "zh-TW" }: { review: PositionReview; timeframe: string; outputLocale?: UiLocale }) {
   const advice = review.advice
+  const decision = review.agent_decision
   return <div className="review position-review">
     <div className="position-review-head"><b>{review.side === 'long' ? uiText("多單") : uiText("空單")} · {review.leverage}×</b>
       {review.agent_decision && <span>{uiText("Agent 決定")}</span>}
     </div>
     {review.agent_decision && <div className="position-review-advice"><strong>{review.agent_decision.decision === 'hold' ? uiText("Agent 建議：繼續持倉") : uiText("Agent 建議：現在平倉")}</strong><p lang={outputLocale}>{review.agent_decision.reason}</p></div>}{" "}
+    {decision?.decision === 'hold' && (decision.exit_plan
+      ? <ExitPlanSection plan={decision.exit_plan} side={review.side} timeframe={timeframe} currentStop={advice?.current_stop} outputLocale={outputLocale} />
+      // Reports from before exit plans have no exit_plan field at all; only say it is missing when it was checked.
+      : decision.exit_plan === null && <small className="exit-plan-missing">{uiText("這筆續抱建議沒有附上可核對的離場計畫。")}</small>)}
     {!review.agent_decision && <small>{uiText("這筆持倉尚未有 AI 的續抱／平倉建議，請重新分析。")}</small>}
     {advice && <details><summary>{uiText("查看風險估算參考")}</summary><p>{labels[advice.kind]}：{advice.selection_source === "python_reference" || advice.selection_source === "rules_only" ? pythonReferenceText(advice.reason, { kind: advice.kind, origin: "python" }) : advice.reason}</p>
       {advice.proposed_stop && <p>{uiText("規則估算止損 $")}{fmt(advice.current_stop)} → ${fmt(advice.proposed_stop)}{uiText("；風險變化") + " "}{fmt(advice.risk_change_usdt)}{" " + uiText("USDT。這不是 Agent 的最終決定，也不會更改訂單。")}</p>}

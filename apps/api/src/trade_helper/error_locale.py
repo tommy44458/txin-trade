@@ -114,13 +114,129 @@ MODEL_MESSAGES = {
     "Claude Code 沒有回傳分析報告。": (
         "Claude Code 沒有回傳分析報告。", "Claude Code did not return an analysis report.",
     ),
+    "請在「AI 分析帳號」輸入並儲存 Anthropic API 金鑰。": (
+        "請在「AI 分析帳號」輸入並儲存 Anthropic API 金鑰。",
+        "Enter and save an Anthropic API key under AI analysis account.",
+    ),
+    "Anthropic API 金鑰無效或已撤銷，請到設定重新輸入。": (
+        "Anthropic API 金鑰無效或已撤銷，請到設定重新輸入。",
+        "The Anthropic API key is invalid or revoked. Enter it again in Settings.",
+    ),
+    "這把 Anthropic API 金鑰沒有使用此模型的權限。": (
+        "這把 Anthropic API 金鑰沒有使用此模型的權限。",
+        "This Anthropic API key cannot use the selected model.",
+    ),
+    "找不到所選的 Claude 模型，請到設定改選其他模型。": (
+        "找不到所選的 Claude 模型，請到設定改選其他模型。",
+        "The selected Claude model was not found. Choose another model in Settings.",
+    ),
+    "Anthropic API 用量已達上限，請稍後重試或檢查帳戶額度。": (
+        "Anthropic API 用量已達上限，請稍後重試或檢查帳戶額度。",
+        "The Anthropic API usage limit was reached. Retry later or check your account limits.",
+    ),
+    "Anthropic API 拒絕了這次請求，請檢查帳戶額度與模型設定後重試。": (
+        "Anthropic API 拒絕了這次請求，請檢查帳戶額度與模型設定後重試。",
+        "The Anthropic API rejected the request. Check your account balance and model settings, then retry.",
+    ),
+    "Anthropic API 回應逾時，請稍後重試。": (
+        "Anthropic API 回應逾時，請稍後重試。",
+        "The Anthropic API timed out. Try again shortly.",
+    ),
+    "無法連線到 Anthropic API，請檢查網路後重試。": (
+        "無法連線到 Anthropic API，請檢查網路後重試。",
+        "Could not reach the Anthropic API. Check your connection and retry.",
+    ),
+    "Anthropic API 暫時無法使用，請稍後重試。": (
+        "Anthropic API 暫時無法使用，請稍後重試。",
+        "The Anthropic API is temporarily unavailable. Try again shortly.",
+    ),
+    "Anthropic API 分析未完成，請稍後重試。": (
+        "Anthropic API 分析未完成，請稍後重試。",
+        "The Anthropic API analysis did not finish. Try again shortly.",
+    ),
+    "Claude 這次拒絕回答，請調整後重試。": (
+        "Claude 這次拒絕回答，請調整後重試。",
+        "Claude declined to answer this time. Adjust the request and retry.",
+    ),
+    "Claude 沒有回傳分析內容。": (
+        "Claude 沒有回傳分析內容。",
+        "Claude did not return an analysis.",
+    ),
+    "Claude 的工具呼叫不完整，請重試。": (
+        "Claude 的工具呼叫不完整，請重試。",
+        "Claude's tool call was incomplete. Try again.",
+    ),
+    "Claude 回傳的工具參數無法解析，請重試。": (
+        "Claude 回傳的工具參數無法解析，請重試。",
+        "Claude returned tool arguments that could not be parsed. Try again.",
+    ),
+    "Claude 呼叫工具的次數超過上限。": (
+        "Claude 呼叫工具的次數超過上限。",
+        "Claude called tools more times than allowed.",
+    ),
+    "請在設定按「連線 ChatGPT」，以你的 ChatGPT Plus 或 Pro 帳號授權。": (
+        "請在設定按「連線 ChatGPT」，以你的 ChatGPT Plus 或 Pro 帳號授權。",
+        "Choose Connect ChatGPT in Settings and authorize with your ChatGPT Plus or Pro account.",
+    ),
+    "ChatGPT 授權已失效，請到設定重新連線。": (
+        "ChatGPT 授權已失效，請到設定重新連線。",
+        "ChatGPT authorization has expired. Reconnect it in Settings.",
+    ),
+    "無法連線到 OpenAI 授權服務，請檢查網路後重試。": (
+        "無法連線到 OpenAI 授權服務，請檢查網路後重試。",
+        "Could not reach OpenAI's authorization service. Check your connection and retry.",
+    ),
+    "OpenAI 授權服務拒絕了這次請求，請重新連線 ChatGPT。": (
+        "OpenAI 授權服務拒絕了這次請求，請重新連線 ChatGPT。",
+        "OpenAI's authorization service rejected the request. Reconnect ChatGPT.",
+    ),
+    "無法驗證 ChatGPT 登入身分，請重新連線。": (
+        "無法驗證 ChatGPT 登入身分，請重新連線。",
+        "The ChatGPT sign-in could not be verified. Reconnect it.",
+    ),
+    "這個 ChatGPT 帳號沒有授權方案用量；需要 ChatGPT Plus 或 Pro，並在授權頁允許。": (
+        "這個 ChatGPT 帳號沒有授權方案用量；需要 ChatGPT Plus 或 Pro，並在授權頁允許。",
+        "This ChatGPT account did not authorize plan usage. It needs ChatGPT Plus or Pro, with access allowed on the authorization page.",
+    ),
+    "OpenAI 沒有回傳完整的授權資料，請重新連線 ChatGPT。": (
+        "OpenAI 沒有回傳完整的授權資料，請重新連線 ChatGPT。",
+        "OpenAI did not return complete authorization data. Reconnect ChatGPT.",
+    ),
+    "ChatGPT 方案沒有可用模型。": (
+        "ChatGPT 方案沒有可用模型。",
+        "No models are available for the ChatGPT plan.",
+    ),
+    "請在「AI 分析帳號」輸入並儲存 OpenAI API 金鑰。": (
+        "請在「AI 分析帳號」輸入並儲存 OpenAI API 金鑰。",
+        "Enter and save an OpenAI API key under AI analysis account.",
+    ),
+    "OpenAI API 金鑰無效或已撤銷，請到設定重新輸入。": (
+        "OpenAI API 金鑰無效或已撤銷，請到設定重新輸入。",
+        "The OpenAI API key is invalid or revoked. Enter it again in Settings.",
+    ),
+    "這把 OpenAI API 金鑰沒有讀取模型的權限。": (
+        "這把 OpenAI API 金鑰沒有讀取模型的權限。",
+        "This OpenAI API key cannot list models.",
+    ),
+    "OpenAI API 用量已達上限，請稍後重試或檢查帳戶額度。": (
+        "OpenAI API 用量已達上限，請稍後重試或檢查帳戶額度。",
+        "The OpenAI API usage limit was reached. Retry later or check your account limits.",
+    ),
+    "無法連線到 OpenAI API，請檢查網路後重試。": (
+        "無法連線到 OpenAI API，請檢查網路後重試。",
+        "Could not reach the OpenAI API. Check your connection and retry.",
+    ),
+    "OpenAI API 暫時無法使用，請稍後重試。": (
+        "OpenAI API 暫時無法使用，請稍後重試。",
+        "The OpenAI API is temporarily unavailable. Try again shortly.",
+    ),
 }
 
 SAFE_EXCEPTION_NAMES = frozenset({
     "Exception", "ValueError", "RuntimeError", "TimeoutError", "TypeError", "KeyError",
     "OSError", "JSONDecodeError", "APITimeoutError", "APIConnectionError", "AuthenticationError",
     "RateLimitError", "ModelProviderError", "CodexError", "CodexTimeoutError", "ClaudeCodeError",
-    "ClaudeCodeTimeoutError",
+    "ClaudeCodeTimeoutError", "AnthropicApiError", "ChatGPTPlanError",
     "CredentialStoreError",
 })
 

@@ -48,10 +48,12 @@ type SettingsUpdate = {
   jev_api_key?: string;
   jblanked_api_key?: string;
   openai_api_key?: string;
+  anthropic_api_key?: string;
   clear_bingx?: boolean;
   clear_jev?: boolean;
   clear_jblanked?: boolean;
   clear_openai?: boolean;
+  clear_anthropic?: boolean;
 };
 
 /** On the remote page, show this browser's own appearance and language, not the computer's. */
@@ -97,6 +99,7 @@ export default function SettingsPanel({
   const [jevKey, setJevKey] = useState("");
   const [jblankedKey, setJblankedKey] = useState("");
   const [openaiKey, setOpenaiKey] = useState("");
+  const [anthropicKey, setAnthropicKey] = useState("");
   const [pendingTheme, setPendingTheme] = useState<UiTheme | null>(null);
   const [themeError, setThemeError] = useState("");
   const [themeNotice, setThemeNotice] = useState(false);
@@ -150,7 +153,7 @@ export default function SettingsPanel({
   useEffect(() => {
     let active = true;
     // The AI account is managed on the computer; the remote page never asks about it.
-    if (provider === "openai" || isRemoteMode()) return;
+    if (isRemoteMode()) return;
     settingsRequest<ModelAuthStatus>(`/auth/${provider}/status`)
       .then((value) => {
         if (!active) return;
@@ -168,7 +171,7 @@ export default function SettingsPanel({
   }, [provider]);
 
   useEffect(() => {
-    if (provider === "openai" || !auth?.authenticated || isRemoteMode()) return;
+    if (!auth?.authenticated || isRemoteMode()) return;
     let active = true;
     settingsRequest<ModelCatalog>(`/auth/${provider}/models`)
       .then((value) => {
@@ -399,6 +402,11 @@ export default function SettingsPanel({
         await changedRef.current();
         return;
       }
+      if (provider === "anthropic" || provider === "openai") {
+        // There is no sign-in: the saved key is checked against the API.
+        if (typeof result.status === "object" && result.status.error) setError(result.status.error);
+        return;
+      }
       if (provider === "claude_code") {
         // Claude Code keeps its own sign-in; this app only binds to it.
         openCliSetup("signin");
@@ -431,14 +439,19 @@ export default function SettingsPanel({
       ? [{ id: model, name: model }, ...models]
       : models;
   const connected = !!auth?.authenticated;
+  // Providers used with the user's own API key, entered right in the AI account section.
+  const keyProvider = provider === "anthropic" || provider === "openai" ? provider : null;
+  const keyTitle = provider === "openai" ? "OpenAI API" : "Anthropic API";
+  const providerKey = provider === "openai" ? openaiKey : anthropicKey;
+  const setProviderKey = provider === "openai" ? setOpenaiKey : setAnthropicKey;
   const indicatorCatalog = initialIndicatorCatalog(settings?.initial_indicator_catalog);
   const indicatorsDirty = !sameInitialIndicators(initialIndicators, savedInitialIndicators);
   const indicatorsDisabled = !!busy || indicatorsLoading || !indicatorsLoaded;
 
   return (
     <div className="local-settings">
-      {cliSetup && provider !== "openai" && (
-        <CliSetupDialog provider={provider} reason={cliSetup} checking={cliChecking} error={cliError}
+      {cliSetup && provider !== "openai" && provider !== "anthropic" && (
+        <CliSetupDialog provider={provider === "chatgpt_plan" ? "codex" : provider} reason={cliSetup} checking={cliChecking} error={cliError}
           onRecheck={() => void recheckCli()} onClose={() => setCliSetup(null)} />
       )}
       <div className="page-title">
@@ -528,15 +541,13 @@ export default function SettingsPanel({
               <span
                 className={`settings-status${connected ? " connected" : ""}`}
               >
-                {provider === "openai"
-                  ? uiText("API 模式")
-                  : connected
-                    ? uiText("已連線")
-                    : waiting
-                      ? uiText("授權中")
-                      : !auth || auth.status_known === false
-                        ? uiText("尚未確認帳號")
-                        : uiText("未連線")}
+                {connected
+                  ? uiText("已連線")
+                  : waiting
+                    ? uiText("授權中")
+                    : !auth || auth.status_known === false
+                      ? uiText("尚未確認帳號")
+                      : uiText("未連線")}
               </span>
             </div>
             <label className="settings-field">{uiText("分析來源")}<SelectControl
@@ -554,14 +565,14 @@ export default function SettingsPanel({
                   setNotice("");
                 }}
               >
+                <option value="chatgpt_plan">{uiText("ChatGPT 方案（官方授權）")}</option>
                 <option value="codex">{uiText("Codex 授權")}</option>
                 <option value="claude_code">{uiText("Claude Code")}</option>
-                {settings.model_provider === "openai" && (
-                  <option value="openai">{uiText("OpenAI API（既有設定）")}</option>
-                )}
+                <option value="anthropic">{uiText("Claude API（API 金鑰）")}</option>
+                <option value="openai">{uiText("OpenAI API（API 金鑰）")}</option>
               </SelectControl>
             </label>
-            {provider !== "openai" && (
+            {(
               <div className="settings-account">
                 {auth?.email && (
                   <p className="settings-account-email">{auth.email}</p>
@@ -569,8 +580,57 @@ export default function SettingsPanel({
                 <p className="settings-help">
                   {provider === "claude_code"
                     ? uiText("使用本機 Claude Code 的登入狀態，本應用程式不會讀取或保存 Claude 憑證。尚未登入時，請先在終端機執行 claude auth login。")
-                    : uiText("使用本機 Codex 的 ChatGPT 授權；尚未登入時，可從這裡完成登入。")}
+                    : provider === "chatgpt_plan"
+                      ? uiText("以 OpenAI 官方的 Sign in with ChatGPT 授權 txinTrade 使用你的 ChatGPT Plus 或 Pro 方案額度；每週可用的比例可在 chatgpt.com/settings/usage 設定。分析透過本機的 Codex CLI 執行，需先安裝。")
+                    : provider === "openai"
+                      ? uiText("使用你的 OpenAI API 金鑰，費用依用量計入你的 OpenAI 帳戶；這是 OpenAI 建議程式化使用的方式。")
+                    : provider === "anthropic"
+                      ? uiText("使用你在 Claude Console 建立的 Anthropic API 金鑰，費用依用量計入你的 Anthropic 帳戶。這是 Anthropic 條款允許第三方 App 使用 Claude 的方式。")
+                      : uiText("使用本機 Codex 的 ChatGPT 授權；尚未登入時，可從這裡完成登入。")}
                 </p>
+                {/* Say plainly what the provider's terms mean for this connection before the user connects. */}
+                {(provider === "codex" || provider === "claude_code") && <p className={provider === "claude_code" ? "settings-help settings-terms-warning" : "settings-help"}>
+                  {provider === "claude_code"
+                    ? uiText("Anthropic 的消費者條款將 Claude Free、Pro、Max 方案的登入限定於 Anthropic 自家的 App，並限制自動化存取。透過 txinTrade 使用 Claude Code 可能與條款衝突，帳號有被限制的風險；連線前請自行評估。")
+                    : uiText("OpenAI 建議程式化的使用採用官方授權方式；建議改用「ChatGPT 方案（官方授權）」連線。")}
+                </p>}
+                {/* The key belongs with the provider it enables, not with the optional integrations further down. */}
+                {keyProvider && (
+                  <form className="settings-inline-key" onSubmit={(event) => {
+                    event.preventDefault();
+                    void perform(keyProvider, async () => {
+                      if (!providerKey.trim()) throw new Error(uiText("請輸入 {{p0}} 金鑰", { p0: keyTitle }));
+                      await update({ [`${keyProvider}_api_key`]: providerKey.trim() });
+                      setProviderKey("");
+                      const checked = await settingsRequest<ModelAuthStatus>(`/auth/${keyProvider}/check`, { method: "POST" });
+                      setAuth(checked);
+                      if (checked.authenticated) {
+                        setModels(normalizeModels(await settingsRequest<ModelCatalog>(`/auth/${keyProvider}/models`, { method: "POST" })));
+                      }
+                      setNotice(checked.authenticated ? uiText("{{p0}} 金鑰已儲存並通過檢查。", { p0: keyTitle }) : uiText("{{p0}} 金鑰已加密儲存。", { p0: keyTitle }));
+                    });
+                  }}>
+                    <label className="settings-field">API Key
+                      <input type="password" autoComplete="off" autoCapitalize="none" spellCheck={false}
+                        value={providerKey} onChange={(event) => setProviderKey(event.target.value)}
+                        placeholder={settings.integrations[keyProvider]?.configured ? uiText("輸入新金鑰以更新") : uiText("輸入 API Key")} />
+                    </label>
+                    <div className="settings-actions">
+                      <button type="submit" className="action" disabled={!!busy || !providerKey} aria-busy={busy === keyProvider}>
+                        {busy === keyProvider && <AnalysisSpinner />}{uiText("儲存 {{p0}} 金鑰", { p0: keyTitle })}</button>
+                      {settings.integrations[keyProvider]?.configured && (
+                        <button type="button" className="settings-secondary" disabled={!!busy} onClick={() => {
+                          void perform(`${keyProvider}-clear`, async () => {
+                            await update({ [`clear_${keyProvider}`]: true });
+                            setAuth(await settingsRequest<ModelAuthStatus>(`/auth/${keyProvider}/status`));
+                            setModels([]);
+                            setNotice(uiText("{{p0}} 金鑰已移除。", { p0: keyTitle }));
+                          });
+                        }}>{uiText("移除金鑰")}</button>
+                      )}
+                    </div>
+                  </form>
+                )}
                 {auth?.error && (
                   <p className="settings-inline-error" role="status">
                     {auth.error}
@@ -609,17 +669,20 @@ export default function SettingsPanel({
                   <div className="settings-actions">
                     <button
                       type="button"
-                      className="action"
-                      disabled={!!busy}
+                      className={keyProvider ? "settings-secondary" : "action"}
+                      disabled={!!busy || (!!keyProvider && !settings.integrations[keyProvider]?.configured)}
                       aria-busy={busy === "login"}
                       onClick={() => login()}
                     >
                       {busy === "login" && <AnalysisSpinner />}{" "}
                       {provider === "claude_code"
                         ? connected ? uiText("重新檢查登入狀態") : uiText("連線 Claude Code")
-                        : connected ? uiText("重新授權") : uiText("連線 Codex")}
+                        : keyProvider
+                          ? uiText("檢查 API 金鑰")
+                          : connected ? uiText("重新授權")
+                            : provider === "chatgpt_plan" ? uiText("連線 ChatGPT") : uiText("連線 Codex")}
                     </button>
-                    {auth?.authenticated && (
+                    {auth?.authenticated && !keyProvider && (
                       <button
                         type="button"
                         className="settings-secondary"
@@ -647,7 +710,7 @@ export default function SettingsPanel({
                 ))}
               </SelectControl>
             </label>
-            {provider !== "openai" && connected && (
+            {connected && (
               <button
                 type="button"
                 className="settings-secondary"
@@ -932,8 +995,6 @@ export default function SettingsPanel({
           {([
             { name: "jblanked", title: uiText("JBlanked 經濟日曆"), key: jblankedKey, setKey: setJblankedKey,
               help: uiText("提供經濟日曆來源檢查使用。儲存金鑰不會立即呼叫供應商；檢查仍受既有請求額度限制。"), visible: true },
-            { name: "openai", title: "OpenAI API", key: openaiKey, setKey: setOpenaiKey,
-              help: uiText("供既有 API 模式使用；Codex 或 Claude Code 分析不需要此金鑰。"), visible: provider === "openai" || settings.integrations.openai?.configured },
           ] as const).filter((item) => item.visible).map((item) => {
             const state = settings.integrations[item.name];
             return (

@@ -68,6 +68,18 @@ const words = text.heroTitle.split(names).flatMap((part) =>
   ))}
 </ol>
 
+<section class="faq wrap" aria-labelledby="faq-title">
+  <h2 id="faq-title">{text.faqTitle}</h2>
+  <dl>
+    {text.faq.map(([question, answer]) => (
+      <div>
+        <dt>{question}</dt>
+        <dd>{answer}</dd>
+      </div>
+    ))}
+  </dl>
+</section>
+
 <script>
   // The page is static and offers the Mac installer; Windows visitors get theirs.
   if (/Windows/.test(navigator.userAgent)) {
@@ -207,6 +219,14 @@ const words = text.heroTitle.split(names).flatMap((part) =>
     }
   }
   .points span:last-child { color: var(--text-secondary); font-size: 15px; }
+
+  /* Plain, always-open answers: what a searcher came for is on the page. */
+  .faq { margin: clamp(96px, 14vh, 160px) auto 0; max-width: 820px; }
+  .faq h2 { font-size: clamp(32px, 4.4vw, 48px); text-align: center; margin-bottom: 40px; }
+  .faq dl { margin: 0; display: grid; }
+  .faq dl > div { display: grid; gap: 8px; padding: 24px 0; box-shadow: 0 -0.5px 0 var(--border); }
+  .faq dt { font-size: clamp(18px, 1.9vw, 21px); font-weight: 600; letter-spacing: -0.02em; }
+  .faq dd { margin: 0; color: var(--text-secondary); font-size: 16px; }
 
   @media (max-width: 700px) {
     .stage { padding: 0 16px; }

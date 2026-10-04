@@ -7,6 +7,8 @@ from time import monotonic
 from openai import OpenAI
 
 from .analysis import calculate
+from .anthropic_api_bridge import AnthropicApiError
+from .chatgpt_plan_auth import ChatGPTPlanError
 from .claude_code_bridge import ClaudeCodeError
 from .codex_bridge import CodexError
 from .credential_store import CredentialStoreError
@@ -154,7 +156,8 @@ _VALIDATION_ERRORS = frozenset({
 
 def model_failure_reason(exc: Exception) -> str:
     """Only expose known application validation messages, never provider payloads."""
-    if isinstance(exc, (ModelProviderError, CodexError, ClaudeCodeError, CredentialStoreError)):
+    if isinstance(exc, (ModelProviderError, CodexError, ClaudeCodeError, AnthropicApiError, ChatGPTPlanError,
+                        CredentialStoreError)):
         return str(exc)
     if isinstance(exc, RuntimeError) and str(exc) == "OPENAI_API_KEY and OPENAI_MODEL are required for Agent analysis":
         return "尚未設定 OPENAI_API_KEY 或 OPENAI_MODEL，無法產生 Agent 策略分析"

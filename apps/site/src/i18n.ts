@@ -14,8 +14,8 @@ export const copy = {
       disclaimer: "txinTrade provides analysis only and never places trades. Nothing on this site or in the app is financial advice. Trading crypto futures carries a high risk of loss.",
     },
     home: {
-      title: "txinTrade — Claude Code and Codex as your trading assistant",
-      description: "Bring your own AI. txinTrade integrates with the Claude Code or Codex already installed and signed in on your computer to analyze crypto futures with real market data. It never places trades.",
+      title: "txinTrade — AI crypto trading assistant with Codex or Claude Code",
+      description: "Connect the Codex or Claude Code on your computer to analyze crypto futures, review your Binance and BingX positions and know when to exit. Free, open source, and it never trades.",
       heroTitle: "Claude Code and Codex, as your trading assistant.",
       heroSubtitle: "Bring your own AI to real crypto futures data. It suggests, you decide, and it never trades.",
       download: "Download for Mac", downloadWindows: "Download for Windows", comingSoon: "Coming soon for Mac", github: "GitHub",
@@ -28,6 +28,15 @@ export const copy = {
         ["Bring your own AI", "Uses the Claude Code or Codex you already run."],
         ["Analysis only", "It never places orders or moves funds."],
         ["On your desktop", "Your keys and data stay on your computer."],
+      ],
+      faqTitle: "Questions",
+      faq: [
+        ["Which AI does it use, and is my account at risk?", "txinTrade launches the Codex or Claude Code already installed and signed in on your computer; it never reads or copies your credentials and never charges for AI usage. Anthropic's Consumer Terms limit Claude Free, Pro and Max sign-in to Anthropic's own apps and restrict automated access, so connecting Claude Code with a subscription may conflict with them. OpenAI recommends API keys for programmatic Codex use. Read your provider's terms before you connect."],
+        ["Does txinTrade place trades?", "No. It provides analysis only. Positions are imported read-only, and it never places orders, changes leverage or moves funds."],
+        ["How does it help me decide when to exit?", "Select your open positions and the AI tells you whether to hold or close now and why. A hold comes with an exit plan: the price that ends the hold, a suggested stop, and where to take profit."],
+        ["Where are my exchange API keys stored?", "Only on your computer. Use read-only keys from Binance or BingX; trading, transfer and withdrawal permissions are never needed."],
+        ["Which exchanges and markets does it support?", "It analyzes Binance USDT perpetual futures and imports positions from Binance USDⓈ-M futures and BingX."],
+        ["Is it free?", "Yes. The app is free and open source. Optional remote access from other devices costs US$3.99 per month."],
       ],
     },
     download: {
@@ -78,8 +87,8 @@ export const copy = {
       disclaimer: "txinTrade 只提供分析，不會下單。本網站與 App 的內容都不構成投資建議。加密貨幣合約交易具有高度虧損風險。",
     },
     home: {
-      title: "txinTrade — 讓 Claude Code 與 Codex 成為交易助手",
-      description: "自帶你的 AI。txinTrade 直接整合你電腦上已安裝並登入的 Claude Code 或 Codex，用真實行情分析加密貨幣合約。不會替你下單。",
+      title: "txinTrade — 用 Codex 或 Claude Code 分析加密貨幣合約的 AI 交易助手",
+      description: "連接你電腦上的 Codex 或 Claude Code，分析加密貨幣合約與你在幣安、BingX 的持倉，告訴你何時該離場。免費、開放原始碼，不會替你下單。",
       heroTitle: "讓 Claude Code 與 Codex 成為你的交易助手。",
       heroSubtitle: "自帶你的 AI，看懂真實的合約行情。它提出建議，由你決定，永遠不會下單。",
       download: "下載 Mac 版", downloadWindows: "下載 Windows 版", comingSoon: "Mac 版即將推出", github: "GitHub",
@@ -92,6 +101,15 @@ export const copy = {
         ["自帶你的 AI", "直接用你已登入的 Claude Code 或 Codex。"],
         ["只分析，不下單", "不會替你下單，也不會移動資金。"],
         ["在你的電腦上", "金鑰與分析資料只保存在你的電腦。"],
+      ],
+      faqTitle: "常見問題",
+      faq: [
+        ["使用哪種 AI？我的帳號會有風險嗎？", "txinTrade 會啟動你電腦上已安裝並登入的 Codex 或 Claude Code，不會讀取或複製你的登入憑證，也不會向你收取 AI 使用費用。Anthropic 的消費者條款將 Claude Free、Pro、Max 方案的登入限定於 Anthropic 自家的 App，並限制自動化存取，因此以訂閱方案連接 Claude Code 可能與其條款衝突。OpenAI 則建議以 API 金鑰進行程式化的 Codex 使用。連接前請先閱讀你所用服務的條款。"],
+        ["txinTrade 會幫我下單嗎？", "不會。它只提供分析，持倉以唯讀方式匯入，不會下單、調整槓桿或移動資金。"],
+        ["它怎麼幫我判斷何時離場？", "選擇你的持倉，AI 會告訴你該續抱還是現在平倉，以及原因。續抱建議會附上離場計畫：何時不再續抱、建議止損，以及分批止盈的價位。"],
+        ["交易所 API 金鑰存在哪裡？", "只存在你的電腦。請使用幣安或 BingX 的唯讀金鑰，不需要交易、轉帳或提款權限。"],
+        ["支援哪些交易所與市場？", "分析幣安 USDT 永續合約，並可從幣安 USDⓈ-M 合約與 BingX 匯入持倉。"],
+        ["需要付費嗎？", "App 免費並開放原始碼。從其他裝置遠端存取是選用的訂閱服務，每月 3.99 美元。"],
       ],
     },
     download: {

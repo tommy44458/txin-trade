@@ -72,8 +72,18 @@ def _restricted_config() -> dict:
     return result
 
 
+def _plan_provider_config() -> dict:
+    """Codex as a Responses provider authorized by a ChatGPT plan token (OpenAI's documented setup)."""
+    prefix = "model_providers.openai_chatgpt_plan"
+    return {"model_provider": "openai_chatgpt_plan", f"{prefix}.name": "ChatGPT plan",
+            f"{prefix}.base_url": "https://api.openai.com/v1", f"{prefix}.env_key": "ACCESS_TOKEN",
+            f"{prefix}.wire_api": "responses", f"{prefix}.requires_openai_auth": False,
+            f"{prefix}.supports_websockets": False}
+
+
 class CodexRpc:
-    def __init__(self, *, isolated: bool = False, process_factory=subprocess.Popen):
+    def __init__(self, *, isolated: bool = False, plan_token: str | None = None,
+                 process_factory=subprocess.Popen):
         self.messages: queue.Queue = queue.Queue()
         self.sequence = 0
         self.started_at = monotonic()
@@ -100,8 +110,16 @@ class CodexRpc:
                 self.workspace.cleanup()
                 raise CodexError("無法讀取本應用程式的 Codex 授權，請在設定重新登入。") from exc
             environment["CODEX_HOME"] = str(self.local_auth.home)
+        if plan_token is not None:
+            # A fresh Codex home: neither the user's Codex login nor their config is used.
+            home = os.path.join(self.workspace.name, "codex-home")
+            os.makedirs(home, exist_ok=True)
+            environment["CODEX_HOME"] = home
+            environment["ACCESS_TOKEN"] = plan_token
         command = [*launch_command(codex_executable()), "app-server", "--listen", "stdio://"]
         overrides = _restricted_config()
+        if plan_token is not None:
+            overrides |= _plan_provider_config()
         # Prevent both isolated and shared CLI sessions from opening an OS
         # credential store; a keyring-only shared login must reconnect here.
         overrides["cli_auth_credentials_store"] = "file"

@@ -663,3 +663,5 @@
   margin-left: auto;
   flex: none;
 }
+.settings-terms-warning { color: var(--warning); }
+.settings-inline-key { margin-top: 12px; }
