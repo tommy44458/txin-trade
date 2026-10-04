@@ -97,6 +97,7 @@ function failureCode(error, fallback) {
  */
 export function createDesktopUpdater({ app, autoUpdater, prepareUpdate, cancelUpdate, stopBackend,
   onState = () => {}, distributionPolicy = null, platform = process.platform, arch = process.arch,
+  logger = null,
   currentVersion = app?.getVersion?.() ?? "", timers = globalThis, now = Date.now,
   random = Math.random, startupDelayMs, checkIntervalMs = CHECK_INTERVAL,
   installPollMs = INSTALL_POLL_INTERVAL } = {}) {
@@ -126,6 +127,10 @@ export function createDesktopUpdater({ app, autoUpdater, prepareUpdate, cancelUp
   function publish(patch) {
     if (disposed) return state;
     const next = { ...state, ...patch };
+    if (next.status !== state.status || next.errorCode !== state.errorCode) {
+      logger?.info?.(`state ${next.status}${next.version ? ` ${next.version}` : ""}`
+        + `${next.errorCode ? ` ${next.errorCode}` : ""}`);
+    }
     state = Object.freeze({ ...next,
       canInstall: downloadedInfo !== null && next.status !== "installing" });
     try { onState(state); } catch { /* UI failures cannot bypass update safety. */ }
@@ -211,7 +216,7 @@ export function createDesktopUpdater({ app, autoUpdater, prepareUpdate, cancelUp
   }
 
   if (enabled) {
-    autoUpdater.logger = null;
+    autoUpdater.logger = logger;
     autoUpdater.autoDownload = false;
     autoUpdater.autoInstallOnAppQuit = false;
     autoUpdater.forceDevUpdateConfig = false;

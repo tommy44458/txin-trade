@@ -164,3 +164,23 @@ export function backupDatabaseFiles(dataDir, version, { fs = { existsSync, mkdir
   return target;
 }
 
+
+/**
+ * A small text log of update checks, so a check that fails on a user's computer can be
+ * explained. It holds feed URLs, versions and error messages only, and starts over past
+ * maxBytes. Writing never throws: the log must not affect updates.
+ */
+export function createUpdateLog(path, { fs, now = () => new Date(), maxBytes = 262_144 } = {}) {
+  function write(level, message) {
+    try {
+      let size = 0;
+      try { size = fs.statSync(path).size; } catch { /* No log yet. */ }
+      const text = message instanceof Error ? `${message.name}: ${message.message}` : String(message);
+      const line = `${now().toISOString()} ${level} ${text.slice(0, 2000)}\n`;
+      if (size + line.length > maxBytes) fs.writeFileSync(path, line, { mode: 0o600 });
+      else fs.appendFileSync(path, line, { mode: 0o600 });
+    } catch { /* Logging is best effort. */ }
+  }
+  return { info: m => write("info", m), warn: m => write("warn", m), error: m => write("error", m),
+    debug: () => {} };
+}

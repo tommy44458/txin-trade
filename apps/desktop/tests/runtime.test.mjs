@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 import { availablePort, backendCommand, backendEnvironment, developmentConfig, externalUrl,
-  spawnBackend, stopBackend } from "../runtime.mjs";
+  createUpdateLog, spawnBackend, stopBackend } from "../runtime.mjs";
 
 test("desktop fixes SQLite to its private data directory and ignores legacy database credentials", () => {
   const env = backendEnvironment({
@@ -195,4 +195,21 @@ test("a backend pipe that fails while the backend exits never becomes an uncaugh
   }
   child.stdin.end();
   await once(child, "exit");
+});
+
+test("the update log appends lines, starts over past its limit, and never throws", () => {
+  const files = new Map();
+  const fs = {
+    statSync: path => { if (!files.has(path)) throw new Error("ENOENT"); return { size: files.get(path).length }; },
+    appendFileSync: (path, text) => files.set(path, (files.get(path) ?? "") + text),
+    writeFileSync: (path, text) => files.set(path, text),
+  };
+  const log = createUpdateLog("/u/updater.log", { fs, now: () => new Date("2026-10-05T00:00:00Z"), maxBytes: 120 });
+  log.info("Checking for update");
+  log.error(new Error("net::ERR_CONNECTION_RESET"));
+  assert.match(files.get("/u/updater.log"), /^2026-10-05T00:00:00.000Z info Checking for update\n.*error Error: net::ERR_CONNECTION_RESET/s);
+  log.info("x".repeat(100));
+  assert.equal(files.get("/u/updater.log").split("\n").length, 2, "past the limit the log starts over");
+  const broken = createUpdateLog("/u/updater.log", { fs: { statSync() { throw new Error(); }, appendFileSync() { throw new Error("EACCES"); } } });
+  assert.doesNotThrow(() => broken.warn("still fine"));
 });

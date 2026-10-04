@@ -1,11 +1,12 @@
 import { app, BrowserWindow, clipboard, dialog, ipcMain, Menu, nativeTheme, shell } from "electron";
 import { randomBytes } from "node:crypto";
+import * as fs from "node:fs";
 import { createWriteStream, mkdirSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 import { availablePort, backendCommand, backendEnvironment, developmentConfig, externalUrl,
-  backupDatabaseFiles, spawnBackend, stopBackend, waitForBackend } from "./runtime.mjs";
+  backupDatabaseFiles, createUpdateLog, spawnBackend, stopBackend, waitForBackend } from "./runtime.mjs";
 import { NATIVE_STRINGS, readSavedLocale, validateLocale } from "./locales.mjs";
 import { readSavedTheme, validateTheme } from "./themes.mjs";
 import { readReleaseInfo } from "./release-info.mjs";
@@ -28,6 +29,11 @@ let updater;
 let updateDialogOpen = false;
 // Set once the app page has its own update window; a navigation or reload clears it.
 let updatePromptsInWindow = false;
+// The loading page is replaced by the app page as soon as the backend is up (slowly on
+// Windows), so an update found meanwhile is offered once the app page can show it.
+let showingStartupPage = false;
+let pendingUpdatePrompt = false;
+const PENDING_PROMPT_FALLBACK_MS = 5000;
 let manualUpdateChecks = 0;
 let updateMenuKey;
 const updateNotices = new Set();
@@ -320,6 +326,10 @@ function updateStateChanged(state) {
       || !["available", "downloaded"].includes(state.status)) return;
   const notice = `${state.status}:${state.version}`;
   if (updateNotices.has(notice)) return;
+  if (showingStartupPage && !startupFailed) {
+    pendingUpdatePrompt = true;
+    return;
+  }
   updateNotices.add(notice);
   runUpdateAction(showUpdateDialog);
 }
@@ -382,6 +392,7 @@ async function initializeUpdater() {
     } catch { /* A missing update engine keeps this App usable with updates disabled. */ }
   }
   updater = createDesktopUpdater({ app, autoUpdater, distributionPolicy,
+    logger: createUpdateLog(join(app.getPath("userData"), "updater.log"), { fs }),
     prepareUpdate,
     cancelUpdate: cancelUpdatePreparation,
     stopBackend: async () => {
@@ -406,12 +417,22 @@ function closeBackendLog() {
   backendLog = undefined;
 }
 
+/** Offer an update found while the loading page was showing, now that the app page is up. */
+function offerPendingUpdate() {
+  if (!pendingUpdatePrompt || (showingStartupPage && !startupFailed) || !updater) return;
+  pendingUpdatePrompt = false;
+  updateStateChanged(updater.state);
+}
+
 async function showStartup(failure = null) {
   startupFailed = failure !== null;
+  showingStartupPage = true;
   // Closing the window while the backend starts or fails leaves nothing to show.
   if (!window || window.isDestroyed()) return;
   await window.loadURL(`data:text/html;charset=UTF-8,${encodeURIComponent(startupPage(failure))}`);
   window.show();
+  // A failed start never reaches the app page: offer a pending update on this screen.
+  if (startupFailed) offerPendingUpdate();
 }
 
 async function startBackend() {
@@ -461,6 +482,9 @@ async function startBackend() {
     if (closing) return;
     await window.loadURL(origin);
     startupFailed = false;
+    showingStartupPage = false;
+    // The page registers its update window once it has loaded; if it never does, a native dialog.
+    setTimeout(offerPendingUpdate, PENDING_PROMPT_FALLBACK_MS).unref?.();
     window.show();
   } catch {
     // The backend says, by its exit code, when the database comes from a newer version.
@@ -555,6 +579,7 @@ app.whenReady().then(async () => {
   ipcMain.handle("desktop:update-prompt-ready", event => {
     trustedSender(event);
     updatePromptsInWindow = true;
+    offerPendingUpdate();
   });
   ipcMain.handle("desktop:update-respond", (event, action) => {
     trustedSender(event);
