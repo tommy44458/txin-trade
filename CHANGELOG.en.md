@@ -4,6 +4,10 @@ The product version is managed in `version.json`. Dates record release preparati
 
 ## [Unreleased]
 
+### Changed
+
+- Entry plans include a checkable invalidation rule, and reconciliation settles on whichever comes first: target, stop or invalidation.
+
 ### Fixed
 
 - On Windows, an update found while the app starts is now offered once the app has loaded.

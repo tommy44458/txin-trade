@@ -135,3 +135,32 @@ def test_an_old_waiting_plan_without_a_price_rule_is_not_judged():
     assert item["unverifiable"] is True and item["trigger"] is None
     [touch] = items_for(report(plan("wait_for_entry")))
     assert touch["unverifiable"] is False and touch["trigger"] == {"type": "touch", "price": "100"}
+
+
+def ruled(confirmation, price="99", **changes):
+    return plan(**changes) | {"invalidation_rule": {"price": price, "confirmation": confirmation}}
+
+
+def test_a_touch_invalidation_rule_ends_the_trade_before_its_stop():
+    [item] = items_for(report(ruled("touch")))
+    assert item["exit_rule"] == {"price": "99", "confirmation": "touch"}
+    cut = run(item, [(100.5, 98.8, 99.2)])
+    assert (cut["result"], cut["r_multiple"], cut["exit_reason"]) == ("loss", "-0.50", "invalidation")
+    # Through the rule and the stop in one candle: the rule comes first.
+    assert run(item, [(100, 97.5, 98)])["r_multiple"] == "-0.50"
+    # Through the rule and the target in one candle: the conservative rule wins.
+    assert run(item, [(104.5, 98.9, 104)])["exit_reason"] == "invalidation"
+
+
+def test_a_close_invalidation_rule_waits_for_the_hourly_close():
+    [item] = items_for(report(ruled("close")))
+    dip = [(100.2, 98.6, 99.5)] * 11  # Below 99 inside the hour, the hour closes at 99.5.
+    assert not run(item, dip)["done"]
+    broken = run(item, dip + [(99.5, 98.4, 98.6)] * 12)
+    assert (broken["result"], broken["exit_price"], broken["r_multiple"]) == ("loss", "98.6", "-0.70")
+    assert run(item, [(104.2, 99.5, 104)])["exit_reason"] == "target"
+
+
+def test_an_invalidation_rule_outside_entry_and_stop_is_ignored():
+    for price in ("97", "100", "101"):  # Beyond the stop, at the entry, above the entry.
+        assert items_for(report(ruled("touch", price)))[0]["exit_rule"] is None

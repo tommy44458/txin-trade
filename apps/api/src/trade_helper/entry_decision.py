@@ -64,6 +64,13 @@ def validate_entry_decision(plan: dict, quote: dict, levels: list[dict], atr: st
             not isinstance(rule, dict) or rule.get("type") not in {"touch", "close_above", "close_below"}
             or _price(rule.get("price")) % tick != 0):
         raise ValueError("Agent trigger rule is invalid")
+    exit_rule = plan.get("invalidation_rule")
+    if exit_rule is not None:
+        exit_price = _price(exit_rule.get("price")) if isinstance(exit_rule, dict) else None
+        if (exit_price is None or exit_rule.get("confirmation") not in {"close", "touch"}
+                or exit_price % tick != 0
+                or not (stop <= exit_price < entry if side == "long" else entry < exit_price <= stop)):
+            raise ValueError("Agent invalidation rule is invalid")
     if action == "open_now" and entry != quote_price:
         raise ValueError("Immediate entry must use the analysis quote")
     if action == "wait_for_entry" and abs(entry - quote_price) > max(
