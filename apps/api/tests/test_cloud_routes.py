@@ -62,3 +62,11 @@ def test_every_ai_provider_can_be_checked_remotely_but_never_signed_in_or_keyed(
         for action in ("login", "logout", "cancel", "models"):
             assert not allowed({"method": "POST", "path": f"/api/v1/auth/{provider}/{action}"})
     assert not allowed({"method": "POST", "path": "/api/v1/auth/other/check"})
+
+
+def test_the_track_record_is_readable_remotely_but_never_writable():
+    assert allowed({"method": "GET", "path": "/api/v1/outcomes"})
+    assert allowed({"method": "GET", "path": "/api/v1/outcomes/summary", "query": "period=30d&group=risk"})
+    assert allowed({"method": "GET", "path": "/api/v1/analyses/ana_1/outcomes"})
+    assert not allowed({"method": "POST", "path": "/api/v1/outcomes"})
+    assert not allowed({"method": "DELETE", "path": "/api/v1/outcomes/summary"})

@@ -4,6 +4,11 @@ The product version is managed in `version.json`. Dates record release preparati
 
 ## [Unreleased]
 
+### Added
+
+- After a report is made, the app reconciles it in the background on later 5-minute candles, recording wins, losses and R.
+- A new AI track record compares results by pair, timeframe, risk tolerance, model and prompt version.
+
 ### Changed
 
 - While an analysis runs, it shows each finished step, the price and nearby levels, and the AI sections already written.

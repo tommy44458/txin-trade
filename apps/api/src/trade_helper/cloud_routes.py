@@ -19,7 +19,9 @@ _ROUTES: tuple[tuple[str, re.Pattern[str]], ...] = tuple((method, re.compile(pat
     # Checks the AI sign-in before an analysis; it never signs in or out.
     ("POST", rf"/api/v1/auth/{_PROVIDERS}/check"),
     ("GET", r"/api/v1/analyses/latest"),
-    ("GET", rf"/api/v1/analyses/{_ID}(/chart-snapshot|/level-shadow|/level-shadow/v4)?"),
+    ("GET", rf"/api/v1/analyses/{_ID}(/chart-snapshot|/level-shadow|/level-shadow/v4|/outcomes)?"),
+    # The AI track record: reconciled outcomes, read-only.
+    ("GET", r"/api/v1/outcomes(/summary)?"),
     ("GET", rf"/api/v1/discussions/(analysis|macro|fund_flows)/{_ID}"),
     # Fund-flow follow-ups: the conversation's frozen data lives on the computer.
     ("GET", r"/api/v1/smart-money/snapshots/latest"),

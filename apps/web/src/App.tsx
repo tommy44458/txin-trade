@@ -52,6 +52,8 @@ import Icon, { type IconName } from "./Icon";
 import AccountMenu from "./AccountMenu";
 import { CLOUD_ACCOUNT_CHANGED } from "./cloudAccountEvents";
 import SmartMoneyPanel from "./SmartMoneyPanel";
+import TrackRecord, { OutcomeLine } from "./TrackRecord";
+import { loadOutcomes, type Outcome } from "./outcomes";
 import type { FlowSnapshot, FlowWindow } from "./smartMoney";
 import UpdateDialog from "./UpdateDialog";
 import UpdateNotice from "./UpdateNotice";
@@ -465,6 +467,8 @@ function App({ remoteSection, remoteIdentity, remoteMenu, remoteStatus }: {
     synchronizeLatestTimeframe.current = true;
   }, [marketId]);
   const [history, setHistory] = useState<Job[]>([]);
+  // The record page opens on the AI track record; past analyses are one tap away.
+  const [historyTab, setHistoryTab] = useState<"record" | "analyses">("record");
   const [liveEvents, setLiveEvents] = useState<EventContext | null>(null);
   const [eventsLoading, setEventsLoading] = useState(true);
   const [eventsError, setEventsError] = useState("");
@@ -562,6 +566,19 @@ function App({ remoteSection, remoteIdentity, remoteMenu, remoteStatus }: {
   const report = useMemo(() => localizeReportText(shownReport,
     shownReport?.response_locale ?? shownReport?.output_locale ?? job?.submitted_input.output_locale ?? "zh-TW"),
   [shownReport, job?.submitted_input.output_locale]);
+  // The reconciled result of the report on screen, once the background check has it.
+  const outcomeJobId = job?.status === "completed" && report ? job.id : null;
+  const [reportOutcomes, setReportOutcomes] = useState<{ id: string; items: Outcome[] } | null>(null);
+  useEffect(() => {
+    if (!outcomeJobId) return;
+    const controller = new AbortController();
+    loadOutcomes<{ items: Outcome[] }>(`/analyses/${outcomeJobId}/outcomes`, controller.signal)
+      .then((result) => setReportOutcomes({ id: outcomeJobId, items: result.items }))
+      .catch(() => { /* An older computer has no reconciliation; the report stands alone. */ });
+    return () => controller.abort();
+  }, [outcomeJobId]);
+  const shownOutcomes = reportOutcomes?.id === outcomeJobId ? reportOutcomes.items : [];
+  const entryOutcome = shownOutcomes.find((item) => item.item_key === "entry");
   // Indicators the report used, drawn only on the chart of that same timeframe.
   const chartIndicators = useMemo(() => reportIndicators(report as IndicatorReport | null), [report]);
   const jobId = pendingJob?.id;
@@ -891,7 +908,7 @@ function App({ remoteSection, remoteIdentity, remoteMenu, remoteStatus }: {
     { id: "positions", label: uiText("我的持倉"), icon: "positions" },
     { id: "smartMoney", label: uiText("資金流向"), icon: "flows" },
     { id: "events", label: uiText("經濟事件"), icon: "events" },
-    { id: "history", label: uiText("分析紀錄"), icon: "history" },
+    { id: "history", label: uiText("紀錄與戰績"), icon: "history" },
     { id: "settings", label: uiText("設定"), icon: "settings" },
   ];
   const lastMarketsPage = useRef<"events" | "smartMoney">("events");
@@ -932,6 +949,28 @@ function App({ remoteSection, remoteIdentity, remoteMenu, remoteStatus }: {
           ),
         )
         .catch((e) => setError(e.message));
+  };
+  /** Show a past analysis on its own page, with the settings it was made with. */
+  const openAnalysis = (item: Job) => {
+    latestPositionAnalysis.invalidate();
+    latestMarketAnalysis.invalidate();
+    setManualPositionAnalysisId(null);
+    // A delayed preference load must not replace a report being viewed.
+    for (const key of ["market_id", "timeframe", "directional_bias", "risk_tolerance", "trading_style", "leverage"] as const)
+      tradingPreferences.touched.current.add(key);
+    setMarketId(item.submitted_input.market_id);
+    if (isAnalysisTimeframe(item.submitted_input.timeframe))
+      setTimeframe(item.submitted_input.timeframe);
+    setBias(item.submitted_input.directional_bias ?? "");
+    setRisk(item.submitted_input.risk_tolerance ?? "");
+    setTradingStyle(item.submitted_input.trading_style ?? "");
+    setLeverage(item.submitted_input.leverage ?? 5);
+    setAccountEquity(item.submitted_input.account_equity_usdt ?? "");
+    setJob(item);
+    if (["queued", "running"].includes(item.status))
+      setPendingJob((current) => current ?? item);
+    setViewingHistoricalPosition(item.submitted_input.kind === "positions");
+    setView(item.submitted_input.kind === "positions" ? "positions" : "market");
   };
   // Phones show four tabs: economic events and fund flows share one "Markets" tab,
   // which reopens whichever of the two was seen last.
@@ -1256,6 +1295,7 @@ function App({ remoteSection, remoteIdentity, remoteMenu, remoteStatus }: {
                     <DirectionAssessment assessment={report.reasoning?.direction_assessment}
                       bias={report.preference_assessment?.directional_bias} />
                   )}{" "}
+                  {report && entryOutcome && <OutcomeLine outcome={entryOutcome} />}
                   {report && (
                     <AnalysisEvidence
                         outputLocale={report.response_locale ?? report.output_locale ?? job?.submitted_input.output_locale ?? "zh-TW"}
@@ -1739,7 +1779,8 @@ function App({ remoteSection, remoteIdentity, remoteMenu, remoteStatus }: {
                 {report?.market_id === marketId &&
                   job?.submitted_input.kind === "positions" &&
                   report.position_reviews.map((r) => (
-                    <PositionReviewCard key={r.position_id} review={r} timeframe={report.timeframe} riskTolerance={report.preference_assessment?.risk_tolerance} outputLocale={report.response_locale ?? report.output_locale ?? job?.submitted_input.output_locale ?? "zh-TW"} />
+                    <PositionReviewCard key={r.position_id} review={r} timeframe={report.timeframe}
+                      outcome={shownOutcomes.find((item) => item.item_key === `position:${r.position_id}`)} riskTolerance={report.preference_assessment?.risk_tolerance} outputLocale={report.response_locale ?? report.output_locale ?? job?.submitted_input.output_locale ?? "zh-TW"} />
                   ))}
                 {report?.market_id === marketId &&
                   job?.submitted_input.kind === "positions" && (
@@ -1850,11 +1891,26 @@ function App({ remoteSection, remoteIdentity, remoteMenu, remoteStatus }: {
             <>
               <div className="page-title">
                 <div>
-                  <h1>{uiText("分析紀錄")}</h1>
-                  <p>{uiText("回看當時的行情、交易設定與決策理由。")}</p>
+                  <h1>{historyTab === "record" ? uiText("AI 戰績") : uiText("分析紀錄")}</h1>
+                  <p>{historyTab === "record"
+                    ? uiText("App 會在背景用之後的行情，自動判斷每份報告的結果。")
+                    : uiText("回看當時的行情、交易設定與決策理由。")}</p>
                 </div>
               </div>
-              <section className="panel">
+              <div className="segments history-switch" role="group" aria-label={uiText("紀錄與戰績")}>
+                {(["record", "analyses"] as const).map((tab) => (
+                  <button key={tab} type="button" aria-pressed={historyTab === tab}
+                    className={historyTab === tab ? "chosen" : ""} onClick={() => setHistoryTab(tab)}>
+                    {tab === "record" ? uiText("AI 戰績") : uiText("分析紀錄")}
+                  </button>
+                ))}
+              </div>
+              {historyTab === "record" && (
+                <TrackRecord onOpenAnalysis={(id) => {
+                  api<Job>(`/analyses/${id}`).then(openAnalysis).catch((e) => setError(e.message));
+                }} />
+              )}
+              {historyTab === "analyses" && <section className="panel">
                 <div className="panel-head">
                   <h2>{uiText("近期分析")}</h2>
                   <span className="tag">{uiText("最近 50 筆")}</span>
@@ -1863,33 +1919,7 @@ function App({ remoteSection, remoteIdentity, remoteMenu, remoteStatus }: {
                   <button
                     className="history-row"
                     key={item.id}
-                    onClick={() => {
-                      latestPositionAnalysis.invalidate();
-                      latestMarketAnalysis.invalidate();
-                      setManualPositionAnalysisId(null);
-                      // A delayed preference load must not replace a report being viewed.
-                      for (const key of ["market_id", "timeframe", "directional_bias", "risk_tolerance", "trading_style", "leverage"] as const)
-                        tradingPreferences.touched.current.add(key);
-                      setMarketId(item.submitted_input.market_id);
-                      if (isAnalysisTimeframe(item.submitted_input.timeframe))
-                        setTimeframe(item.submitted_input.timeframe);
-                      setBias(item.submitted_input.directional_bias ?? "");
-                      setRisk(item.submitted_input.risk_tolerance ?? "");
-                      setTradingStyle(item.submitted_input.trading_style ?? "");
-                      setLeverage(item.submitted_input.leverage ?? 5);
-                      setAccountEquity(
-                        item.submitted_input.account_equity_usdt ?? "",
-                      );
-                      setJob(item);
-                      if (["queued", "running"].includes(item.status))
-                        setPendingJob((current) => current ?? item);
-                      setViewingHistoricalPosition(item.submitted_input.kind === "positions");
-                      setView(
-                        item.submitted_input.kind === "positions"
-                          ? "positions"
-                          : "market",
-                      );
-                    }}
+                    onClick={() => openAnalysis(item)}
                   >
                     <span>
                       <b>
@@ -1914,7 +1944,7 @@ function App({ remoteSection, remoteIdentity, remoteMenu, remoteStatus }: {
                 {!history.length && (
                   <div className="placeholder big">{uiText("還沒有分析紀錄。")}</div>
                 )}
-              </section>
+              </section>}
             </>
           )}
         </div>

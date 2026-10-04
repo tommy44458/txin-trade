@@ -114,8 +114,9 @@ def test_analysis_idempotency_and_position_snapshot(monkeypatch, tmp_path):
         saved = next(item for item in history if item["id"] == result["id"])
         assert saved["report"] == result["report"]
         assert saved["status"] == "completed"
-        assert client.get(f"/api/v1/analyses/{first.json()['id']}/outcomes").status_code == 404
-        assert client.get("/api/v1/outcomes/summary").status_code == 404
+        # Reconciliation is a separate record; the report itself never changes.
+        assert client.get(f"/api/v1/analyses/{first.json()['id']}/outcomes").json() == {"items": []}
+        assert client.get("/api/v1/outcomes/summary").json()["overall"]["total"] == 0
         assert result["report"]["position_reviews"][0]["agent_decision"]["decision"] == "close_now"
         assert result["submitted_input"]["trading_style"] == "right"
         assert result["report"]["preference_assessment"]["trading_style"] == "right"
