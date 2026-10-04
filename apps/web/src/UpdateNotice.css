@@ -74,3 +74,26 @@
     margin: 0;
   }
 }
+/* Under an update notice the sign-in notice follows it instead of taking the free space. */
+.update-notice + .cloud-sign-in-notice {
+  margin-top: 6px;
+}
+.cloud-sign-in-notice {
+  border-color: var(--border);
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+.cloud-sign-in-notice .update-notice-dot {
+  background: var(--text-tertiary);
+}
+.cloud-sign-in-notice:hover {
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+/* A window narrowed to phone width has no room for it; the account menu offers sign-in there. */
+@media (max-width: 700px) {
+  .cloud-sign-in-notice {
+    display: none;
+  }
+}

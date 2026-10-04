@@ -147,13 +147,17 @@
   color: var(--text-tertiary);
 }
 
-/* The result next to a report: one line under its plan. */
+/* The result next to a report: a small card of its own, spaced like the cards around it. */
 .outcome-line {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 8px 10px;
   flex-wrap: wrap;
-  margin: 0;
+  margin: 0 0 var(--space-5);
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
   font-size: 13px;
   color: var(--text-secondary);
   font-variant-numeric: tabular-nums;
@@ -221,4 +225,8 @@
   .track-row {
     padding-block: var(--space-3);
   }
+}
+.position-review .outcome-line {
+  margin: var(--space-3) 0 0;
+  background: var(--surface-subtle);
 }
