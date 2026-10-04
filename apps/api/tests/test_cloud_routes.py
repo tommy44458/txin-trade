@@ -53,3 +53,12 @@ def test_only_a_discussion_reply_may_stream():
     assert not allowed({"method": "GET", "path": path, "stream": True, "query": "limit=100"})
     assert not allowed({"method": "GET", "path": "/api/v1/discussions/analysis/../stream", "stream": True,
                         "connection_id": "c"})
+
+
+def test_every_ai_provider_can_be_checked_remotely_but_never_signed_in_or_keyed():
+    for provider in ("codex", "claude_code", "chatgpt_plan", "anthropic", "openai"):
+        assert allowed({"method": "GET", "path": f"/api/v1/auth/{provider}/status"})
+        assert allowed({"method": "POST", "path": f"/api/v1/auth/{provider}/check"})
+        for action in ("login", "logout", "cancel", "models"):
+            assert not allowed({"method": "POST", "path": f"/api/v1/auth/{provider}/{action}"})
+    assert not allowed({"method": "POST", "path": "/api/v1/auth/other/check"})

@@ -4,6 +4,10 @@ The product version is managed in `version.json`. Dates record release preparati
 
 ## [Unreleased]
 
+### Fixed
+
+- The remote web page can run AI analyses with the ChatGPT plan, Claude API or OpenAI API too.
+
 ## [1.0.11] - 2026-10-04
 
 ### Changed
