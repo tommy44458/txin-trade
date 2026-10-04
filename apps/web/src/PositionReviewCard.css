@@ -106,3 +106,6 @@
     gap: 2px;
   }
 }
+.exit-plan > .exit-plan-wide {
+  color: var(--warning);
+}

@@ -259,7 +259,8 @@ class AnalysisReportV3(BaseModel):
                 raise ValueError("Agent entry decision differs from reasoning")
             expected_entry_risk = validate_entry_decision(
                 self.entry_decision, self.quote, self.metrics["levels"],
-                self.metrics["atr14"], self.agent_stance, self.analysis_leverage)
+                self.metrics["atr14"], self.agent_stance, self.analysis_leverage,
+                self.preference_assessment.get("risk_tolerance"))
             if self.entry_risk_reference != expected_entry_risk:
                 raise ValueError("Agent entry risk reference differs from snapshot")
         elif self.entry_decision is not None or self.entry_risk_reference is not None:

@@ -168,7 +168,7 @@ def model_failure_reason(exc: Exception) -> str:
 
 def _final_reasoning(raw: str, trace: list[dict], *, require_detail: bool = False,
                      macro_context: dict | None = None, quote: dict | None = None,
-                     leverage: int = 5) -> dict:
+                     leverage: int = 5, risk_tolerance: str | None = None) -> dict:
     try:
         value = json.loads(raw)
     except json.JSONDecodeError as exc:
@@ -240,7 +240,7 @@ def _final_reasoning(raw: str, trace: list[dict], *, require_detail: bool = Fals
             raise ValueError("AI skipped required level or strategy calculation")
         risk_reference = validate_entry_decision(
             entry_plan, quote or {}, level_runs[-1].get("levels", []),
-            candidate_runs[-1].get("atr14", "1"), value["agent_stance"], leverage)
+            candidate_runs[-1].get("atr14", "1"), value["agent_stance"], leverage, risk_tolerance)
         position_decisions = value.get("position_decisions", {})
         # A null optional map carries no decision when no positions were selected.
         if position_decisions is None and not options:

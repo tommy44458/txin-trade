@@ -185,7 +185,7 @@ def _reported_macro_outlook(state: dict | None, model_outlook: dict | None,
 
 
 def _with_exit_plan(agent_decision: object, position: dict, price: Decimal, quote: dict,
-                    metrics: dict) -> object:
+                    metrics: dict, risk_tolerance: str | None = None) -> object:
     """A hold carries the checked parts of its exit plan; closing now needs none."""
     if not isinstance(agent_decision, dict):
         return agent_decision
@@ -194,7 +194,7 @@ def _with_exit_plan(agent_decision: object, position: dict, price: Decimal, quot
         plan = sanitize_exit_plan(
             agent_decision.get("exit_plan"), side=position["side"], price=price,
             tick=Decimal(str(quote["tick_size"])), atr=Decimal(metrics["atr14"]),
-            levels=metrics["levels"])
+            levels=metrics["levels"], risk_tolerance=risk_tolerance)
     return {key: value for key, value in agent_decision.items() if key != "exit_plan"} | {"exit_plan": plan}
 
 
@@ -259,7 +259,7 @@ def build_report(request: dict, candles: list[dict], quote: dict, positions: lis
             if decision["mode"] == "openai_assisted":
                 agent_decision = _with_exit_plan(
                     decision.get("position_decisions", {}).get(position["id"]), position,
-                    Decimal(options["valuation_price"]), quote, metrics)
+                    Decimal(options["valuation_price"]), quote, metrics, request.get("risk_tolerance"))
                 review["agent_decision"] = agent_decisions[position["id"]] = agent_decision
             position_reviews.append(review)
     entry_plan = decision["reasoning"].get("entry_decision") if decision["mode"] == "openai_assisted" else None

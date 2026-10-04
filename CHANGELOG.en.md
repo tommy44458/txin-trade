@@ -4,6 +4,10 @@ The product version is managed in `version.json`. Dates record release preparati
 
 ## [Unreleased]
 
+### Changed
+
+- With a high risk tolerance, market and position analyses use a wider stop and farther take-profit targets.
+
 ## [1.0.10] - 2026-10-04
 
 ### Fixed
