@@ -15,6 +15,8 @@ from decimal import Decimal, InvalidOperation
 from .timeframes import advance_candle, candle_open
 
 RULES_VERSION = "outcome_rules_v1"
+# A waiting entry starts only as its trigger_rule says; without one it cannot be judged.
+TRIGGERS = {"touch", "close_above", "close_below"}
 RESOLUTION = "5m"
 STEP = timedelta(minutes=5)
 # Calendar windows: short-timeframe calls are often held for days.
@@ -62,9 +64,15 @@ def items_for(report: dict) -> list[dict]:
         side = plan.get("side")
         if side in {"long", "short"} and entry and stop and target and stop != entry:
             waiting = plan["action"] == "wait_for_entry"
+            rule = plan.get("trigger_rule") if waiting else None
+            trigger = ({"type": rule["type"], "price": str(_price(rule.get("price")))}
+                       if isinstance(rule, dict) and rule.get("type") in TRIGGERS and _price(rule.get("price"))
+                       else None)
             items.append(base | {
                 "key": "entry", "kind": "entry", "action": plan["action"], "side": side,
-                "entry": str(entry), "stop": str(stop), "target": str(target),
+                "entry": str(entry), "stop": str(stop), "target": str(target), "trigger": trigger,
+                # Older plans described their condition only in words: no price rule to check.
+                "unverifiable": waiting and trigger is None,
                 "wait_until": _window(start, timeframe, WAIT_CANDLES, WAIT_MIN).isoformat() if waiting else None,
                 "deadline": (start + MAX_TRACK).isoformat()})
     elif isinstance(plan, dict) and plan.get("action") == "stand_aside" and _price(quote.get("price")):
@@ -107,10 +115,10 @@ def new_state(item: dict) -> dict:
             "high": None, "low": None, "last_close": None}
 
 
-def _r(item: dict, exit_price: Decimal) -> str:
+def _r(item: dict, exit_price: Decimal, fill: str | None = None) -> str:
     """Gain in units of the distance to the stop (or, for a hold, to its invalidation)."""
     if item["kind"] == "entry":
-        start, risk_at = Decimal(item["entry"]), Decimal(item["stop"])
+        start, risk_at = Decimal(fill or item["entry"]), Decimal(item["stop"])
     else:
         start, risk_at = Decimal(item["reference"]), Decimal(item["invalidation"])
     risk = abs(start - risk_at)
@@ -145,6 +153,9 @@ def step(item: dict, state: dict, candles: list[dict]) -> dict:
         state["through"] = (opened + STEP).isoformat()
         if item["kind"] == "entry":
             state = _entry_candle(item, state, opened, high, low, close)
+            if (state["entered_at"] is None and not state["done"]
+                    and (item.get("trigger") or {}).get("type") in {"close_above", "close_below"}):
+                state = _close_trigger(item, state, candle, close)
         elif item["kind"] == "hold":
             state = _hold_candle(item, state, candle, high, low, close)
         else:
@@ -158,13 +169,33 @@ def _extremes(state: dict, high: Decimal, low: Decimal, close: Decimal) -> dict:
                     "last_close": str(close)}
 
 
+def _close_trigger(item, state, candle, close):
+    """A close-confirmed entry fills at the close of the primary candle that confirms it."""
+    rule = item["trigger"]
+    level = Decimal(rule["price"])
+    if not _closes_primary(candle, item["timeframe"]):
+        return state
+    if not (close > level if rule["type"] == "close_above" else close < level):
+        return state
+    stop, target = Decimal(item["stop"]), Decimal(item["target"])
+    long = item["side"] == "long"
+    # A close already past the stop or the target leaves no trade to take.
+    if (close <= stop or close >= target) if long else (close >= stop or close <= target):
+        return _finish(state, "not_triggered", (_at(candle["open_time"]) + STEP).isoformat())
+    return state | {"entered_at": (_at(candle["open_time"]) + STEP).isoformat(), "fill": str(close),
+                    "high": None, "low": None}
+
+
 def _entry_candle(item, state, opened, high, low, close):
     entry, stop, target = Decimal(item["entry"]), Decimal(item["stop"]), Decimal(item["target"])
     long = item["side"] == "long"
     at = (opened + STEP).isoformat()
+    fill = state.get("fill")
     if state["entered_at"] is None:
         if item["wait_until"] and opened >= _at(item["wait_until"]):
             return _finish(state, "not_triggered", item["wait_until"])
+        if (item.get("trigger") or {"type": "touch"})["type"] != "touch":
+            return state  # Close-confirmed entries start in _close_trigger, after this candle.
         if not low <= entry <= high:
             return state
         state = state | {"entered_at": opened.isoformat()}
@@ -173,13 +204,15 @@ def _entry_candle(item, state, opened, high, low, close):
             return _finish(_extremes(state, high, low, close), "loss", at, exit_price=str(stop),
                            r_multiple=_r(item, stop))
         return _extremes(state, high, low, close)
+    if opened < _at(state["entered_at"]):
+        return state  # The confirming candle itself: the trade starts at its close.
     state = _extremes(state, high, low, close)
     stopped = (low <= stop) if long else (high >= stop)
     reached = (high >= target) if long else (low <= target)
     if stopped:  # Also when both were touched in this candle.
-        return _finish(state, "loss", at, exit_price=str(stop), r_multiple=_r(item, stop))
+        return _finish(state, "loss", at, exit_price=str(stop), r_multiple=_r(item, stop, fill))
     if reached:
-        return _finish(state, "win", at, exit_price=str(target), r_multiple=_r(item, target))
+        return _finish(state, "win", at, exit_price=str(target), r_multiple=_r(item, target, fill))
     return state
 
 
@@ -211,8 +244,9 @@ def settle(item: dict, state: dict) -> dict:
     if item["kind"] == "entry":
         if state["entered_at"] is None:
             return _finish(state, "not_triggered", (item["wait_until"] or item["deadline"]))
-        last = Decimal(state["last_close"])
-        return _finish(state, "expired", item["deadline"], exit_price=str(last), r_multiple=_r(item, last))
+        last = Decimal(state["last_close"] or state.get("fill") or item["entry"])
+        return _finish(state, "expired", item["deadline"], exit_price=str(last),
+                       r_multiple=_r(item, last, state.get("fill")))
     if item["kind"] == "hold":
         last = Decimal(state["last_close"]) if state["last_close"] else Decimal(item["reference"])
         return _finish(state, "expired", item["deadline"], exit_price=str(last), r_multiple=_r(item, last))

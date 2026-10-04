@@ -50,7 +50,8 @@ function Overview({ stats }: { stats: OutcomeStats }) {
             note={uiText("{{p0}} 勝 {{p1}} 負", { p0: entries.wins, p1: entries.losses })} />
           <Figure label={uiText("平均每筆")} value={signedR(entries.average_r)} />
           <Figure label={uiText("累計")} value={signedR(entries.total_r)} />
-          <Figure label={uiText("到期／未觸發")} value={`${entries.expired} / ${entries.not_triggered}`} />
+          <Figure label={uiText("到期／未觸發")} value={`${entries.expired} / ${entries.not_triggered}`}
+            note={entries.unverifiable ? uiText("另 {{p0}} 筆條件無法判斷", { p0: entries.unverifiable }) : undefined} />
         </dl>
         {settled > 0 && settled < MIN_SAMPLE && (
           <p className="track-sample">{uiText("已分勝負的只有 {{p0}} 筆，樣本不足，僅供參考。", { p0: settled })}</p>
@@ -81,6 +82,8 @@ function Overview({ stats }: { stats: OutcomeStats }) {
 export default function TrackRecord({ onOpenAnalysis }: { onOpenAnalysis: (analysisId: string) => void }) {
   const [period, setPeriod] = useState<OutcomePeriod>("all");
   const [group, setGroup] = useState<OutcomeGroup | "">("");
+  // Start from the prompts this version uses; older versions are one tap away.
+  const [currentOnly, setCurrentOnly] = useState(true);
   const [summary, setSummary] = useState<OutcomeSummary | null>(null);
   const [items, setItems] = useState<Outcome[]>([]);
   const [total, setTotal] = useState(0);
@@ -89,11 +92,12 @@ export default function TrackRecord({ onOpenAnalysis }: { onOpenAnalysis: (analy
 
   useEffect(() => {
     const controller = new AbortController();
-    const query = new URLSearchParams({ period, ...(group ? { group } : {}) });
+    const version = currentOnly ? "current" : "all";
+    const query = new URLSearchParams({ period, version, ...(group ? { group } : {}) });
     Promise.all([
       loadOutcomes<OutcomeSummary>(`/outcomes/summary?${query}`, controller.signal),
       loadOutcomes<{ items: Outcome[]; total: number }>(
-        `/outcomes?period=${period}&limit=${PAGE}&offset=${page * PAGE}`, controller.signal),
+        `/outcomes?period=${period}&version=${version}&limit=${PAGE}&offset=${page * PAGE}`, controller.signal),
     ]).then(([nextSummary, list]) => {
       setSummary(nextSummary);
       setItems(list.items);
@@ -103,7 +107,7 @@ export default function TrackRecord({ onOpenAnalysis }: { onOpenAnalysis: (analy
       if (reason.name !== "AbortError") setError(uiText("無法載入 AI 戰績，請稍後重試。"));
     });
     return () => controller.abort();
-  }, [period, group, page]);
+  }, [period, group, page, currentOnly]);
 
   const pages = Math.max(1, Math.ceil(total / PAGE));
   return (
@@ -116,6 +120,10 @@ export default function TrackRecord({ onOpenAnalysis }: { onOpenAnalysis: (analy
               onClick={() => { setPeriod(value); setPage(0); }}>{periodLabel(value)}</button>
           ))}
         </div>
+        <label className="track-current">
+          <input type="checkbox" checked={currentOnly} onChange={(event) => { setCurrentOnly(event.target.checked); setPage(0); }} />
+          <span>{uiText("只看目前版本")}{summary && <small>{summary.current_versions.join("、")}</small>}</span>
+        </label>
         <label className="track-group">{uiText("分組")}
           <select value={group} onChange={(event) => setGroup(event.target.value as OutcomeGroup | "")}>
             {(["", "market", "timeframe", "risk", "style", "model", "prompt"] as const).map((value) => (
@@ -126,7 +134,9 @@ export default function TrackRecord({ onOpenAnalysis }: { onOpenAnalysis: (analy
       </div>
       {error && <div className="alert" role="alert">{error}</div>}
       {summary && summary.overall.total === 0 && (
-        <div className="placeholder big">{uiText("還沒有可對帳的報告。完成分析後，App 會在背景用之後的行情自動判斷結果。")}</div>
+        <div className="placeholder big">{currentOnly
+          ? uiText("目前版本還沒有對帳結果。完成分析後，App 會在背景用之後的行情自動判斷；取消「只看目前版本」可查看較早版本的結果。")
+          : uiText("還沒有可對帳的報告。完成分析後，App 會在背景用之後的行情自動判斷結果。")}</div>
       )}
       {summary && summary.overall.total > 0 && (
         <>

@@ -9,6 +9,7 @@ from fastapi import APIRouter, HTTPException, Query
 from .config import local_user_id
 from .db import connect
 from .outcomes import RULES_VERSION
+from .prompts import task_prompt_version
 
 router = APIRouter(prefix="/api/v1", tags=["Outcomes"])
 PERIODS = {"30d": timedelta(days=30), "90d": timedelta(days=90), "all": None}
@@ -21,8 +22,13 @@ GROUPS = {
 TRADE_RESULTS = {"win", "loss", "expired"}
 
 
+def current_versions() -> list[str]:
+    """The strategy prompts this app version writes reports with."""
+    return sorted({task_prompt_version("strategy_market"), task_prompt_version("strategy_positions")})
+
+
 def _rows(db, *, since: datetime | None, market_id: str | None = None, timeframe: str | None = None,
-          analysis_id: str | None = None):
+          analysis_id: str | None = None, versions: list[str] | None = None):
     query = ["""SELECT o.id, o.analysis_id, o.item_key, o.kind, o.status, o.result, o.r_multiple,
                        o.item_json, o.state_json, o.resolved_at, a.created_at,
                        json_extract(a.request_json,'$.kind') AS report_kind""",
@@ -42,6 +48,10 @@ def _rows(db, *, since: datetime | None, market_id: str | None = None, timeframe
     if analysis_id:
         query.append(" AND o.analysis_id=?")
         params.append(analysis_id)
+    if versions:
+        query.append(f" AND json_extract(a.report_json,'$.analysis_execution.prompt_version') IN "
+                     f"({','.join('?' * len(versions))})")
+        params.extend(versions)
     query.append(" ORDER BY a.created_at DESC, o.item_key")
     return db.execute("".join(query), params).fetchall()
 
@@ -66,6 +76,7 @@ def summarize(rows) -> dict:
         "total": len(rows), "pending": sum(1 for row in rows if row["status"] == "pending"),
         "entries": {"wins": wins, "losses": losses, "expired": count("entry", "expired"),
                     "not_triggered": count("entry", "not_triggered"),
+                    "unverifiable": count("entry", "unverifiable"),
                     "win_rate": str(round(wins / (wins + losses) * 100, 1)) if wins + losses else None,
                     "average_r": _mean(trade_r), "total_r": str(sum(trade_r)) if trade_r else None},
         "holds": {"target_hit": count("hold", "target_hit"), "invalidated": count("hold", "invalidated"),
@@ -89,6 +100,7 @@ def _public(row) -> dict:
         "entry": item.get("entry"), "stop": item.get("stop"), "target": item.get("target"),
         "reference": item.get("reference"), "invalidation": item.get("invalidation"),
         "entered_at": state.get("entered_at"), "exit_price": state.get("exit_price"),
+        "fill": state.get("fill"), "trigger": item.get("trigger"),
         "max_up_pct": state.get("max_up_pct"), "max_down_pct": state.get("max_down_pct"),
         "end_pct": state.get("end_pct"),
     }
@@ -96,13 +108,16 @@ def _public(row) -> dict:
 
 @router.get("/outcomes/summary")
 def outcome_summary(period: str = Query("all"), group: str | None = Query(None),
-                    market_id: str | None = Query(None), timeframe: str | None = Query(None)):
-    if period not in PERIODS or (group is not None and group not in GROUPS):
+                    market_id: str | None = Query(None), timeframe: str | None = Query(None),
+                    version: str = Query("all")):
+    if period not in PERIODS or (group is not None and group not in GROUPS) or version not in {"all", "current"}:
         raise HTTPException(422, {"code": "invalid_filter"})
     since = datetime.now(UTC) - PERIODS[period] if PERIODS[period] else None
+    versions = current_versions() if version == "current" else None
     with connect(readonly=True) as db:
-        rows = _rows(db, since=since, market_id=market_id, timeframe=timeframe)
+        rows = _rows(db, since=since, market_id=market_id, timeframe=timeframe, versions=versions)
     result = {"rules_version": RULES_VERSION, "period": period, "overall": summarize(rows),
+              "version": version, "current_versions": current_versions(),
               "assumptions": {"resolution": "5m", "same_candle": "loss", "fees_and_slippage": "excluded"}}
     if group:
         buckets: dict = {}
@@ -115,12 +130,12 @@ def outcome_summary(period: str = Query("all"), group: str | None = Query(None),
 
 @router.get("/outcomes")
 def outcome_list(limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0),
-                 period: str = Query("all")):
-    if period not in PERIODS:
+                 period: str = Query("all"), version: str = Query("all")):
+    if period not in PERIODS or version not in {"all", "current"}:
         raise HTTPException(422, {"code": "invalid_filter"})
     since = datetime.now(UTC) - PERIODS[period] if PERIODS[period] else None
     with connect(readonly=True) as db:
-        rows = _rows(db, since=since)
+        rows = _rows(db, since=since, versions=current_versions() if version == "current" else None)
     return {"items": [_public(row) for row in rows[offset:offset + limit]], "total": len(rows)}
 
 

@@ -39,6 +39,8 @@ export type EntryDecision = {
   stop_loss: string | null;
   take_profit: string | null;
   trigger: string | null;
+  // The price-checkable part of a waiting entry's condition; absent in older reports.
+  trigger_rule?: { type: "touch" | "close_above" | "close_below"; price: string } | null;
   invalidation: string | null;
   reason: string;
   basis_level_ids: string[];
@@ -336,6 +338,13 @@ export default function AnalysisEvidence({
               <div>
                 <span>{uiText("進場條件")}</span>
                 <p lang={entryDecision.trigger ? outputLocale : uiLocale()}>{entryDecision.trigger || uiText("模型未提供")}</p>
+                {entryDecision.trigger_rule && <small className="plan-trigger-rule">{
+                  entryDecision.trigger_rule.type === "touch"
+                    ? uiText("觸發規則：盤中觸及 {{p0}}", { p0: planPrice(entryDecision.trigger_rule.price) })
+                    : entryDecision.trigger_rule.type === "close_above"
+                      ? uiText("觸發規則：收盤高於 {{p0}}", { p0: planPrice(entryDecision.trigger_rule.price) })
+                      : uiText("觸發規則：收盤低於 {{p0}}", { p0: planPrice(entryDecision.trigger_rule.price) })
+                }</small>}
               </div>
               <div>
                 <span>{uiText("方案失效")}</span>

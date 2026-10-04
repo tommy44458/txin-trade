@@ -18,8 +18,11 @@ def report(entry=None, reviews=(), timeframe="1h", price="100"):
             "entry_decision": entry, "position_reviews": list(reviews)}
 
 
-def plan(action="open_now", side="long", entry="100", stop="98", target="104"):
-    return {"action": action, "side": side, "entry_price": entry, "stop_loss": stop, "take_profit": target}
+def plan(action="open_now", side="long", entry="100", stop="98", target="104", rule="touch"):
+    value = {"action": action, "side": side, "entry_price": entry, "stop_loss": stop, "take_profit": target}
+    if action == "wait_for_entry" and rule:
+        value["trigger_rule"] = {"type": rule, "price": entry}
+    return value
 
 
 def run(item, rows, **kwargs):
@@ -106,3 +109,29 @@ def test_reports_without_a_checkable_plan_have_nothing_to_judge():
     assert items_for(report(plan(stop="100"))) == []  # No distance to the stop.
     assert items_for(report(reviews=[{"position_id": "p", "side": "long",
                                       "agent_decision": {"decision": "hold", "exit_plan": None}}])) == []
+
+
+def test_a_close_confirmed_entry_starts_at_the_confirming_close_not_at_a_touch():
+    [item] = items_for(report(plan("wait_for_entry", entry="102", stop="99", target="108", rule="close_above")))
+    # Inside the 00:00 hour price trades through 102 but the hour closes at 101.5: no entry.
+    hour = [(102.5, 100.5, 101)] * 10 + [(102.2, 101, 101.5)]
+    assert run(item, hour)["entered_at"] is None
+    # The 01:00 hour closes at 103: filled at 103, risk 4, target +5 = +1.25R.
+    confirmed = run(item, hour + [(103, 101.5, 102.5)] * 11 + [(103.2, 102.5, 103)] + [(108.5, 103, 108)])
+    assert confirmed["result"] == "win" and confirmed["fill"] == "103" and confirmed["r_multiple"] == "1.25"
+
+
+def test_a_close_confirmed_entry_does_not_lose_to_a_dip_it_never_entered():
+    [item] = items_for(report(plan("wait_for_entry", side="short", entry="99", stop="101", target="95",
+                                   rule="close_below")))
+    # A spike to 101.5 before any close below 99: nothing was entered, so nothing was lost.
+    # The 00:55 candle closes the hour at 98.8: filled there, risk 2.2, so the 95 target is +1.73R.
+    spiked = run(item, [(101.5, 99.5, 100)] * 10 + [(100, 98.5, 98.8)] + [(98.8, 94.5, 95)])
+    assert spiked["result"] == "win" and spiked["r_multiple"] == "1.73"
+
+
+def test_an_old_waiting_plan_without_a_price_rule_is_not_judged():
+    [item] = items_for(report(plan("wait_for_entry", rule=None)))
+    assert item["unverifiable"] is True and item["trigger"] is None
+    [touch] = items_for(report(plan("wait_for_entry")))
+    assert touch["unverifiable"] is False and touch["trigger"] == {"type": "touch", "price": "100"}

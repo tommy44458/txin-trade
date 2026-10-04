@@ -178,3 +178,20 @@
   width: fit-content;
   margin-bottom: var(--space-5);
 }
+.track-current {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.track-current input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+}
+.track-current small {
+  margin-left: 6px;
+  color: var(--text-tertiary);
+}

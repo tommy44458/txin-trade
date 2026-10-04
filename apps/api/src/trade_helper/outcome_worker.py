@@ -49,7 +49,9 @@ def enroll(db, now: datetime) -> int:
         except (ValueError, TypeError, KeyError):
             items = []
         # A report with nothing to judge keeps one marker, so it is not scanned again.
-        entries = [(item, "pending", None) for item in items] or [
+        # A waiting entry with no price rule is recorded but never judged.
+        entries = [(item, "resolved" if item.get("unverifiable") else "pending",
+                    "unverifiable" if item.get("unverifiable") else None) for item in items] or [
             ({"key": "none", "kind": "none"}, "resolved", "not_applicable")]
         for item, status, result in entries:
             db.execute(
@@ -58,7 +60,7 @@ def enroll(db, now: datetime) -> int:
                     item_json,state_json,next_check_at,created_at,updated_at)
                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                 (new_id("out"), row["user_id"], row["id"], item["key"], item["kind"], RULES_VERSION,
-                 status, result, json.dumps(item), json.dumps(new_state(item) if status == "pending" else {}),
+                 status, result, json.dumps(item), json.dumps(new_state(item) if item["kind"] != "none" else {}),
                  _iso(now) if status == "pending" else None, stamp, stamp))
     return len(rows)
 

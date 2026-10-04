@@ -1,14 +1,14 @@
 {
   "schema_version": "prompt_registry_manifest_v1",
-  "policy_version": "bilingual_trading_policy_v11",
+  "policy_version": "bilingual_trading_policy_v12",
   "locales": {
     "en-US": {
-      "translation_version": "en_prompts_v11",
-      "reviewed_policy_version": "bilingual_trading_policy_v11"
+      "translation_version": "en_prompts_v12",
+      "reviewed_policy_version": "bilingual_trading_policy_v12"
     },
     "zh-TW": {
-      "translation_version": "zh_prompts_v11",
-      "reviewed_policy_version": "bilingual_trading_policy_v11"
+      "translation_version": "zh_prompts_v12",
+      "reviewed_policy_version": "bilingual_trading_policy_v12"
     }
   },
   "policies": {
@@ -101,8 +101,8 @@
       "en-US": "b66e4d0888d30548012f86b9e6a3f24d3b357b07f5850fe4a09f37f895f95e60"
     },
     "ENTRY_PLAN_PRICE_CONTRACT": {
-      "zh-TW": "21aa9d471f64c80d04f1ba69ce7b20e87a59fa0752d30d7a66ea1c27ec36a54f",
-      "en-US": "9882b237c4d04d6c68389ecd3742b7472ea24952a7004e82811aab1f530eaa85"
+      "zh-TW": "50908dc8d6d6cf4a57013a035a47c5fcb49c8b425b5ec7aaecfc75a3b997f5e9",
+      "en-US": "ce6e656d0abc10e550819064a1175759114773e488e72b7a382206143e7b0ebd"
     },
     "HISTORICAL_BOUNDARIES_NOT_ACTIVE_ZONES": {
       "zh-TW": "fbc56763cea05df388cbcc5c489abb5e950e0a61338f2ad6e5698d3d8a633461",
@@ -193,17 +193,17 @@
       "en-US": "a7e0079f4d58328df32e5a1c6665fb46ead11d981e17779eb5e96c0607cb7e37"
     }
   },
-  "task_sections_sha256": "185e2f06829ed5141b9d5dce240a4e87f13d723a7d6254c21894f3ae50869491",
+  "task_sections_sha256": "5490910f64f45436591cd03a0e41ebf2e1eed7e228e550b2b5610789e630a5fa",
   "news_questions_sha256": "532feb24aebc172bebc227cb3ec3ecc16a6a3eb93531d4004e2f1394541c4f79",
   "terminology_sha256": "44d06fcd5aa6a98e27e55a52083aa225a10997d4d2ca3c69c03a7960932ecb01",
   "task_versions": {
     "strategy_market": {
-      "prompt_version": "contract_strategy_v33",
-      "schema_version": "strategy_response_v3"
+      "prompt_version": "contract_strategy_v34",
+      "schema_version": "strategy_response_v4"
     },
     "strategy_positions": {
-      "prompt_version": "contract_strategy_v33",
-      "schema_version": "strategy_response_v3"
+      "prompt_version": "contract_strategy_v34",
+      "schema_version": "strategy_response_v4"
     },
     "discussion": {
       "prompt_version": "professional_discussion_v7",
@@ -222,5 +222,5 @@
       "schema_version": "typesafe_jev_questions_v1"
     }
   },
-  "machine_contracts_sha256": "cdf4963a79a9466b3e9e96be4874273849e3b5b144b11e9480c66f6b4159933c"
+  "machine_contracts_sha256": "b55cb398e1334af89becdcadb76fc1a56e06fd3e29d2fa2d3eeb9d9009a3b3ba"
 }

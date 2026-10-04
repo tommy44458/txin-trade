@@ -136,9 +136,11 @@ STRATEGY_MACHINE_CONTRACT = {
     "strategy_decision": ["candidate", "wait"],
     "entry_actions": ["open_now", "wait_for_entry", "stand_aside"],
     "entry_fields": [
-        "action", "side", "entry_price", "stop_loss", "take_profit", "trigger",
+        "action", "side", "entry_price", "stop_loss", "take_profit", "trigger", "trigger_rule",
         "invalidation", "reason", "basis_level_ids",
     ],
+    "trigger_rule": {"type": ["touch", "close_above", "close_below"], "price": "price string",
+                     "when": "wait_for_entry only; null otherwise"},
     "position_decisions": {"position_id": {
         "decision": ["hold", "close_now"], "reason": "text",
         "exit_plan": {"invalidation": {"price": "price string", "confirmation": ["close", "touch"],

@@ -20,6 +20,8 @@ export type Outcome = {
   action: "open_now" | "wait_for_entry" | "stand_aside" | null;
   entered_at: string | null;
   exit_price: string | null;
+  fill: string | null;
+  trigger: { type: "touch" | "close_above" | "close_below"; price: string } | null;
   max_up_pct: string | null;
   max_down_pct: string | null;
   end_pct: string | null;
@@ -27,7 +29,7 @@ export type Outcome = {
 export type OutcomeStats = {
   total: number;
   pending: number;
-  entries: { wins: number; losses: number; expired: number; not_triggered: number;
+  entries: { wins: number; losses: number; expired: number; not_triggered: number; unverifiable: number;
     win_rate: string | null; average_r: string | null; total_r: string | null };
   holds: { target_hit: number; invalidated: number; expired: number; average_r: string | null };
   closes: { good: number; early: number; good_rate: string | null };
@@ -35,6 +37,7 @@ export type OutcomeStats = {
 };
 export type OutcomeSummary = {
   period: OutcomePeriod;
+  current_versions: string[];
   overall: OutcomeStats;
   groups?: ({ key: string } & OutcomeStats)[];
 };
@@ -74,6 +77,7 @@ export function outcomeLabel(outcome: Pick<Outcome, "status" | "result" | "kind"
     case "loss": return { text: uiText("輸"), tone: "bad" };
     case "expired": return { text: uiText("到期未分勝負"), tone: "neutral" };
     case "not_triggered": return { text: uiText("未觸發，已過期"), tone: "neutral" };
+    case "unverifiable": return { text: uiText("條件無法判斷"), tone: "neutral" };
     case "target_hit": return { text: uiText("續抱達標"), tone: "good" };
     case "invalidated": return { text: uiText("續抱失效"), tone: "bad" };
     case "good_close": return { text: uiText("平得好"), tone: "good" };
