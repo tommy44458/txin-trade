@@ -1,4 +1,4 @@
-// Serves the static site, sends www.txintrade.com to the main domain, and counts downloads.
+// Serves the static site over HTTPS on the main domain, and counts downloads.
 import manifest from "../../../version.json";
 
 const REPOSITORY = "tommy44458/txin-trade";
@@ -44,7 +44,9 @@ async function recordGithubDownloads(env) {
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
-    if (url.hostname === "www.txintrade.com") {
+    // Plain HTTP and www both go to https://txintrade.com, in one hop.
+    if (url.protocol === "http:" || url.hostname === "www.txintrade.com") {
+      url.protocol = "https:";
       url.hostname = "txintrade.com";
       return Response.redirect(url.toString(), 301);
     }
