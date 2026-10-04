@@ -97,7 +97,9 @@ export default function TrackRecord({ onOpenAnalysis }: { onOpenAnalysis: (analy
     Promise.all([
       loadOutcomes<OutcomeSummary>(`/outcomes/summary?${query}`, controller.signal),
       loadOutcomes<{ items: Outcome[]; total: number }>(
-        `/outcomes?period=${period}&version=${version}&limit=${PAGE}&offset=${page * PAGE}`, controller.signal),
+        // Plans whose condition cannot be checked are counted above, not listed.
+        `/outcomes?period=${period}&version=${version}&judged=1&limit=${PAGE}&offset=${page * PAGE}`,
+        controller.signal),
     ]).then(([nextSummary, list]) => {
       setSummary(nextSummary);
       setItems(list.items);
@@ -178,8 +180,8 @@ export default function TrackRecord({ onOpenAnalysis }: { onOpenAnalysis: (analy
                 <button key={item.id} type="button" className="history-row track-row"
                   onClick={() => onOpenAnalysis(item.analysis_id)}>
                   <span>
-                    <b>{item.market_id?.split(":").at(-1)} · {item.timeframe?.toUpperCase()} · {outcomeSubject(item)}</b>
-                    <small>{when(item.created_at)}</small>
+                    <b>{item.market_id?.split(":").at(-1)} · {item.timeframe?.toUpperCase()}</b>
+                    <small>{outcomeSubject(item)} · {when(item.created_at)}</small>
                   </span>
                   <span className="track-result">
                     <i className={`track-badge track-${label.tone}`}>{label.text}</i>

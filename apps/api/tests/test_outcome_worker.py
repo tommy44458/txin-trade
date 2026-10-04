@@ -156,3 +156,14 @@ def test_sharing_is_off_until_turned_on_and_sends_only_results_and_versions(monk
     result = TestClient(app).post("/api/v1/outcomes/sharing/delete").json()
     assert result == {"enabled": False, "shared": 0, "deleted": 1} and deleted == ["DELETE"]
     assert TestClient(app).get("/api/v1/outcomes/sharing").json() == {"enabled": False, "shared": 0}
+
+
+def test_the_list_can_leave_out_plans_whose_condition_cannot_be_checked():
+    wait = {"action": "wait_for_entry", "side": "long", "entry_price": "99", "stop_loss": "97",
+            "take_profit": "103"}  # No trigger_rule: an older plan.
+    add_report("ana_old_wait", market_report(wait))
+    outcome_worker.run_once(now=OBSERVED + timedelta(hours=1), fetch=fake_market(lambda index: (100, 99.5, 100))[0])
+    client = TestClient(app)
+    assert client.get("/api/v1/outcomes").json()["items"][0]["result"] == "unverifiable"
+    assert client.get("/api/v1/outcomes?judged=1").json() == {"items": [], "total": 0}
+    assert client.get("/api/v1/outcomes/summary").json()["overall"]["entries"]["unverifiable"] == 1
