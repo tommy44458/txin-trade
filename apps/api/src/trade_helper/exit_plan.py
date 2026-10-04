@@ -12,6 +12,10 @@ VERSION = "exit_plan_v1"
 CONFIRMATIONS = {"close", "touch"}
 MAX_TAKE_PROFITS = 3
 MAX_CONDITION_LENGTH = 300
+# How far from the price a plan may reach, as (ATR multiple, share of price), whichever is
+# larger. A high risk tolerance asks for a wider stop and farther targets, so it reaches further.
+REACH = {"high": (Decimal(10), Decimal("0.15"))}
+DEFAULT_REACH = (Decimal(6), Decimal("0.1"))
 
 
 def _price(value: object, tick: Decimal) -> Decimal | None:
@@ -33,11 +37,13 @@ def _beyond(side: str, price: Decimal, reference: Decimal, *, adverse: bool) -> 
 
 
 def sanitize_exit_plan(plan: object, *, side: str, price: Decimal, tick: Decimal,
-                       atr: Decimal, levels: list[dict]) -> dict | None:
+                       atr: Decimal, levels: list[dict],
+                       risk_tolerance: str | None = None) -> dict | None:
     """Return the plan reduced to valid parts, or None without a usable invalidation."""
     if not isinstance(plan, dict) or side not in {"long", "short"}:
         return None
-    reach = max(atr * 6, price * Decimal("0.1"))
+    atr_multiple, share = REACH.get(risk_tolerance, DEFAULT_REACH)
+    reach = max(atr * atr_multiple, price * share)
 
     def usable(value: object, *, adverse: bool) -> Decimal | None:
         level = _price(value, tick)

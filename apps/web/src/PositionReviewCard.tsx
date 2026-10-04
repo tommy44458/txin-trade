@@ -48,8 +48,9 @@ const labels: Record<PositionAction['kind'], string> = {
 }
 const fmt = (value: string | number | null | undefined) => value == null ? '—' : Number(value).toLocaleString('en-US', { maximumFractionDigits: 8 })
 
-function ExitPlanSection({ plan, side, timeframe, currentStop, outputLocale }: {
+function ExitPlanSection({ plan, side, timeframe, currentStop, outputLocale, riskTolerance }: {
   plan: ExitPlan; side: string; timeframe: string; currentStop: string | null | undefined; outputLocale: UiLocale
+  riskTolerance?: string | null
 }) {
   const long = side === 'long'
   const exitPrice = fmt(plan.invalidation.price)
@@ -74,11 +75,15 @@ function ExitPlanSection({ plan, side, timeframe, currentStop, outputLocale }: {
         </li>)}</ol></dd>
       </div>}
     </dl>
+    {/* A high tolerance asks for room: say what that costs when the stop is hit. */}
+    {riskTolerance === 'high' && <small className="exit-plan-wide">{uiText("依你選擇的高風險承擔，止損放得較寬、止盈看得較遠；止損觸發時虧損也較大，請確認倉位大小承受得起。")}</small>}
     <small>{uiText("AI 建議，不會更改你的交易所訂單。")}</small>
   </section>
 }
 
-export default function PositionReviewCard({ review, timeframe, outputLocale = "zh-TW" }: { review: PositionReview; timeframe: string; outputLocale?: UiLocale }) {
+export default function PositionReviewCard({ review, timeframe, outputLocale = "zh-TW", riskTolerance }: {
+  review: PositionReview; timeframe: string; outputLocale?: UiLocale; riskTolerance?: string | null
+}) {
   const advice = review.advice
   const decision = review.agent_decision
   return <div className="review position-review">
@@ -87,7 +92,7 @@ export default function PositionReviewCard({ review, timeframe, outputLocale = "
     </div>
     {review.agent_decision && <div className="position-review-advice"><strong>{review.agent_decision.decision === 'hold' ? uiText("Agent 建議：繼續持倉") : uiText("Agent 建議：現在平倉")}</strong><p lang={outputLocale}>{review.agent_decision.reason}</p></div>}{" "}
     {decision?.decision === 'hold' && (decision.exit_plan
-      ? <ExitPlanSection plan={decision.exit_plan} side={review.side} timeframe={timeframe} currentStop={advice?.current_stop} outputLocale={outputLocale} />
+      ? <ExitPlanSection plan={decision.exit_plan} side={review.side} timeframe={timeframe} currentStop={advice?.current_stop} outputLocale={outputLocale} riskTolerance={riskTolerance} />
       // Reports from before exit plans have no exit_plan field at all; only say it is missing when it was checked.
       : decision.exit_plan === null && <small className="exit-plan-missing">{uiText("這筆續抱建議沒有附上可核對的離場計畫。")}</small>)}
     {!review.agent_decision && <small>{uiText("這筆持倉尚未有 AI 的續抱／平倉建議，請重新分析。")}</small>}

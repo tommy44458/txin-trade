@@ -1734,7 +1734,7 @@ function App({ remoteSection, remoteIdentity, remoteMenu, remoteStatus }: {
                 {report?.market_id === marketId &&
                   job?.submitted_input.kind === "positions" &&
                   report.position_reviews.map((r) => (
-                    <PositionReviewCard key={r.position_id} review={r} timeframe={report.timeframe} outputLocale={report.response_locale ?? report.output_locale ?? job?.submitted_input.output_locale ?? "zh-TW"} />
+                    <PositionReviewCard key={r.position_id} review={r} timeframe={report.timeframe} riskTolerance={report.preference_assessment?.risk_tolerance} outputLocale={report.response_locale ?? report.output_locale ?? job?.submitted_input.output_locale ?? "zh-TW"} />
                   ))}
                 {report?.market_id === marketId &&
                   job?.submitted_input.kind === "positions" && (

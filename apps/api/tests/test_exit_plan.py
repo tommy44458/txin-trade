@@ -127,3 +127,29 @@ def test_hold_reports_its_exit_plan_and_close_now_reports_none(monkeypatch):
     assert closed == {"decision": "close_now", "reason": "Close the short.", "exit_plan": None}
     # The saved reasoning carries the same checked decisions as the reviews.
     assert report["reasoning"]["position_decisions"] == {"p1": held, "p2": closed}
+
+
+def test_a_high_risk_tolerance_keeps_a_wider_stop_and_farther_targets():
+    # ATR 1 at 100: the usual reach is 10 (10%); a high tolerance reaches 15.
+    wide = plan(invalidation={"price": "88", "confirmation": "close"}, protective_stop="86.5",
+                take_profits=[{"price": "106", "portion_pct": 25}, {"price": "114", "portion_pct": 50}])
+    usual = check(wide)
+    assert usual is None  # The invalidation at 88 is beyond the usual reach.
+    high = sanitize_exit_plan(wide, side="long", price=Decimal(100), tick=Decimal("0.1"),
+                              atr=Decimal(1), levels=LEVELS, risk_tolerance="high")
+    assert high["invalidation"]["price"] == "88" and high["protective_stop"] == "86.5"
+    assert [item["price"] for item in high["take_profits"]] == ["106", "114"]
+    medium = sanitize_exit_plan(plan(take_profits=[{"price": "106", "portion_pct": 25},
+                                                   {"price": "114", "portion_pct": 50}]),
+                                side="long", price=Decimal(100), tick=Decimal("0.1"),
+                                atr=Decimal(1), levels=LEVELS, risk_tolerance="medium")
+    assert [item["price"] for item in medium["take_profits"]] == ["106"]
+
+
+def test_both_prompt_languages_size_the_exit_plan_to_risk_tolerance():
+    from trade_helper.prompts.registry import _resource_json
+
+    for locale, phrases in {"zh-TW": ("更遠的有效區間", "1 倍 atr14", "越過最近的反向有效區間"),
+                            "en-US": ("farther active zone", "1 × atr14", "past the nearest opposing")}.items():
+        rule = _resource_json(f"{locale}/policies.json")["POSITION_HOLD_OR_CLOSE"]
+        assert all(phrase in rule for phrase in phrases), locale

@@ -1,14 +1,14 @@
 {
   "schema_version": "prompt_registry_manifest_v1",
-  "policy_version": "bilingual_trading_policy_v10",
+  "policy_version": "bilingual_trading_policy_v11",
   "locales": {
     "en-US": {
-      "translation_version": "en_prompts_v10",
-      "reviewed_policy_version": "bilingual_trading_policy_v10"
+      "translation_version": "en_prompts_v11",
+      "reviewed_policy_version": "bilingual_trading_policy_v11"
     },
     "zh-TW": {
-      "translation_version": "zh_prompts_v10",
-      "reviewed_policy_version": "bilingual_trading_policy_v10"
+      "translation_version": "zh_prompts_v11",
+      "reviewed_policy_version": "bilingual_trading_policy_v11"
     }
   },
   "policies": {
@@ -125,8 +125,8 @@
       "en-US": "cc5ef42dcf562d0ca9c4b0c3c2c4abef94d073bc93e833ec741bd713fa74d16f"
     },
     "POSITION_HOLD_OR_CLOSE": {
-      "zh-TW": "143b272895ea1610a5b8e053b896598a0a5550542cda1c14265f5838184da92e",
-      "en-US": "2bfa3ded40ccc7312ca88f4cf90fb1315e86e4b1969656975399852f0ddd092e"
+      "zh-TW": "89d31fb92b36ea9b146f3851325e2ea8891a31f9cdc866ceb1224ae521205aec",
+      "en-US": "8c974e147d03e266a9e93f296948b769fd0353a13495e0c7aa74c6ab4b672a97"
     },
     "NO_POSITION_DECISIONS_FOR_MARKET": {
       "zh-TW": "0ad8539c3a53db29a7186d7253faf250e052a8e7bd918f20871093087d03bfbc",
@@ -193,16 +193,16 @@
       "en-US": "a7e0079f4d58328df32e5a1c6665fb46ead11d981e17779eb5e96c0607cb7e37"
     }
   },
-  "task_sections_sha256": "43dfc984110a7bc138df6c7c279003d98972c16efd7c6826850710e7702e8cd9",
+  "task_sections_sha256": "9656d1a26eb76bd7373a0d7d64380b266b976e5dcdf1e4733f4f7c7fdbac15a9",
   "news_questions_sha256": "532feb24aebc172bebc227cb3ec3ecc16a6a3eb93531d4004e2f1394541c4f79",
   "terminology_sha256": "44d06fcd5aa6a98e27e55a52083aa225a10997d4d2ca3c69c03a7960932ecb01",
   "task_versions": {
     "strategy_market": {
-      "prompt_version": "contract_strategy_v32",
+      "prompt_version": "contract_strategy_v33",
       "schema_version": "strategy_response_v3"
     },
     "strategy_positions": {
-      "prompt_version": "contract_strategy_v32",
+      "prompt_version": "contract_strategy_v33",
       "schema_version": "strategy_response_v3"
     },
     "discussion": {
