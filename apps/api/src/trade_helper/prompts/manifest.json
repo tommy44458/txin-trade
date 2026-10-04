@@ -65,8 +65,8 @@
       "en-US": "14b2d828e55c592d6a65aa00a22ce0aa7a104644fc215c34df9f1e6373bb29da"
     },
     "PREFERENCES_WITHOUT_CONFIRMATION_BIAS": {
-      "zh-TW": "3a2713f73742e94bca9aee38f4f7549e6b58b174b3e9c2bb5079bad5dc566330",
-      "en-US": "37443640e96cf36572de18b84a1cc0e29c5bb0e7f7f931881eaa4f1c4ef08373"
+      "zh-TW": "39fb29b24f5a6dfd236b3dfd4d17deaa00573a505c19aabe2d404e3c717ac7f2",
+      "en-US": "23a8ba6da58d598c56f2e81b8207ab4642f6802fe51d1f3707be0db8db1d719a"
     },
     "DIRECTION_VERDICT_STANDARD": {
       "zh-TW": "146768e4e78367873ee60cad2c425553c6c4a8b4db87f522981d3aa9b1d1e334",
@@ -101,8 +101,8 @@
       "en-US": "b66e4d0888d30548012f86b9e6a3f24d3b357b07f5850fe4a09f37f895f95e60"
     },
     "ENTRY_PLAN_PRICE_CONTRACT": {
-      "zh-TW": "85423588a82379be489931d6c0f081d68632c608b372791a622c72548b81472f",
-      "en-US": "213cdf87e74693630d01bec1bcf383fcc3a295dbd7edc3bc0fb9449317393240"
+      "zh-TW": "21aa9d471f64c80d04f1ba69ce7b20e87a59fa0752d30d7a66ea1c27ec36a54f",
+      "en-US": "9882b237c4d04d6c68389ecd3742b7472ea24952a7004e82811aab1f530eaa85"
     },
     "HISTORICAL_BOUNDARIES_NOT_ACTIVE_ZONES": {
       "zh-TW": "fbc56763cea05df388cbcc5c489abb5e950e0a61338f2ad6e5698d3d8a633461",
@@ -141,8 +141,8 @@
       "en-US": "bbe6a00eefc7cf9532d10c84f1b806b26d95efcae9818dd20cc489c28e8e5984"
     },
     "DISCUSSION_PREFERENCE_REFERENCE": {
-      "zh-TW": "2bee56ff524497dde7396943e972a4cf0a79f6b6442f825108223fd63eb980ff",
-      "en-US": "4e2d2fcab9c315f8b2c679387a6d8904fd2fafa07f126bbb383d312321d0de21"
+      "zh-TW": "c5acff542c87adbc67754575018985fd038970348d41f2a837f900d42d4e75da",
+      "en-US": "3c050ef664de4be3262df886fcac5ddd35da6db1794ef459fbbcf9b6644b0d7a"
     },
     "DISCUSSION_QUOTE_BOUNDARY": {
       "zh-TW": "dfe489adeee9fae5eab74e4118c578f4cfaeef2d0c83a4988e937cbaaec93086",
@@ -193,7 +193,7 @@
       "en-US": "a7e0079f4d58328df32e5a1c6665fb46ead11d981e17779eb5e96c0607cb7e37"
     }
   },
-  "task_sections_sha256": "9656d1a26eb76bd7373a0d7d64380b266b976e5dcdf1e4733f4f7c7fdbac15a9",
+  "task_sections_sha256": "185e2f06829ed5141b9d5dce240a4e87f13d723a7d6254c21894f3ae50869491",
   "news_questions_sha256": "532feb24aebc172bebc227cb3ec3ecc16a6a3eb93531d4004e2f1394541c4f79",
   "terminology_sha256": "44d06fcd5aa6a98e27e55a52083aa225a10997d4d2ca3c69c03a7960932ecb01",
   "task_versions": {
@@ -206,7 +206,7 @@
       "schema_version": "strategy_response_v3"
     },
     "discussion": {
-      "prompt_version": "professional_discussion_v6",
+      "prompt_version": "professional_discussion_v7",
       "schema_version": "discussion_markdown_v1"
     },
     "macro_interpretation": {

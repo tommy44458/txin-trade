@@ -84,7 +84,7 @@
       "DISCUSSION_UNTRUSTED_DATA",
       "DATA_NOT_INSTRUCTIONS_AND_LANGUAGE"
     ],
-    "prompt_version": "professional_discussion_v6",
+    "prompt_version": "professional_discussion_v7",
     "schema_version": "discussion_markdown_v1"
   },
   "macro_interpretation": {

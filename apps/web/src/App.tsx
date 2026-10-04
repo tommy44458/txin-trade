@@ -1261,6 +1261,7 @@ function App({ remoteSection, remoteIdentity, remoteMenu, remoteStatus }: {
                       runs={report.tool_trace}
                       fallbackReason={report.fallback_reason}
                       entryDecision={report.entry_decision}
+                      riskTolerance={report.preference_assessment?.risk_tolerance}
                       entryRiskReference={report.entry_risk_reference}
                       analysisLeverage={report.analysis_leverage}
                       macroContext={report.macro_context}
@@ -1766,6 +1767,7 @@ function App({ remoteSection, remoteIdentity, remoteMenu, remoteStatus }: {
                       runs={report.tool_trace}
                       fallbackReason={report.fallback_reason}
                       entryDecision={report.entry_decision}
+                      riskTolerance={report.preference_assessment?.risk_tolerance}
                       entryRiskReference={report.entry_risk_reference}
                       analysisLeverage={report.analysis_leverage}
                       macroContext={report.macro_context}

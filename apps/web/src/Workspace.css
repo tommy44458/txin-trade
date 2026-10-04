@@ -429,6 +429,14 @@
   color: var(--text-secondary);
   margin: 7px 0 0;
 }
+.plan-risk-wide {
+  margin: 0;
+  padding: 10px 16px;
+  border-top: 1px solid var(--border);
+  color: var(--warning);
+  font-size: 12px;
+  line-height: 1.8;
+}
 .cost-reference {
   padding: 0 16px;
   border-top: 1px solid var(--border);

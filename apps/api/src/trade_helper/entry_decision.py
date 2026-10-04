@@ -2,6 +2,7 @@
 
 from decimal import Decimal, InvalidOperation
 
+from .exit_plan import plan_reach
 from .risk import costed_risk
 
 ACTIONS = {"open_now", "wait_for_entry", "stand_aside"}
@@ -24,7 +25,8 @@ def _reason(value: object) -> bool:
 
 
 def validate_entry_decision(plan: dict, quote: dict, levels: list[dict], atr: str,
-                            agent_stance: str, leverage: int) -> dict | None:
+                            agent_stance: str, leverage: int,
+                            risk_tolerance: str | None = None) -> dict | None:
     """Return cost reference for a coherent plan; this is not a strategy whitelist."""
     if (not isinstance(plan, dict) or not isinstance(plan.get("action"), str) or
             plan["action"] not in ACTIONS):
@@ -64,7 +66,8 @@ def validate_entry_decision(plan: dict, quote: dict, levels: list[dict], atr: st
         raise ValueError("Conditional entry is too far from the snapshot")
     if not (stop < entry < target if side == "long" else target < entry < stop):
         raise ValueError("Agent entry prices have the wrong direction")
-    max_distance = max(volatility * 6, entry * Decimal("0.1"))
+    # A high risk tolerance asks for a wider stop and a farther target.
+    max_distance = plan_reach(entry, volatility, risk_tolerance)
     if max(abs(entry - stop), abs(target - entry)) > max_distance:
         raise ValueError("Agent entry stop or target is too far from the snapshot")
     return costed_risk(side, entry, stop, target, leverage, quote)

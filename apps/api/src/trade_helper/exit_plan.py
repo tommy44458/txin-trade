@@ -18,6 +18,12 @@ REACH = {"high": (Decimal(10), Decimal("0.15"))}
 DEFAULT_REACH = (Decimal(6), Decimal("0.1"))
 
 
+def plan_reach(reference: Decimal, atr: Decimal, risk_tolerance: str | None) -> Decimal:
+    """How far a stop or target may sit from `reference` for this risk tolerance."""
+    atr_multiple, share = REACH.get(risk_tolerance, DEFAULT_REACH)
+    return max(atr * atr_multiple, reference * share)
+
+
 def _price(value: object, tick: Decimal) -> Decimal | None:
     if not isinstance(value, str):
         return None
@@ -42,8 +48,7 @@ def sanitize_exit_plan(plan: object, *, side: str, price: Decimal, tick: Decimal
     """Return the plan reduced to valid parts, or None without a usable invalidation."""
     if not isinstance(plan, dict) or side not in {"long", "short"}:
         return None
-    atr_multiple, share = REACH.get(risk_tolerance, DEFAULT_REACH)
-    reach = max(atr * atr_multiple, price * share)
+    reach = plan_reach(price, atr, risk_tolerance)
 
     def usable(value: object, *, adverse: bool) -> Decimal | None:
         level = _price(value, tick)

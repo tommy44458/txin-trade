@@ -72,3 +72,23 @@ def test_entry_reason_accepts_concrete_price_but_rejects_empty_or_oversized_text
         concrete["reason"] = invalid
         with pytest.raises(ValueError, match="lacks a clear reason"):
             validate_entry_decision(concrete, QUOTE, LEVELS, "2", "long", 5)
+
+
+def test_a_high_risk_tolerance_accepts_a_wider_stop_and_a_farther_target():
+    # ATR 1 at 100: the usual reach is 10; a high tolerance reaches 15.
+    wide = plan() | {"stop_loss": "88.0", "take_profit": "114.0"}
+    for risk in (None, "low", "medium"):
+        with pytest.raises(ValueError, match="too far"):
+            validate_entry_decision(wide, QUOTE, LEVELS, "1", "long", 5, risk)
+    assert validate_entry_decision(wide, QUOTE, LEVELS, "1", "long", 5, "high")
+    with pytest.raises(ValueError, match="too far"):
+        validate_entry_decision(wide | {"take_profit": "116.0"}, QUOTE, LEVELS, "1", "long", 5, "high")
+
+
+def test_both_prompt_languages_size_entry_stops_and_targets_to_risk_tolerance():
+    from trade_helper.prompts.registry import _resource_json
+
+    for locale, phrases in {"zh-TW": ("1 倍 atr14", "越過最近的反向有效區間", "強平距離之內"),
+                            "en-US": ("1 × atr14", "past the nearest opposing", "liquidation distance")}.items():
+        rule = _resource_json(f"{locale}/policies.json")["ENTRY_PLAN_PRICE_CONTRACT"]
+        assert all(phrase in rule for phrase in phrases), locale

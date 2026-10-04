@@ -207,6 +207,7 @@ export default function AnalysisEvidence({
   generatedAt,
   execution,
   positionAnalysis = false,
+  riskTolerance,
 }: {
   mode: string;
   outputLocale?: UiLocale;
@@ -223,6 +224,7 @@ export default function AnalysisEvidence({
   generatedAt?: string;
   positionAnalysis?: boolean;
   execution?: AnalysisExecution | null;
+  riskTolerance?: string | null;
 }) {
   const [now, setNow] = useState(Date.now);
   useEffect(() => {
@@ -340,6 +342,8 @@ export default function AnalysisEvidence({
                 <p lang={entryDecision.invalidation ? outputLocale : uiLocale()}>{entryDecision.invalidation || uiText("模型未提供")}</p>
               </div>
             </div>
+            {/* A high tolerance asks for room: say what that costs when the stop is hit. */}
+            {riskTolerance === "high" && <p className="plan-risk-wide">{uiText("依你選擇的高風險承擔，止損放得較寬、止盈看得較遠；止損觸發時虧損也較大，請確認倉位大小承受得起。")}</p>}
             {entryRiskReference && (
               <details className="cost-reference">
                 <summary>{uiText("成本與風報比參考")}</summary>
