@@ -131,7 +131,8 @@ def test_a_revoked_refresh_token_signs_out_but_keeps_the_issued_client():
     assert plan.status()["authenticated"] is False
 
 
-def test_without_tokens_analysis_asks_to_connect():
+def test_without_tokens_analysis_asks_to_connect(monkeypatch):
+    monkeypatch.setattr(codex_bridge, "cli_installed", lambda: True)
     with pytest.raises(plan.ChatGPTPlanError, match="連線 ChatGPT"):
         plan.require_authorized()
 

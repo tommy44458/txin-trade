@@ -6,7 +6,7 @@ The product version is managed in `version.json`. Dates record release preparati
 
 ### Fixed
 
-- Choosing ChatGPT plan (official) without Codex installed now explains it in Settings with install steps, instead of failing at analysis after sign-in.
+- Choosing the ChatGPT plan without Codex installed now explains it in Settings, with install steps.
 
 ## [1.0.9] - 2026-10-04
 
