@@ -908,7 +908,7 @@ function App({ remoteSection, remoteIdentity, remoteMenu, remoteStatus }: {
     { id: "positions", label: uiText("我的持倉"), icon: "positions" },
     { id: "smartMoney", label: uiText("資金流向"), icon: "flows" },
     { id: "events", label: uiText("經濟事件"), icon: "events" },
-    { id: "history", label: uiText("紀錄與戰績"), icon: "history" },
+    { id: "history", label: uiText("紀錄與表現"), icon: "history" },
     { id: "settings", label: uiText("設定"), icon: "settings" },
   ];
   const lastMarketsPage = useRef<"events" | "smartMoney">("events");
@@ -1891,17 +1891,17 @@ function App({ remoteSection, remoteIdentity, remoteMenu, remoteStatus }: {
             <>
               <div className="page-title">
                 <div>
-                  <h1>{historyTab === "record" ? uiText("AI 戰績") : uiText("分析紀錄")}</h1>
+                  <h1>{historyTab === "record" ? uiText("AI 表現") : uiText("分析紀錄")}</h1>
                   <p>{historyTab === "record"
                     ? uiText("App 會在背景用之後的行情，自動判斷每份報告的結果。")
                     : uiText("回看當時的行情、交易設定與決策理由。")}</p>
                 </div>
               </div>
-              <div className="segments history-switch" role="group" aria-label={uiText("紀錄與戰績")}>
+              <div className="segments history-switch" role="group" aria-label={uiText("紀錄與表現")}>
                 {(["record", "analyses"] as const).map((tab) => (
                   <button key={tab} type="button" aria-pressed={historyTab === tab}
                     className={historyTab === tab ? "chosen" : ""} onClick={() => setHistoryTab(tab)}>
-                    {tab === "record" ? uiText("AI 戰績") : uiText("分析紀錄")}
+                    {tab === "record" ? uiText("AI 表現") : uiText("分析紀錄")}
                   </button>
                 ))}
               </div>

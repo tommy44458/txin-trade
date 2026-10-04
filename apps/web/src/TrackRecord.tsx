@@ -104,7 +104,7 @@ export default function TrackRecord({ onOpenAnalysis }: { onOpenAnalysis: (analy
       setTotal(list.total);
       setError("");
     }).catch((reason: Error) => {
-      if (reason.name !== "AbortError") setError(uiText("無法載入 AI 戰績，請稍後重試。"));
+      if (reason.name !== "AbortError") setError(uiText("無法載入 AI 表現，請稍後重試。"));
     });
     return () => controller.abort();
   }, [period, group, page, currentOnly]);

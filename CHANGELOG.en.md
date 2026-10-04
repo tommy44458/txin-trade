@@ -7,7 +7,7 @@ The product version is managed in `version.json`. Dates record release preparati
 ### Added
 
 - After a report is made, the app reconciles it in the background on later 5-minute candles, recording wins, losses and R.
-- A new AI track record compares results by pair, timeframe, risk tolerance, model and prompt version.
+- A new AI performance page compares results by pair, timeframe, risk tolerance, model and prompt version.
 - Settings can share reconciled results to improve the AI; it is off by default and sends only results and versions.
 - Waiting entry plans include a checkable trigger rule, such as a close above a price or a trade at a price.
 
