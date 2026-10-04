@@ -56,6 +56,7 @@ import TrackRecord, { OutcomeLine } from "./TrackRecord";
 import { loadOutcomes, type Outcome } from "./outcomes";
 import type { FlowSnapshot, FlowWindow } from "./smartMoney";
 import UpdateDialog from "./UpdateDialog";
+import CloudSignInNotice from "./CloudSignInNotice";
 import UpdateNotice from "./UpdateNotice";
 import LocalCloudMenu from "./LocalCloudMenu";
 import DerivativesContext, { type DerivativesData } from "./DerivativesContext";
@@ -1146,6 +1147,12 @@ function App({ remoteSection, remoteIdentity, remoteMenu, remoteStatus }: {
           ])}
         </nav>
         <UpdateNotice />
+        <CloudSignInNotice onOpen={() => {
+          openPage("settings");
+          // Bring the cloud account section into view once Settings has rendered.
+          window.setTimeout(() => document.getElementById("settings-cloud-title")?.closest("section")
+            ?.scrollIntoView({ behavior: "smooth", block: "start" }), 120);
+        }} />
         <AccountMenu account={account} settingsActive={view === "settings"} onOpenSettings={() => openPage("settings")}>
           {remoteMenu ?? <LocalCloudMenu onOpenSettings={() => openPage("settings")}
             onChanged={() => { api<SessionInfo>("/session").then(setSession).catch(() => {}); }} />}

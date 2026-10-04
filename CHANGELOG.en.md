@@ -4,6 +4,14 @@ The product version is managed in `version.json`. Dates record release preparati
 
 ## [Unreleased]
 
+### Changed
+
+- Without a cloud account, the bottom left suggests signing in to use txinTrade remotely from a phone.
+
+### Fixed
+
+- A report's reconciliation result sits in its own small card instead of against the analysis below.
+
 ## [1.1.2] - 2026-10-04
 
 ### Changed
