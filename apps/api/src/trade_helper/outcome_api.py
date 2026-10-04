@@ -130,12 +130,14 @@ def outcome_summary(period: str = Query("all"), group: str | None = Query(None),
 
 @router.get("/outcomes")
 def outcome_list(limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0),
-                 period: str = Query("all"), version: str = Query("all")):
+                 period: str = Query("all"), version: str = Query("all"), judged: bool = Query(False)):
     if period not in PERIODS or version not in {"all", "current"}:
         raise HTTPException(422, {"code": "invalid_filter"})
     since = datetime.now(UTC) - PERIODS[period] if PERIODS[period] else None
     with connect(readonly=True) as db:
         rows = _rows(db, since=since, versions=current_versions() if version == "current" else None)
+    if judged:  # Leave out plans whose condition cannot be checked.
+        rows = [row for row in rows if row["result"] != "unverifiable"]
     return {"items": [_public(row) for row in rows[offset:offset + limit]], "total": len(rows)}
 
 

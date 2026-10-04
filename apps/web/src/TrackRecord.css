@@ -195,3 +195,30 @@
   margin-left: 6px;
   color: var(--text-tertiary);
 }
+
+/* Segments keep each label on one line; on phones they share the full width. */
+.track-controls .segments button,
+.history-switch button {
+  white-space: nowrap;
+}
+.track-row {
+  padding-block: var(--space-4);
+}
+@media (max-width: 700px) {
+  .history-switch,
+  .track-controls .segments {
+    width: 100%;
+  }
+  .history-switch button,
+  .track-controls .segments button {
+    flex: 1;
+    padding-inline: 8px;
+  }
+  .track-controls {
+    display: grid;
+    justify-content: stretch;
+  }
+  .track-row {
+    padding-block: var(--space-3);
+  }
+}

@@ -4,6 +4,10 @@ The product version is managed in `version.json`. Dates record release preparati
 
 ## [Unreleased]
 
+### Fixed
+
+- AI performance on phones uses a more compact layout, keeps switches on one line, and lists only checkable results.
+
 ## [1.1.0] - 2026-10-04
 
 ### Added
