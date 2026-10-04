@@ -8,7 +8,7 @@ const text = t(locale).home;
 const download = RELEASED ? downloadLink("mac", "home", locale) : localePath("/download", locale);
 
 // The headline rises word by word; the two product names carry the logo's shine.
-const names = /(Claude Code|Codex)/;
+const names = /(ChatGPT|Claude)/;
 const segmenter = new Intl.Segmenter(locale, { granularity: "word" });
 const words = text.heroTitle.split(names).flatMap((part) =>
   names.test(part)
@@ -44,12 +44,12 @@ const words = text.heroTitle.split(names).flatMap((part) =>
 
 <section class="stage">
   <figure class="frame">
-    <video data-video autoplay muted loop playsinline preload="metadata" poster="/video/promo-v5-16x9.webp"
-      data-tall-src="/video/promo-v6-9x16.mp4" data-tall-poster="/video/promo-v6-9x16.webp"
-      data-wide-src="/video/promo-v5-16x9.mp4" data-wide-poster="/video/promo-v5-16x9.webp"
+    <video data-video autoplay muted loop playsinline preload="metadata" poster="/video/promo-v7-16x9.webp"
+      data-tall-src="/video/promo-v7-9x16.mp4" data-tall-poster="/video/promo-v7-9x16.webp"
+      data-wide-src="/video/promo-v7-16x9.mp4" data-wide-poster="/video/promo-v7-16x9.webp"
       aria-label={text.videoLabel}>
-      <source src="/video/promo-v6-9x16.mp4" type="video/mp4" media="(max-width: 700px)" />
-      <source src="/video/promo-v5-16x9.mp4" type="video/mp4" />
+      <source src="/video/promo-v7-9x16.mp4" type="video/mp4" media="(max-width: 700px)" />
+      <source src="/video/promo-v7-16x9.mp4" type="video/mp4" />
     </video>
     <button type="button" class="toggle" data-toggle data-pause={text.pause} data-play={text.play} aria-label={text.pause}>
       <svg class="icon-pause" viewBox="0 0 16 16" aria-hidden="true"><rect x="4" y="3" width="2.6" height="10" rx="1" /><rect x="9.4" y="3" width="2.6" height="10" rx="1" /></svg>

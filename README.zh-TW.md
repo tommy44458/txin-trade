@@ -6,7 +6,7 @@
 </p>
 
 <p align="center">
-  用你已經有的 Claude 或 ChatGPT 訂閱，就能使用的加密貨幣合約 AI 交易分析師。<br>
+  用你已經在用的 ChatGPT 或 Claude，就能使用的加密貨幣合約 AI 交易分析師。<br>
   它會看盤、說明它看到什麼，並告訴你什麼時候該出手、什麼時候該等。
 </p>
 
@@ -22,13 +22,14 @@ txinTrade 用謹慎交易者的方式看 Binance USDT 永續合約：多個週�
 
 ## 自帶你的 AI
 
-txinTrade 直接整合你電腦上已經安裝並登入的 AI 工具：**Claude Code** 或 **Codex**。它把真實行情交給這些工具分析，用的是你原本就在使用的 **Claude** 或 **ChatGPT** 方案，以及方案裡最強的模型，例如 Claude Opus。
+txinTrade 連接你已經有的 AI 帳號，把真實行情交給它分析，不必另外購買 AI 訂閱。
 
-- **沿用你已經有的工具**：在設定裡選一次 Claude Code 或 Codex 就好，不必另外申請 AI 帳號。
-- **你的 AI、你的方案**：每次分析都以你自己的登入執行，txinTrade 不另收 AI 費用。
-- **自己選模型**：在設定裡選擇分析要用哪個模型。
+- **你的 ChatGPT 方案**：以 OpenAI 官方的 Sign in with ChatGPT 登入，允許 txinTrade 使用你的 Plus 或 Pro 方案額度；每週可用的比例在 ChatGPT 的設定裡由你決定。
+- **你的 Claude 帳號**：輸入 Anthropic API 金鑰，費用依用量計入你自己的帳戶。
+- **或 OpenAI API 金鑰**：同樣依用量計費。
+- **自己選模型**：在設定裡選擇分析要用哪個模型，txinTrade 不另收 AI 費用。
 
-登入狀態由 Claude Code 或 Codex 自己管理，txinTrade 不會讀取或保存這些憑證。
+授權資料與金鑰都加密保存在你的電腦。既有的 Claude Code 與 Codex 連線仍可使用，設定頁會說明各種連線方式與服務條款的關係。
 
 ## txinTrade 能幫你做什麼
 
@@ -87,7 +88,7 @@ txinTrade 會蒐集美國官方公布的數據——CPI、就業、PCE、GDP 與
 ## 你的資料屬於你
 
 - **在你的電腦上執行。** 持倉、偏好、分析紀錄與對話都保存在本機。除非你要使用遠端存取，否則不需要註冊任何 txinTrade 帳號。
-- **使用你自己的 AI 帳號。** 分析透過你已經登入的 Claude Code 或 Codex 執行；每次分析的行情、持倉與對話內容會傳送給該 AI 服務。
+- **使用你自己的 AI 帳號。** 分析使用你的 ChatGPT 方案，或你自己的 Claude、OpenAI 金鑰；每次分析的行情、持倉與對話內容會傳送給該 AI 服務。
 - **交易所只需唯讀權限。** 交易所金鑰只要讀取權限，txinTrade 不會要求交易、劃轉或提領權限。金鑰會加密保存在你的電腦上。
 - **誠實面對限制。** AI 或資料來源出問題時，畫面會直接告訴你，不會自行填補。AI 分析不構成投資建議，過去的建議也不保證未來的結果。
 
@@ -99,9 +100,10 @@ txinTrade 支援搭載 **Apple Silicon（M1 或更新）的 macOS**，以及 **6
    - **Mac：** 打開 DMG，把 txinTrade 拖到「應用程式」。App 已通過 Apple 簽章與公證。
    - **Windows：** 執行安裝程式。目前尚未做程式碼簽章，Windows 可能會顯示「已保護您的電腦」：請按 **其他資訊**，再按 **仍要執行**。
 2. 開啟 txinTrade。資料會自動建立，不需要設定資料庫或設定檔。
-3. 在**設定**連結你已經有的 AI 訂閱：
-   - **Codex**：使用你已安裝的 Codex 與它的登入狀態。
-   - **Claude Code**：先在終端機執行一次 `claude auth login` 登入，再選擇**連結 Claude Code**。txinTrade 只會確認你已登入，不會讀取你的 Claude 憑證。
+3. 在**設定**連接你的 AI：
+   - **ChatGPT 方案**：按**連線 ChatGPT**，在瀏覽器允許 txinTrade。需要 ChatGPT Plus 或 Pro，並安裝 [Codex CLI](https://developers.openai.com/codex/cli)，分析會透過它在你的電腦上執行。
+   - **Claude API** 或 **OpenAI API**：貼上你的 API 金鑰，txinTrade 會檢查金鑰並列出可用的模型。
+   - **Claude Code** 或 **Codex** 的登入方式仍可使用；設定頁會說明這些連線方式與各服務條款的關係。
 
 分析進行中請保持 txinTrade 開啟；關閉 App 會中止正在執行的工作。txinTrade 會自動檢查並安裝更新，安裝前會先備份你的資料。如果想從原始碼執行，請參考 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
@@ -131,7 +133,7 @@ txinTrade 支援繁體中文與英文，可以選擇淺色、深色或跟隨系�
 所有目前可交易的 Binance USDT 永續合約。不包含幣本位、USDC 與交割合約。
 
 **需要付費嗎？**
-App 本身免費並開放原始碼。AI 由你自己帶來：分析透過你電腦上已登入的 Claude Code 或 Codex 執行，用的是你原本的方案，txinTrade 不另收 AI 費用。用手機遠端存取是選用的付費雲端服務。
+App 本身免費並開放原始碼。AI 由你自己帶來：你的 ChatGPT 方案，或由該服務計費的 Claude、OpenAI API 金鑰，txinTrade 不另收 AI 費用。用手機遠端存取是選用的付費雲端服務。
 
 **建議可以完全相信嗎？**
 請把它當成一份有理有據的第二意見，而不是保證。每份報告都列出證據，以及會讓判斷失效的條件，方便你自己評估。
