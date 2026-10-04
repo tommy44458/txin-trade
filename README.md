@@ -6,7 +6,7 @@
 </p>
 
 <p align="center">
-  An AI trading analyst for crypto futures, powered by the Claude or ChatGPT subscription you already have.<br>
+  An AI trading analyst for crypto futures, powered by the ChatGPT or Claude you already use.<br>
   It reads the market, explains what it sees, and tells you when to act — and when not to.
 </p>
 
@@ -22,13 +22,14 @@ txinTrade looks at a Binance USDT perpetual market the way a careful trader woul
 
 ## Bring your own AI
 
-txinTrade integrates with the AI tools already installed and signed in on your computer: **Claude Code** or **Codex**. It hands them real market data and lets them do the analysis, on the **Claude** or **ChatGPT** plan you already use and with the most capable models it offers, such as Claude Opus.
+txinTrade connects to the AI account you already have and hands it real market data to analyze. There is no new AI subscription to buy.
 
-- **Works with what you already have.** Choose Claude Code or Codex once in Settings; there is no new AI account to open.
-- **Your AI, your plan.** Every analysis runs under your own sign-in, and txinTrade adds no AI fees.
-- **Pick the model** you want for analysis in Settings.
+- **Your ChatGPT plan.** Sign in with ChatGPT and allow txinTrade to use your Plus or Pro plan, through OpenAI's official sign-in. You choose how much of your weekly usage it may take in ChatGPT's settings.
+- **Your Claude account.** Add an Anthropic API key, billed per use to your own account.
+- **Or an OpenAI API key**, billed the same way.
+- **Pick the model** you want for analysis in Settings. txinTrade adds no AI fees.
 
-Your sign-in stays with Claude Code or Codex; txinTrade never reads or stores those credentials.
+Tokens and keys are stored encrypted on your computer. Existing Claude Code and Codex connections keep working, and Settings explains how each one relates to the provider's terms.
 
 ## What txinTrade does for you
 
@@ -87,7 +88,7 @@ With an optional txinTrade cloud account, you can open the same screens from you
 ## Your data stays yours
 
 - **Runs on your computer.** Your positions, preferences, history and conversations are saved locally. There is no txinTrade account to create unless you want remote access.
-- **Uses your own AI account.** Analysis runs through the Claude Code or Codex sign-in you already have. The market, position and conversation details of each analysis are sent to that AI provider.
+- **Uses your own AI account.** Analysis runs on your ChatGPT plan or your own Claude or OpenAI key. The market, position and conversation details of each analysis are sent to that AI provider.
 - **Read-only exchange access.** Exchange keys only need read permission, and txinTrade never asks for trading, transfer or withdrawal rights. Keys are stored encrypted on your computer.
 - **Honest about limits.** If the AI or a data source fails, the app says so instead of filling the gap. AI analysis is not financial advice, and past recommendations do not guarantee future results.
 
@@ -99,9 +100,10 @@ txinTrade runs on **macOS with Apple Silicon** (M1 or later) and on **64-bit Win
    - **Mac:** open the DMG and drag txinTrade to Applications. The app is signed and notarized by Apple.
    - **Windows:** run the installer. It is not code-signed yet, so Windows may say it protected your PC: choose **More info**, then **Run anyway**.
 2. Open txinTrade. Your data is created automatically; there is no database or configuration file to set up.
-3. In **Settings**, connect the AI subscription you already have:
-   - **Codex** — uses the Codex app you have installed and its sign-in.
-   - **Claude Code** — sign in once with `claude auth login` in a terminal, then choose **Connect Claude Code**. txinTrade only checks that you are signed in and never reads your Claude credentials.
+3. In **Settings**, connect your AI:
+   - **ChatGPT plan** — choose **Connect ChatGPT** and approve txinTrade in your browser. It needs ChatGPT Plus or Pro, and the [Codex CLI](https://developers.openai.com/codex/cli) installed, which runs the analysis on your computer.
+   - **Claude API** or **OpenAI API** — paste your API key. txinTrade checks it and lists the models it can use.
+   - **Claude Code** or **Codex** sign-ins are still available; Settings explains how these connections relate to each provider's terms.
 
 Keep txinTrade open while an analysis is running; closing it stops the work in progress. txinTrade checks for updates and installs them for you, after backing up your data. To run it from the source code instead, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
@@ -131,7 +133,7 @@ No. It analyzes markets and positions and gives recommendations. You decide and 
 All currently tradable Binance USDT perpetual futures. Coin-margined, USDC and delivery contracts are not included.
 
 **What does it cost?**
-The app is free and open source. Bring your own AI: analyses run through the Claude Code or Codex already signed in on your computer, on the plan you already have, and txinTrade adds no AI fees. Remote access from your phone is an optional paid cloud service.
+The app is free and open source. Bring your own AI: your ChatGPT plan, or a Claude or OpenAI API key billed by that provider; txinTrade adds no AI fees. Remote access from your phone is an optional paid cloud service.
 
 **Can I trust the recommendations?**
 Treat them as a well-reasoned second opinion, not a guarantee. Every report shows the evidence and the conditions that would invalidate it, so you can judge it yourself.
