@@ -4,6 +4,8 @@ The product version is managed in `version.json`. Dates record release preparati
 
 ## [Unreleased]
 
+## [1.0.9] - 2026-10-04
+
 ### Added
 
 - When a position analysis recommends holding, it now includes an exit plan with the price that ends the hold, a suggested stop, and take-profit levels.
