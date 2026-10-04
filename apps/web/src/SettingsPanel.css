@@ -664,4 +664,24 @@
   flex: none;
 }
 .settings-terms-warning { color: var(--warning); }
+/* Codex or Claude Code is missing: say so beside the connect button, with the steps one tap away. */
+.settings-cli-missing {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 12px 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-subtle);
+}
+.settings-cli-missing p {
+  flex: 1 1 240px;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--warning);
+}
 .settings-inline-key { margin-top: 12px; }

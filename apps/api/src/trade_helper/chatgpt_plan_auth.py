@@ -49,10 +49,18 @@ _METADATA = "chatgpt_plan"
 _CREDENTIALS = "chatgpt_plan"
 SIGN_IN_HINT = "請在設定按「連線 ChatGPT」，以你的 ChatGPT Plus 或 Pro 帳號授權。"
 EXPIRED_HINT = "ChatGPT 授權已失效，請到設定重新連線。"
+CODEX_MISSING_HINT = "ChatGPT 方案透過這台電腦的 Codex 執行分析，但找不到 Codex。請到設定依說明安裝後重試。"
 
 
 class ChatGPTPlanError(RuntimeError):
     """Credential-free operational error suitable for display in the app."""
+
+
+def _codex_installed() -> bool:
+    # Analysis runs in the local Codex app-server; the token alone cannot analyze.
+    from .codex_bridge import cli_installed  # Imported here to avoid an import cycle.
+
+    return cli_installed()
 
 
 def _host_id() -> str:
@@ -246,7 +254,8 @@ def status() -> dict:
         error = _pending.error if _pending is not None and _pending.done.is_set() else None
     saved = read_metadata(_METADATA)
     authenticated = bool(saved.get("connected")) and not pending
-    result = {"authenticated": authenticated, "available": True,
+    installed = _codex_installed()
+    result = {"authenticated": authenticated, "available": installed, "cli_installed": installed,
               "email": saved.get("email") if authenticated else None,
               "auth_source": "chatgpt_plan" if authenticated else None,
               "login_pending": pending, "status_known": True}
@@ -256,6 +265,8 @@ def status() -> dict:
 
 
 def require_authorized() -> str:
+    if not _codex_installed():
+        raise ChatGPTPlanError(CODEX_MISSING_HINT)
     return access_token()
 
 
@@ -277,6 +288,9 @@ def check_status():
 @router.post("/login")
 def login():
     global _pending
+    if not _codex_installed():
+        # Settings shows how to install Codex first; signing in alone would not let analysis run.
+        return {"auth_url": None, "status": status()}
     with _lock:
         if _pending is not None and not _pending.done.is_set():
             _pending.stop()
