@@ -14,7 +14,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
 
-SCHEMA_VERSION = 10
+SCHEMA_VERSION = 11
 BUSY_TIMEOUT_MS = 15_000
 
 
@@ -561,6 +561,15 @@ def _migration_10(db: Database) -> None:
             raise RuntimeError("Rebuilding discussion sessions broke a reference")
 
 
+def _migration_11(db: Database) -> None:
+    # A running analysis shows each finished step (quote, levels, the AI's sections
+    # as written) before its report is complete. Display-only; NULL for older rows.
+    columns = {row["name"] for row in db.execute("PRAGMA table_info(analyses)").fetchall()}
+    if "progress_json" not in columns:
+        db.execute("ALTER TABLE analyses ADD COLUMN progress_json TEXT "
+                   "CHECK(progress_json IS NULL OR json_valid(progress_json))")
+
+
 class DatabaseFromNewerVersion(RuntimeError):
     """The database was upgraded by a newer txinTrade; this version must not touch it."""
 
@@ -583,7 +592,7 @@ def init_db() -> None:
         for migration_version, migration in (
             (1, _migration_1), (2, _migration_2), (3, _migration_3), (4, _migration_4),
             (5, _migration_5), (6, _migration_6), (7, _migration_7), (8, _migration_8),
-            (9, _migration_9), (10, _migration_10),
+            (9, _migration_9), (10, _migration_10), (11, _migration_11),
         ):
             if version < migration_version:
                 migration(db)
@@ -635,6 +644,9 @@ def public_job(row: sqlite3.Row | dict) -> dict:
         "report": json.loads(row["report_json"]) if row["report_json"] else None,
         "v4_status": row["v4_status"],
         "v4_shadow": json.loads(row["v4_json"]) if row["v4_json"] else None,
+        # What a running analysis can already show; the finished report replaces it.
+        "progress": (json.loads(row["progress_json"]) if row.get("progress_json")
+                     and row["status"] in {"queued", "running"} else None),
     }
     if row["error_code"]:
         result["error"] = {"code": row["error_code"], "message": row["error_message"]}

@@ -215,8 +215,6 @@ class ClaudeCodeSession:
             raise ValueError("Unsupported Claude Code response format")
         if response_format == "text" and (tools or tool_handler is not None):
             raise ValueError("Plain text discussions cannot expose model tools")
-        if on_text is not None and response_format != "text":
-            raise ValueError("Text streaming is only available for discussions")
         developer_instructions = (
             "Only use the supplied trading evidence and registered Python tools. "
             "Return the report as JSON. Do not use shell, files, plugins or web search."

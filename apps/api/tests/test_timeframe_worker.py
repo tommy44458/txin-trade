@@ -29,7 +29,7 @@ def test_worker_freezes_selected_frame_and_three_independent_higher_series(monke
         assert context_candles is rows[frames[1]]
         return {frame: {'candles': rows[frame]} for frame in higher_timeframes(primary)}
 
-    def analyze(request, candles, quote, context_candles, positions, *, prepared_trace, prompt_bundle):
+    def analyze(request, candles, quote, context_candles, positions, *, prepared_trace, prompt_bundle, on_text=None):
         assert prompt_bundle.response_locale == request['output_locale'] == 'zh-TW'
         model_calls.append(request['timeframe'])
         snapshot = prepared_trace[0]['result']

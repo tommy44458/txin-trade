@@ -4,6 +4,10 @@ The product version is managed in `version.json`. Dates record release preparati
 
 ## [Unreleased]
 
+### Changed
+
+- While an analysis runs, it shows each finished step, the price and nearby levels, and the AI sections already written.
+
 ## [1.0.12] - 2026-10-04
 
 ### Fixed

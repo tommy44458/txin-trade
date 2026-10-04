@@ -70,7 +70,7 @@ def test_worker_uses_submitted_instructions_when_locale_and_registry_change(monk
         monkeypatch.setattr(worker, 'fetch_tick_size', lambda *_: Decimal('.1'))
         received = []
 
-        def model(request, candles, quote, context, positions, *, prepared_trace, prompt_bundle):
+        def model(request, candles, quote, context, positions, *, prepared_trace, prompt_bundle, on_text=None):
             assert request['output_locale'] == 'en-US'
             assert prompt_bundle.to_dict() == saved.to_dict()
             received.append(prompt_bundle.rendered_sha256)

@@ -89,8 +89,6 @@ class AnthropicApiSession:
             raise ValueError("Unsupported Anthropic response format")
         if response_format == "text" and (tools or tool_handler is not None):
             raise ValueError("Plain text discussions cannot expose model tools")
-        if on_text is not None and response_format != "text":
-            raise ValueError("Text streaming is only available for discussions")
         system = f"{instructions}\n\n" + (
             "Only use the supplied trading evidence and registered tools. Return the report as JSON."
             if response_format == "json" else

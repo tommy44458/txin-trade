@@ -11,6 +11,7 @@ import httpx
 
 from .agent import analyze_with_tools
 from .analysis import StaleMarketDataError, build_report, validate_market_freshness
+from .analysis_progress import ProgressRecorder, evidence_progress, market_progress
 from .config import assert_local_mode
 from .db import connect, init_db, utc_now
 from .derivatives_context import fetch_derivatives_context
@@ -109,6 +110,7 @@ def run_once() -> bool:
         update_execution = register_desktop_execution(db, "analyses", row["id"])
         db.commit()
     job_id = row["id"]
+    progress = ProgressRecorder(job_id)
     response_locale = "zh-TW"
     stage = "prompt"
     try:
@@ -153,6 +155,7 @@ def run_once() -> bool:
             forming_candle = None
         stage = "quote"
         quote = _required_market_fetch(lambda: fetch_quote(request["market_id"]))
+        progress.record(market=market_progress(request, quote))
         quote["higher_timeframe_candles"] = higher_candles
         quote["forming_candle"] = forming_candle
         stage = "tick_size"
@@ -208,13 +211,18 @@ def run_once() -> bool:
         stage = "preparation"
         validate_market_freshness(request, candles, quote, context_candles)
         prepared = prepare_analysis_evidence(request, candles, quote, context_candles, positions)
+        try:
+            progress.record(evidence=evidence_progress(request, prepared))
+        except (KeyError, TypeError, StopIteration):
+            pass  # Progress is a convenience; the report carries the same evidence.
         with connect() as db:
             db.execute("UPDATE analyses SET phase='model' WHERE id=?", (job_id,))
             db.commit()
         stage = "model"
         try:
             decision = analyze_with_tools(request, candles, quote, context_candles, positions,
-                                          prepared_trace=prepared, prompt_bundle=bundle)
+                                          prepared_trace=prepared, prompt_bundle=bundle,
+                                          on_text=progress.model_text)
         except Exception as model_exc:  # noqa: BLE001 - never expose provider payloads
             safe_reason = model_error_message(model_exc, response_locale)
             code = "MODEL_CALL_FAILED"

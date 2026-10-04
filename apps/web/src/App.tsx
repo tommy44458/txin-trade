@@ -42,6 +42,7 @@ import { ANALYSIS_TIMEFRAMES, isAnalysisTimeframe, timeframeCode, timeframeLabel
 import AnalysisProgress, {
   AnalysisSpinner,
   type AnalysisKind,
+  type AnalysisProgressData,
 } from "./AnalysisProgress";
 import ExchangeSyncPanel from "./ExchangeSyncPanel";
 import { levelLadder } from "./levelLadder";
@@ -238,6 +239,8 @@ type Job = {
   };
   report: Report | null;
   error: { code?: string; message: string } | null;
+  // What a running analysis can already show; absent for finished ones and older computers.
+  progress?: AnalysisProgressData | null;
 };
 
 async function api<T>(path: string, options?: RequestInit): Promise<T> {
@@ -1218,7 +1221,8 @@ function App({ remoteSection, remoteIdentity, remoteMenu, remoteStatus }: {
                 </aside>
                 <div className="analysis-main">
                   {marketBusy && (
-                    <AnalysisProgress kind="market" phase={analysisPhase} />
+                    <AnalysisProgress kind="market" phase={analysisPhase} progress={pendingJob?.progress}
+                      outputLocale={pendingJob?.submitted_input.output_locale} />
                   )}
                   {!marketBusy && latestMarketAnalysis.status === "loading" && (
                     <div className="market-context-status" role="status" aria-busy="true">
@@ -1573,6 +1577,8 @@ function App({ remoteSection, remoteIdentity, remoteMenu, remoteStatus }: {
                       <AnalysisProgress
                         kind="positions"
                         phase={analysisPhase}
+                        progress={pendingJob?.progress}
+                        outputLocale={pendingJob?.submitted_input.output_locale}
                       />
                     </div>
                   )}

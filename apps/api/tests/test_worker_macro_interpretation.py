@@ -34,7 +34,8 @@ def worker_feeds(monkeypatch):
     monkeypatch.setattr(worker, "fetch_order_book", lambda *_: None)
     monkeypatch.setattr(worker, "fetch_tick_size", lambda *_: Decimal("0.1"))
 
-    def trade_agent(request, candles, quote, context, positions, *, prepared_trace, prompt_bundle=None):
+    def trade_agent(request, candles, quote, context, positions, *, prepared_trace, prompt_bundle=None,
+                    on_text=None):
         trade_contexts.append(agent_context(request, candles, quote, context, positions, prepared_trace))
         decision = fallback_analysis(request, candles, quote, context_candles=context, positions=positions)
         decision["mode"] = "openai_assisted"
