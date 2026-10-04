@@ -1,6 +1,7 @@
 ---
 import "../styles.css";
 import { t } from "../i18n";
+import WindowsNotice from "../components/WindowsNotice.astro";
 import { CONTACT_EMAIL, LOCALES, REPOSITORY, WEB_APP, localePath, type Locale } from "../site";
 
 interface Props {
@@ -91,6 +92,7 @@ const canonical = new URL(path, Astro.site).href;
         <p>© {new Date().getFullYear()} txinTrade · <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a></p>
       </div>
     </footer>
+    <WindowsNotice locale={locale} />
   </body>
 </html>
 

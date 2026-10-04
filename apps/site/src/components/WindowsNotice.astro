@@ -1,0 +1,96 @@
+---
+import { t } from "../i18n";
+import type { Locale } from "../site";
+
+interface Props { locale: Locale }
+const { locale } = Astro.props;
+const text = t(locale).windowsNotice;
+---
+<dialog class="notice" data-windows-notice aria-labelledby="windows-notice-title">
+  <h2 id="windows-notice-title">{text.title}</h2>
+  <p>{text.intro}</p>
+  <ol class="steps">
+    <li>
+      <span class="label">{text.steps[0]}</span>
+      <div class="screen" aria-hidden="true">
+        <strong>{text.protected}</strong>
+        <span class="bar"></span><span class="bar short"></span>
+        <span class="link mark">{text.moreInfo}</span>
+        <span class="buttons"><span class="ghost">{text.dontRun}</span></span>
+      </div>
+    </li>
+    <li>
+      <span class="label">{text.steps[1]}</span>
+      <div class="screen" aria-hidden="true">
+        <strong>{text.protected}</strong>
+        <span class="bar"></span><span class="bar short"></span>
+        <span class="bar"></span>
+        <span class="buttons"><span class="ghost mark">{text.runAnyway}</span><span class="ghost">{text.dontRun}</span></span>
+      </div>
+    </li>
+  </ol>
+  <p class="muted">{text.safety}</p>
+  <p class="muted">{text.smartAppControl}</p>
+  <div class="actions">
+    <a class="button" href="/get/windows" data-confirm>{text.confirm}</a>
+    <button class="button secondary" type="button" data-cancel>{text.cancel}</button>
+  </div>
+</dialog>
+
+<script>
+  // The Windows installer isn't code-signed yet: explain SmartScreen before the download starts.
+  const dialog = document.querySelector<HTMLDialogElement>("[data-windows-notice]");
+  const confirm = dialog?.querySelector<HTMLAnchorElement>("[data-confirm]");
+  if (dialog && confirm && typeof dialog.showModal === "function") {
+    document.addEventListener("click", (event) => {
+      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      const link = (event.target as Element).closest<HTMLAnchorElement>('a[href^="/get/windows"]');
+      if (!link || dialog.contains(link)) return;
+      event.preventDefault();
+      confirm.href = link.getAttribute("href") ?? confirm.href;
+      dialog.showModal();
+    });
+    confirm.addEventListener("click", () => dialog.close());
+    dialog.querySelector("[data-cancel]")?.addEventListener("click", () => dialog.close());
+    // A click on the backdrop lands on the dialog element itself.
+    dialog.addEventListener("click", (event) => { if (event.target === dialog) dialog.close(); });
+  }
+</script>
+
+<style>
+  .notice {
+    width: min(560px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow: auto;
+    margin: auto; padding: 32px; border: 0; border-radius: var(--radius);
+    background: var(--surface); color: var(--text); box-shadow: var(--shadow);
+  }
+  .notice::backdrop { background: rgba(0, 0, 0, 0.45); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+  .notice[open] { animation: rise 0.35s var(--ease); }
+  @keyframes rise { from { opacity: 0; transform: translateY(12px) scale(0.98); } }
+  @media (prefers-reduced-motion: reduce) { .notice[open] { animation: none; } }
+  h2 { font-size: 26px; margin-bottom: 12px; }
+  p { margin: 0 0 16px; }
+  .muted { color: var(--text-secondary); font-size: 14px; line-height: 1.5; margin-bottom: 10px; }
+  .steps { list-style: none; padding: 0; margin: 20px 0 22px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; counter-reset: step; }
+  .steps li { counter-increment: step; display: flex; flex-direction: column; gap: 8px; }
+  .label { font-weight: 500; font-size: 15px; }
+  .label::before { content: counter(step); display: inline-grid; place-items: center; width: 22px; height: 22px; margin-right: 8px; border-radius: 50%; background: var(--button); color: var(--button-text); font-size: 13px; }
+  /* A sketch of the SmartScreen screen, not a copy of it. */
+  .screen {
+    flex: 1; display: flex; flex-direction: column; gap: 6px; padding: 14px; border-radius: 10px;
+    background: #0b5cad; color: #fff; font-size: 12px; line-height: 1.3;
+  }
+  .screen strong { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .bar { height: 5px; width: 90%; border-radius: 3px; background: rgba(255, 255, 255, 0.35); }
+  .bar.short { width: 60%; }
+  .link { align-self: flex-start; margin-top: 4px; text-decoration: underline; }
+  .buttons { display: flex; justify-content: flex-end; gap: 6px; margin-top: auto; padding-top: 10px; }
+  .ghost { padding: 4px 8px; border: 1px solid rgba(255, 255, 255, 0.7); white-space: nowrap; }
+  .mark { outline: 2px solid #ffd60a; outline-offset: 2px; border-radius: 3px; }
+  .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 22px; }
+  .actions .button { font-family: inherit; cursor: pointer; border: 0; white-space: nowrap; }
+  @media (max-width: 480px) {
+    .notice { padding: 24px 20px; }
+    .steps { grid-template-columns: 1fr; }
+    .actions { flex-direction: column; }
+  }
+</style>
