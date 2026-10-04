@@ -4,6 +4,8 @@ The product version is managed in `version.json`. Dates record release preparati
 
 ## [Unreleased]
 
+## [1.0.10] - 2026-10-04
+
 ### Fixed
 
 - Choosing the ChatGPT plan without Codex installed now explains it in Settings, with install steps.
