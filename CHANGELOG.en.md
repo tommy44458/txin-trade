@@ -4,6 +4,8 @@ The product version is managed in `version.json`. Dates record release preparati
 
 ## [Unreleased]
 
+## [1.1.3] - 2026-10-04
+
 ### Changed
 
 - Without a cloud account, the bottom left suggests signing in to use txinTrade remotely from a phone.
