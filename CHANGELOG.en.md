@@ -4,6 +4,8 @@ The product version is managed in `version.json`. Dates record release preparati
 
 ## [Unreleased]
 
+## [1.1.4] - 2026-10-08
+
 ### Fixed
 
 - After the computer sleeps or changes networks, the remote page reconnects instead of showing it online but not responding.
