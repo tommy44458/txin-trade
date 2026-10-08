@@ -36,6 +36,9 @@ from .credential_store import (
 _DEVICE = "txintrade_device"
 _SETTING = "txintrade_remote"
 PING_SECONDS = 30
+# The relay answers every ping. Hearing nothing for this long means the link went away
+# unnoticed (sleep, a network change): reconnect instead of waiting on a dead socket.
+LINK_SILENCE_SECONDS = 75
 MAX_BACKOFF_SECONDS = 60
 WAIT_SECONDS = {"subscription_required": 300, "device_limit": 300, "device_already_connected": 30}
 MAX_FRAME_BYTES = 262_144
@@ -206,8 +209,10 @@ class Connector:
             self._socket = ws
         established = False
         try:
-            last_ping = time.monotonic()
+            last_ping = last_heard = time.monotonic()
             while not self._stop.is_set() and remote_enabled():
+                if time.monotonic() - last_heard > LINK_SILENCE_SECONDS:
+                    break
                 if time.monotonic() - last_ping >= PING_SECONDS:
                     self._send(ws, "ping")
                     last_ping = time.monotonic()
@@ -215,6 +220,7 @@ class Connector:
                     message = ws.recv(timeout=1)
                 except TimeoutError:
                     continue
+                last_heard = time.monotonic()
                 if message == "pong" or not isinstance(message, str):
                     continue
                 event = json.loads(message)
@@ -222,7 +228,8 @@ class Connector:
                     established = True
                     self._set("connected", device_id=device["device_id"], connected_since=int(time.time() * 1000))
                 elif event.get("type") == "job.dispatch":
-                    self._handle(ws, event)
+                    # A slow command must not stop this loop from reading and pinging.
+                    self._requests.submit(self._handle, ws, event)
                 elif event.get("type") == "request.dispatch" and isinstance(event.get("request"), dict):
                     self._requests.submit(self._answer, ws, event["request"])
                 elif event.get("type") == "request.cancel":

@@ -35,6 +35,9 @@ class FakeRelay:
         self.jobs, self.accept_token, self.requests = jobs, accept_token, requests or []
         self.received: list[dict] = []
         self.pings = 0
+        self.connections = 0
+        # A link that went away unnoticed: the socket stays open but nothing comes back.
+        self.silent = False
         self.headers: list[dict] = []
         self.server = serve(self.handle, "127.0.0.1", 0, process_request=self.authorize)
         self.port = self.server.socket.getsockname()[1]
@@ -47,6 +50,7 @@ class FakeRelay:
         return None
 
     def handle(self, ws):
+        self.connections += 1
         ws.send(json.dumps({"v": 1, "type": "relay.ready", "role": "desktop", "device_id": DEVICE_ID,
                             "expires_at": int(time.time() * 1000) + 900_000}))
         for job in self.jobs:
@@ -57,7 +61,8 @@ class FakeRelay:
         for message in ws:
             if message == "ping":
                 self.pings += 1
-                ws.send("pong")
+                if not self.silent:
+                    ws.send("pong")
             else:
                 self.received.append(json.loads(message))
 
@@ -288,3 +293,15 @@ def test_a_cancelled_stream_stops_forwarding(cloud, monkeypatch):
     gate.set()
     assert wait_for(lambda: any(event.get("type") == "stream.end" for event in relay.received))
     assert sum(event.get("type") == "stream.event" for event in relay.received) == 1
+
+
+def test_a_link_that_goes_silent_is_replaced_instead_of_held(cloud, monkeypatch):
+    # Above the loop's one-second receive wait, far below the real 75 seconds.
+    monkeypatch.setattr(cloud_connector, "LINK_SILENCE_SECONDS", 2.5)
+    relay = cloud["relay"]["relay"] = FakeRelay([])
+    write_metadata("txintrade_remote", {"enabled": True})
+    cloud["connector"].start()
+    assert wait_for(lambda: relay.pings >= 2)
+    assert relay.connections == 1  # Answered pings keep the link.
+    relay.silent = True  # Pings now go unanswered, as after sleep or a network change.
+    assert wait_for(lambda: relay.connections >= 2, timeout=15)
