@@ -15,6 +15,7 @@ of the desktop database, never the live one, e.g.:
 
 import argparse
 import json
+import os
 import sys
 from datetime import UTC, datetime
 from decimal import Decimal
@@ -93,6 +94,8 @@ def main() -> None:
     args = parser.parse_args()
     if not args.live:
         parser.error("Replaying calls the model and spends allowance; pass --live to run it")
+    # A replay must not search the web: it would read news from after the saved snapshot.
+    os.environ["TRADE_WEB_SEARCH_ENABLED"] = "0"
     init_db()
     cases = saved_cases(limit=args.limit, kind=args.kind, market=args.market)
     cache: dict = {}

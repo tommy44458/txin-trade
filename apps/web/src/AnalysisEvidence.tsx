@@ -1,5 +1,5 @@
 import { economicMetricLabel } from "./economicLabels";
-import type { DirectionAssessmentData } from "./DirectionAssessment";
+import type { BiasAnswer, DirectionAssessmentData } from "./DirectionAssessment";
 import { pythonReferenceText } from "./pythonReferenceText";
 import { uiText, uiLocale, languageName, type UiLocale } from "./i18n/index.ts";
 import { useEffect, useState } from "react";
@@ -26,6 +26,9 @@ export type Reasoning = {
   counter_evidence?: string;
   agent_stance?: "long" | "short" | "wait";
   direction_assessment?: DirectionAssessmentData;
+  bias_answer?: BiasAnswer;
+  // Pages the model read when it searched the web; unverified background.
+  web_sources?: { title: string; url: string; published?: string | null }[];
   macro_outlook?: {
     stance: "bullish" | "bearish" | "neutral";
     reason: string;
@@ -390,6 +393,22 @@ export default function AnalysisEvidence({
             <p lang={reasoning.counter_evidence ? outputLocale : uiLocale()}>{reasoning.counter_evidence || uiText("模型未提供改看法條件。")}</p>
           </div>
         </article>
+        {!!reasoning.web_sources?.length && (
+          <article className="web-sources">
+            <div>
+              <h3>{uiText("AI 參考的網路資訊")}</h3>
+              <ul>
+                {reasoning.web_sources.map((source) => (
+                  <li key={source.url}>
+                    <a href={source.url} target="_blank" rel="noreferrer noopener">{source.title}</a>
+                    {source.published && <small>{source.published}</small>}
+                  </li>
+                ))}
+              </ul>
+              <small className="web-sources-note">{uiText("網路資訊未經核對，只作背景參考，不取代分析時的行情數字。")}</small>
+            </div>
+          </article>
+        )}
       </div>
       {reasoning.macro_outlook && (
         <details className="report-disclosure macro-disclosure">

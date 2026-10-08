@@ -145,6 +145,9 @@ def read_model_report(raw: str, trace: list[dict], *, output_locale: str = "zh-T
     macro = value.get('macro_outlook')
     result['macro_outlook'] = (macro | {'evidence_ids': macro.get('evidence_ids') if isinstance(macro.get('evidence_ids'), list) else []}
                               if isinstance(macro, dict) and isinstance(macro.get('reason'), str) else None)
+    # Checked against the request in trader_question.answer.
+    result['bias_answer'] = value.get('bias_answer') if isinstance(value.get('bias_answer'), dict) else None
+    result['web_sources'] = value.get('web_sources') if isinstance(value.get('web_sources'), list) else []
     supplied = value.get('position_decisions', {})
     result['position_decisions'] = {key: item for key, item in supplied.items()
         if isinstance(item, dict) and item.get('decision') in ('hold', 'close_now') and isinstance(item.get('reason'), str)} if isinstance(supplied, dict) else {}

@@ -953,3 +953,27 @@
 .manual-position {
   scroll-margin-top: 72px;
 }
+
+.web-sources ul {
+  display: grid;
+  gap: 6px;
+  margin: 8px 0 0;
+  padding-left: 18px;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.web-sources a {
+  color: var(--accent);
+  overflow-wrap: anywhere;
+}
+.web-sources li small {
+  margin-left: 8px;
+  color: var(--text-tertiary);
+  font-size: 12px;
+}
+.web-sources-note {
+  display: block;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-tertiary);
+}

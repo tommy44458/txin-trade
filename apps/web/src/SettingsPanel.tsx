@@ -6,6 +6,7 @@ import SelectControl from "./SelectControl";
 import BinanceSettingsPanel from "./BinanceSettingsPanel";
 import CliSetupDialog, { type CliSetupReason } from "./CliSetupDialog";
 import OutcomeSharingSection from "./OutcomeSharingSection";
+import WebSearchSection from "./WebSearchSection";
 import { openAuthorization } from "./desktop";
 import { applyUiTheme, currentUiTheme, isUiTheme, normalizeUiTheme, type UiTheme } from "./uiTheme";
 import { isRemoteMode } from "./transport.ts";
@@ -822,6 +823,8 @@ export default function SettingsPanel({
                 </p>}
             </div>
           </section>
+          {!remote && <WebSearchSection enabled={settings.allow_web_search !== false}
+            onChanged={(next) => setSettings(shownSettings(next))} />}
           {!remote && <OutcomeSharingSection enabled={!!settings.share_outcomes}
             onChanged={(next) => setSettings(shownSettings(next))} />}
           {!remote && (<>

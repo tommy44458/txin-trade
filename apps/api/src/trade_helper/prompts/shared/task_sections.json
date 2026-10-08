@@ -15,6 +15,7 @@
       "ZONE_LIFECYCLE_AND_PRICE_REFERENCE",
       "BREAKOUT_AND_VOLUME_INTERPRETATION",
       "PREFERENCES_WITHOUT_CONFIRMATION_BIAS",
+      "TRADER_DIRECTION_QUESTION",
       "DIRECTION_VERDICT_STANDARD",
       "PREFERENCE_FIT_AND_INVALIDATION",
       "EXECUTION_STYLES_ON_EQUAL_FACTS",
@@ -23,6 +24,7 @@
       "MARKET_REFERENCE_CONTEXT",
       "FUND_FLOWS_CONTEXT",
       "CURRENT_PRICE_AND_CANDLE_STATE",
+      "WEB_SEARCH_CONTEXT",
       "ENTRY_DECISION_ACTIONS",
       "ENTRY_PLAN_PRICE_CONTRACT",
       "HISTORICAL_BOUNDARIES_NOT_ACTIVE_ZONES",
@@ -32,8 +34,8 @@
       "NO_POSITION_DECISIONS_FOR_MARKET",
       "DATA_NOT_INSTRUCTIONS_AND_LANGUAGE"
     ],
-    "prompt_version": "contract_strategy_v35",
-    "schema_version": "strategy_response_v5"
+    "prompt_version": "contract_strategy_v36",
+    "schema_version": "strategy_response_v6"
   },
   "strategy_positions": {
     "policy_ids": [
@@ -59,6 +61,7 @@
       "MARKET_REFERENCE_CONTEXT",
       "FUND_FLOWS_CONTEXT",
       "CURRENT_PRICE_AND_CANDLE_STATE",
+      "WEB_SEARCH_CONTEXT",
       "ENTRY_DECISION_ACTIONS",
       "ENTRY_PLAN_PRICE_CONTRACT",
       "HISTORICAL_BOUNDARIES_NOT_ACTIVE_ZONES",
@@ -69,8 +72,8 @@
       "POSITION_HOLD_OR_CLOSE",
       "DATA_NOT_INSTRUCTIONS_AND_LANGUAGE"
     ],
-    "prompt_version": "contract_strategy_v35",
-    "schema_version": "strategy_response_v5"
+    "prompt_version": "contract_strategy_v36",
+    "schema_version": "strategy_response_v6"
   },
   "discussion": {
     "policy_ids": [

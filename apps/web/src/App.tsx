@@ -1226,7 +1226,7 @@ function App({ remoteSection, remoteIdentity, remoteMenu, remoteStatus }: {
                       </span>
                     </summary>
                     <section className="panel">
-                      <span className="field-label" id="bias-label">{uiText("個人方向判斷")}</span>
+                      <span className="field-label" id="bias-label">{uiText("想做的方向（AI 會回答是否適合）")}</span>
                       <div
                         className="choices"
                         role="group"
@@ -1300,7 +1300,7 @@ function App({ remoteSection, remoteIdentity, remoteMenu, remoteStatus }: {
                   )}{" "}
                   {report && (
                     <DirectionAssessment assessment={report.reasoning?.direction_assessment}
-                      bias={report.preference_assessment?.directional_bias} />
+                      bias={report.preference_assessment?.directional_bias} answer={report.reasoning?.bias_answer} />
                   )}{" "}
                   {report && entryOutcome && <OutcomeLine outcome={entryOutcome} />}
                   {report && (
@@ -1810,7 +1810,7 @@ function App({ remoteSection, remoteIdentity, remoteMenu, remoteStatus }: {
                 {report && job?.submitted_input.kind === "positions" && (
                   <>
                     <DirectionAssessment assessment={report.reasoning?.direction_assessment}
-                      bias={report.preference_assessment?.directional_bias} />
+                      bias={report.preference_assessment?.directional_bias} answer={report.reasoning?.bias_answer} />
                     <AnalysisEvidence
                         outputLocale={report.response_locale ?? report.output_locale ?? job?.submitted_input.output_locale ?? "zh-TW"}
                       positionAnalysis

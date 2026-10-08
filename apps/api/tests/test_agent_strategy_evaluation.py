@@ -71,14 +71,19 @@ def test_python_recommendations_are_not_sent_as_market_evidence(candidate):
     assert supplied["reference_scope"] == "preference_filtered_non_exhaustive_numerical_templates"
 
 
-def test_opposite_directional_hypotheses_produce_identical_model_input():
+def test_a_chosen_direction_only_adds_the_traders_question_and_never_changes_evidence():
     request, candles, context, quote = fixture()
     payloads = []
     for bias in ("bullish", "bearish", None):
         selected = request | {"trading_style": "left", "risk_tolerance": "medium", "directional_bias": bias}
         trace = prepare_analysis_evidence(selected, candles, quote, context)
         payloads.append(agent_context(selected, candles, quote, context, prepared_trace=trace))
-    assert payloads[0] == payloads[1] == payloads[2]
+    assert [payload.get("trader_question") for payload in payloads] == [
+        {"direction": "long"}, {"direction": "short"}, None]
+    without = [{key: value for key, value in payload.items() if key != "trader_question"} for payload in payloads]
+    assert without[0] == without[1] == without[2]
+    # Python's entry templates are no longer part of the model input.
+    assert "strategy_candidates" not in payloads[0]["precomputed_evidence"]
     assert "情境方向與你的判斷相反" not in json.dumps(payloads[0], ensure_ascii=False)
 
 
@@ -91,7 +96,7 @@ def test_changing_preferences_keeps_price_and_indicator_evidence_identical():
         trace = prepare_analysis_evidence(selected, candles, quote, context)
         payload = agent_context(selected, candles, quote, context, prepared_trace=trace)
         assert (payload["trading_style"], payload["risk_tolerance"]) == (style, risk)
-        # The directional hypothesis is withheld so it cannot anchor the decision.
+        # The direction is only ever the trader's question, never a raw preference field.
         assert "directional_bias" not in payload
         assert list(payload).index("precomputed_evidence") < list(payload).index("risk_tolerance")
         payloads.append(payload)

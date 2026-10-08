@@ -119,6 +119,16 @@ def _save_preferences(db, value: dict) -> None:
                (local_user_id(), json.dumps(value, ensure_ascii=False), utc_now()))
 
 
+def web_search_allowed() -> bool:
+    """Whether the analysis model may search the web: on unless turned off in Settings.
+
+    TRADE_WEB_SEARCH_ENABLED=0 turns it off for replays and tests, which must not see later news.
+    """
+    if os.getenv("TRADE_WEB_SEARCH_ENABLED", "1") == "0":
+        return False
+    return preferences().get("allow_web_search") is not False
+
+
 def preferences() -> dict:
     _ensure_preferences_store()
     with connect(readonly=True) as db:
@@ -242,6 +252,7 @@ def public_settings() -> dict:
             "initial_indicators": initial_indicators(),
             "initial_indicator_catalog": initial_indicator_catalog(),
             "share_outcomes": preferences().get("share_outcomes") is True,
+            "allow_web_search": preferences().get("allow_web_search") is not False,
             "integrations": {name: integration_status(name)
                              for name in INTEGRATION_NAMES}}
 
@@ -328,6 +339,8 @@ class SettingsUpdate(BaseModel):
     initial_indicators: list[InitialIndicatorName] | None = Field(default=None, max_length=100)
     # Opt-in sharing of reconciled outcomes with the txinTrade cloud; never set remotely.
     share_outcomes: bool | None = None
+    # Lets the analysis model search the web for recent news; on by default, never set remotely.
+    allow_web_search: bool | None = None
     bingx_api_key: SecretStr | None = None
     bingx_api_secret: SecretStr | None = None
     binance_api_key: SecretStr | None = None
@@ -471,6 +484,8 @@ def _write_settings(body: SettingsUpdate):
                 saved["initial_indicators"] = body.initial_indicators
             if body.share_outcomes is not None:
                 saved["share_outcomes"] = body.share_outcomes
+            if body.allow_web_search is not None:
+                saved["allow_web_search"] = body.allow_web_search
             _save_preferences(db, saved)
         return public_settings()
     except CredentialStoreError as exc:

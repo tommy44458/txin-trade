@@ -239,14 +239,16 @@ class CodexRpc:
     def analyze(self, instructions: str, context: str, model: str,
                 tools: list[dict], tool_handler, *, timeout: float,
                 effort: str = "medium", response_format: str = "json",
-                on_text: Callable[[str], None] | None = None) -> dict:
+                on_text: Callable[[str], None] | None = None, web_search: bool = False) -> dict:
         if response_format not in {"json", "text"}:
             raise ValueError("Unsupported Codex response format")
         if response_format == "text" and (tools or tool_handler is not None):
             raise ValueError("Plain text discussions cannot expose model tools")
         developer_instructions = (
             "Only use the supplied trading evidence and registered Python tools. "
-            "Return the report as JSON. Do not use shell, files, plugins or web search."
+            + ("You may search the web as the task instructions allow. " if web_search else "")
+            + "Return the report as JSON. Do not use shell, files, plugins"
+            + (" or anything beyond that web search." if web_search else " or web search.")
             if response_format == "json" else
             "Discuss only the supplied frozen trading evidence and conversation in readable "
             "prose using the response language specified by the task instructions. "
@@ -261,6 +263,9 @@ class CodexRpc:
             configuration = self.request("config/read", {"includeLayers": False},
                                          timeout=min(15, max(0.01, deadline - monotonic())))
             config = _restricted_config()
+            # An analysis may search the web for recent news when Settings allow it.
+            if web_search and response_format == "json":
+                config["web_search"] = "live"
             for name in configuration.get("config", {}).get("mcp_servers", {}):
                 config[f"mcp_servers.{name}.enabled"] = False
             dynamic_tools = [{"type": "function", "name": item["name"],

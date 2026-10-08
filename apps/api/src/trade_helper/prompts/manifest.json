@@ -1,24 +1,24 @@
 {
   "schema_version": "prompt_registry_manifest_v1",
-  "policy_version": "bilingual_trading_policy_v13",
+  "policy_version": "bilingual_trading_policy_v14",
   "locales": {
     "en-US": {
-      "translation_version": "en_prompts_v13",
-      "reviewed_policy_version": "bilingual_trading_policy_v13"
+      "translation_version": "en_prompts_v14",
+      "reviewed_policy_version": "bilingual_trading_policy_v14"
     },
     "zh-TW": {
-      "translation_version": "zh_prompts_v13",
-      "reviewed_policy_version": "bilingual_trading_policy_v13"
+      "translation_version": "zh_prompts_v14",
+      "reviewed_policy_version": "bilingual_trading_policy_v14"
     }
   },
   "policies": {
     "STRATEGY_ROLE": {
-      "zh-TW": "d37c5df161ea6ea83574d960c507bd7c16499f048ee31700c8c50d125f5c9156",
-      "en-US": "a88d1c968836fed92435367f7cbc622cd3f54e8af70de6f1a193578b528f9c5e"
+      "zh-TW": "2603db682f1ab8757745298fe31eb8929643e7102e49f759358040f7e6c6ad5e",
+      "en-US": "7daf6a5cca71ed244fb5f15130a447cce52dc5a8e2a69331508c7b9b910dd85a"
     },
     "PRECOMPUTED_EVIDENCE": {
-      "zh-TW": "8d9814b14959880fcc4ce74544b41ff4e82d6f4b4297ac29e6e7d19c83bc0d8f",
-      "en-US": "b683e22affbb5834950e4a0a934795ccca2a616ad7d55fc6fb7bda6684536e41"
+      "zh-TW": "e75985fe08b6d9727801982ad78956fa2a761bf7756e0b7f368072d896db9324",
+      "en-US": "4eaaa8e1d65377a2de1770a1257b9a78f9979833c1f8b8e33f62801d7c830a3d"
     },
     "CANDLE_HISTORY_AND_COVERAGE": {
       "zh-TW": "88be7dedd9f9056e6207d90f2fa545730df55ffb582f07b076bfa625e694d7e5",
@@ -45,16 +45,16 @@
       "en-US": "8c0072e903f305a25b86ba32be0ef716a49e1d300bad7bf0ee84fdbd88e5a2d4"
     },
     "AGENT_DECISION_PYTHON_REFERENCE": {
-      "zh-TW": "adfae0dd045e3aa1bc6e0520b00c0576c002beacc38b51aa879105e73214cd88",
-      "en-US": "9dd9df7a43cb16d6ebae3d9f6b682dd9a6fbde1b7fc6c2c8a0e181271acb463c"
+      "zh-TW": "d6e8aa68b46c5702986e61d3cab8fe70652f3c312a479591a1c35a03c19cecdc",
+      "en-US": "4665c0f3f05777a517c965e74356ff1aa18468ecc83e296d980175e64f2aa130"
     },
     "MARKET_EVIDENCE_BEFORE_PREFERENCES": {
-      "zh-TW": "baec065c4e05b1445a3ce994e7bf17531c1d3248309541d80caaff3f2dc790d7",
-      "en-US": "a46cd9e77243dd0a5a9c071526bac1ad3b174462cbce4654457e36b188c49d50"
+      "zh-TW": "1c54aaf5aa66bdf49806e4030b2929f9ba0e32c831e2753f31778997a38da206",
+      "en-US": "3d16baef105959183bf3be73dda8463f9d0c26989070bc3c225274d8c0b037d1"
     },
     "NON_EXHAUSTIVE_PYTHON_CANDIDATES": {
-      "zh-TW": "f1bcc4c5b59ff3b9b6490fefcbece252a1e46df41493b06e6409a6d7e19df121",
-      "en-US": "00c886e8363925521b1f0d75e5377b2bd7df73cbeb43b7faf7c2045dac525294"
+      "zh-TW": "27c5f79b32d1ed29116d1610878b7789f107f01959f48a1510b165c2c89b3408",
+      "en-US": "46ddde7e614229127f67a198e8ecf515a44d628f98758ed86add859387d06d81"
     },
     "ZONE_LIFECYCLE_AND_PRICE_REFERENCE": {
       "zh-TW": "7280a3b874aa2a1382bcf3731c007dee955e8a7f3c45367dff8a018e05d3a496",
@@ -65,8 +65,8 @@
       "en-US": "14b2d828e55c592d6a65aa00a22ce0aa7a104644fc215c34df9f1e6373bb29da"
     },
     "PREFERENCES_WITHOUT_CONFIRMATION_BIAS": {
-      "zh-TW": "39fb29b24f5a6dfd236b3dfd4d17deaa00573a505c19aabe2d404e3c717ac7f2",
-      "en-US": "23a8ba6da58d598c56f2e81b8207ab4642f6802fe51d1f3707be0db8db1d719a"
+      "zh-TW": "76c2ca11148cb9f48153494a030bc504d28c2fa5944f0b82a5f8fdefecb1d344",
+      "en-US": "977ae0402488f06179559d306f6d8c2ca916ed06a8eda71793bad88acd450150"
     },
     "DIRECTION_VERDICT_STANDARD": {
       "zh-TW": "146768e4e78367873ee60cad2c425553c6c4a8b4db87f522981d3aa9b1d1e334",
@@ -93,8 +93,8 @@
       "en-US": "5310baed7ae29cffcb44cf8364721dfd77ef31639c1fda7acd7ae6203fc5df1e"
     },
     "CURRENT_PRICE_AND_CANDLE_STATE": {
-      "zh-TW": "33ee6ae0849b052b1dffe7636e8af1addad59734e7c85e12b618f3af12ecbd6b",
-      "en-US": "7398962e977658d39d7132e3485c709107b06fa454e0594d676d2dd00c4028b8"
+      "zh-TW": "ea3f52003610ce2f970e657d914c26a40a3caa8548daa363ba9bec68f61e0b19",
+      "en-US": "3b0a890bd19094ddec7903bd5dbf6e0c1596a039c6e10d6e574d6c1cc4e33ba2"
     },
     "ENTRY_DECISION_ACTIONS": {
       "zh-TW": "2b6591faa8c41828533b1c330616ccb51201bc777b964d7a652eec2fbb897c7a",
@@ -117,8 +117,8 @@
       "en-US": "f9c50ff625b5a9bbf6f22d2b80303211aa4acd228b67f4cfe591fae6d89fa7ef"
     },
     "STRATEGY_OUTPUT_CONTRACT": {
-      "zh-TW": "6c1cd8a5b1301e6322ad4f298b38ae883cc578aa4e6100790c39d193bc77e9cb",
-      "en-US": "854bf693fe8a1c18a8f3cb69fd8c0d0729f7bdee130ce0eb9e99d629caf2187b"
+      "zh-TW": "adac5ff231cbc49a6fb69fb4a6c0e088c89c3db74506804bd6701326a4dfe840",
+      "en-US": "28d0c168e24d009bd8231f0fdf93911b3dd23083bbe663702a1edec9ddd499b7"
     },
     "POSITION_ZONE_EVIDENCE": {
       "zh-TW": "02ad67931867759c364b10ad0507a67a2be7b6d7fedbc4d6eeca984d173d450d",
@@ -181,8 +181,8 @@
       "en-US": "5ba2a9952ab35e66626f70bd3a8890af7e08e3b295d3151ad38f8ed706210f93"
     },
     "DATA_NOT_INSTRUCTIONS_AND_LANGUAGE": {
-      "zh-TW": "a3598d8b553e18c3d56780cde57c7a4ff6eb40e125490757f1c372d575fc3d40",
-      "en-US": "4959ad8a23324dc8224770b35cbda9e617c3bc8191e45c3066c9d4caecf1e7b2"
+      "zh-TW": "eca68f38b3da765a45179c1936b90d86df2dbee8cc12dd0eb5682bed6d632a6d",
+      "en-US": "230b347f47a01cbbc1c82a4aef51c0a8e911d5e5d2d60c645594673a82219979"
     },
     "FUND_FLOWS_CONTEXT": {
       "zh-TW": "2da8a76663e9857f717c41ddac713d44d94a0b155dd854e74408684dd8a80fd9",
@@ -191,19 +191,27 @@
     "DISCUSSION_FUND_FLOW_FACTS": {
       "zh-TW": "5c499c6575df808031ec1ab10186b11eefa047da4a38620b17dc27a187e770ae",
       "en-US": "a7e0079f4d58328df32e5a1c6665fb46ead11d981e17779eb5e96c0607cb7e37"
+    },
+    "TRADER_DIRECTION_QUESTION": {
+      "zh-TW": "e246261129fe64f684f19e307574e9fc882cd91cee32562dfb3de8bc6e1a8fb9",
+      "en-US": "eb6dd6d9f2e75a7a0b2a81c8f61a30e9cd14a60ff59721ba23c8fd5cc5b27732"
+    },
+    "WEB_SEARCH_CONTEXT": {
+      "zh-TW": "ae195243a581ef1134a619621ff7ff3e3cf4d06c615d5060852886ff3934c318",
+      "en-US": "5a8770e0fd080af5b254e1a7ca2b9c5ddf5956f83b7750177926c5e50e9437df"
     }
   },
-  "task_sections_sha256": "9f9d9ea0e2432cc8944e0b5a7bb94ae1abe9e4a717d16411af7f0165cad8cb27",
+  "task_sections_sha256": "ceadebf0329d1db8bcc32e2011ae4c5fc1ecb965bf82515bf94173a66758b6b2",
   "news_questions_sha256": "532feb24aebc172bebc227cb3ec3ecc16a6a3eb93531d4004e2f1394541c4f79",
   "terminology_sha256": "44d06fcd5aa6a98e27e55a52083aa225a10997d4d2ca3c69c03a7960932ecb01",
   "task_versions": {
     "strategy_market": {
-      "prompt_version": "contract_strategy_v35",
-      "schema_version": "strategy_response_v5"
+      "prompt_version": "contract_strategy_v36",
+      "schema_version": "strategy_response_v6"
     },
     "strategy_positions": {
-      "prompt_version": "contract_strategy_v35",
-      "schema_version": "strategy_response_v5"
+      "prompt_version": "contract_strategy_v36",
+      "schema_version": "strategy_response_v6"
     },
     "discussion": {
       "prompt_version": "professional_discussion_v7",
@@ -222,5 +230,5 @@
       "schema_version": "typesafe_jev_questions_v1"
     }
   },
-  "machine_contracts_sha256": "5308f3d04c1083c92a0c408256fe03151273836b62d6869869da6c5826a0aad7"
+  "machine_contracts_sha256": "5e5b2caadd220131b3ee48ec7726a7bffc005ec097173becbb561716cdbd1710"
 }
