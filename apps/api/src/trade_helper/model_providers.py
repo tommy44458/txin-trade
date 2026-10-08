@@ -248,7 +248,7 @@ class ModelSession:
 
     def analyze_local_agent(self, *, instructions: str, context: str, tools: list[dict],
                             tool_handler, timeout: float, response_format: str = "json",
-                            on_text: Callable[[str], None] | None = None):
+                            on_text: Callable[[str], None] | None = None, web_search: bool = False):
         deadline = monotonic() + timeout
         if self.provider == "claude_code":
             label, effort = "Claude Code", claude_code_effort()
@@ -269,6 +269,8 @@ class ModelSession:
             options = {"response_format": response_format} if response_format != "json" else {}
             if on_text is not None:
                 options["on_text"] = on_text
+            if web_search:
+                options["web_search"] = True
             result = runner.analyze(instructions, context, self.model, tools, tool_handler,
                                     timeout=remaining, effort=effort, **options)
             usage = result.get("usage") or {}

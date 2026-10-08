@@ -45,6 +45,8 @@ export type LocalSettings = {
   trading_preferences?: TradingPreferences;
   // Opt-in sharing of reconciled outcomes with the txinTrade cloud.
   share_outcomes?: boolean;
+  // Analyses may search the web for recent news; absent means on.
+  allow_web_search?: boolean;
   integrations: {
     bingx: IntegrationStatus;
     binance?: IntegrationStatus;

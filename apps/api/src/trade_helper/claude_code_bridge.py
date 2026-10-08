@@ -99,17 +99,20 @@ class ClaudeCodeSession:
         # A CLI child that Windows has not released yet must not fail the run.
         self.workspace = tempfile.TemporaryDirectory(prefix="ath-claude-", ignore_cleanup_errors=True)
 
-    def _command(self, model: str, effort: str, prompt_file: Path, max_turns: int) -> list[str]:
+    def _command(self, model: str, effort: str, prompt_file: Path, max_turns: int,
+                 web_search: bool = False) -> list[str]:
         command = [*launch_command(claude_executable()), "-p", "--output-format", "stream-json", "--verbose",
                    "--input-format", "stream-json", "--include-partial-messages",
-                   "--system-prompt-file", str(prompt_file), "--tools", "",
+                   "--system-prompt-file", str(prompt_file), "--tools", "WebSearch" if web_search else "",
                    "--strict-mcp-config", "--permission-mode", "dontAsk",
                    "--setting-sources=", "--disable-slash-commands",
                    "--no-session-persistence", "--max-turns", str(max_turns)]
+        allowed = [f"mcp__{_MCP_SERVER}__{name}" for name in self.tools] + (["WebSearch"] if web_search else [])
         if self.tools:
             command += ["--mcp-config", json.dumps(
-                {"mcpServers": {_MCP_SERVER: {"type": "sdk", "name": _MCP_SERVER}}}),
-                "--allowedTools", ",".join(f"mcp__{_MCP_SERVER}__{name}" for name in self.tools)]
+                {"mcpServers": {_MCP_SERVER: {"type": "sdk", "name": _MCP_SERVER}}})]
+        if allowed:
+            command += ["--allowedTools", ",".join(allowed)]
         if model:
             command.append(f"--model={model}")
         if effort:
@@ -210,14 +213,16 @@ class ClaudeCodeSession:
     def analyze(self, instructions: str, context: str, model: str,
                 tools: list[dict], tool_handler, *, timeout: float,
                 effort: str = "medium", response_format: str = "json",
-                on_text: Callable[[str], None] | None = None) -> dict:
+                on_text: Callable[[str], None] | None = None, web_search: bool = False) -> dict:
         if response_format not in {"json", "text"}:
             raise ValueError("Unsupported Claude Code response format")
         if response_format == "text" and (tools or tool_handler is not None):
             raise ValueError("Plain text discussions cannot expose model tools")
         developer_instructions = (
             "Only use the supplied trading evidence and registered Python tools. "
-            "Return the report as JSON. Do not use shell, files, plugins or web search."
+            + ("You may search the web as the task instructions allow. " if web_search else "")
+            + "Return the report as JSON. Do not use shell, files, plugins"
+            + (" or anything beyond that web search." if web_search else " or web search.")
             if response_format == "json" else
             "Discuss only the supplied frozen trading evidence and conversation in readable "
             "prose using the response language specified by the task instructions. "
@@ -230,7 +235,10 @@ class ClaudeCodeSession:
         prompt_file = Path(self.workspace.name) / "system-prompt.txt"
         prompt_file.write_text(f"{instructions}\n\n{developer_instructions}", encoding="utf-8")
         # Six turns: up to four optional tool calls, then the report.
-        command = self._command(model, effort, prompt_file, 6 if self.tools else 1)
+        web_search = web_search and response_format == "json"
+        # Searches take turns too: up to three, besides the indicator calls.
+        command = self._command(model, effort, prompt_file,
+                                (6 if self.tools else 1) + (3 if web_search else 0), web_search)
         self.process = self.process_factory(
             command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
             text=True, encoding="utf-8", errors="replace", bufsize=1, env=_environment(),

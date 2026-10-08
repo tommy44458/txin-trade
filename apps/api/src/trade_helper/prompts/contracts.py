@@ -153,6 +153,10 @@ STRATEGY_MACHINE_CONTRACT = {
     }},
     "macro_outlook": {"stance": ["bullish", "bearish", "neutral"], "reason": "text",
                       "evidence_ids": "array of unchanged evidence IDs"},
+    "bias_answer": {"direction": ["long", "short"], "verdict": ["reasonable", "conditional", "unsuitable"],
+                    "recommendation": ["enter", "wait_for_entry", "stand_aside", "reverse"], "reason": "text",
+                    "when": "only with trader_question; else null"},
+    "web_sources": [{"title": "text", "url": "https URL", "published": "date text or null"}],
     "evidence_tools": "array of executed evidence/tool names",
 }
 MACRO_MACHINE_CONTRACT = {

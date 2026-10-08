@@ -18,6 +18,16 @@ from .local_settings import integration_credentials
 router = APIRouter(prefix="/api/v1/auth/anthropic", tags=["Anthropic API authorization"])
 
 DEFAULT_MODEL = "claude-opus-5-5"
+WEB_SEARCH_USES = 3
+# Models that take the dynamic-filtering web search; older ones take the basic tool.
+_CURRENT_SEARCH = ("claude-opus-5", "claude-opus-4-6", "claude-opus-4-7", "claude-opus-4-8",
+                   "claude-sonnet-5", "claude-sonnet-4-6", "claude-fable", "claude-mythos")
+
+
+def search_tool(model: str) -> dict:
+    """Anthropic's server-side web search, capped per analysis."""
+    version = "web_search_20260209" if model.startswith(_CURRENT_SEARCH) else "web_search_20250305"
+    return {"type": version, "name": "web_search", "max_uses": WEB_SEARCH_USES}
 # On a policy decline the API re-runs the request on a fallback model it picks.
 FALLBACK_BETA = "server-side-fallback-2026-07-01"
 MAX_OUTPUT_TOKENS = 64000
@@ -84,7 +94,7 @@ class AnthropicApiSession:
     def analyze(self, instructions: str, context: str, model: str,
                 tools: list[dict], tool_handler, *, timeout: float,
                 effort: str = "medium", response_format: str = "json",
-                on_text: Callable[[str], None] | None = None) -> dict:
+                on_text: Callable[[str], None] | None = None, web_search: bool = False) -> dict:
         if response_format not in {"json", "text"}:
             raise ValueError("Unsupported Anthropic response format")
         if response_format == "text" and (tools or tool_handler is not None):
@@ -97,7 +107,10 @@ class AnthropicApiSession:
             "conversational answer, not a JSON report, and never execute trades.")
         deadline = monotonic() + timeout
         messages: list = [{"role": "user", "content": context}]
-        options = {"tools": [_tool(item) for item in tools]} if tools else {}
+        declared = [_tool(item) for item in tools]
+        if web_search and response_format == "json":
+            declared.append(search_tool(model or DEFAULT_MODEL))
+        options = {"tools": declared} if declared else {}
         usage = {"inputTokens": 0, "outputTokens": 0}
         unparsed = 0
         # Up to four optional tool calls, then the report.

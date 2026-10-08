@@ -4,6 +4,12 @@ The product version is managed in `version.json`. Dates record release preparati
 
 ## [Unreleased]
 
+### Changed
+
+- When a market analysis has a long or short chosen, the AI answers whether that direction fits now and suggests entering, waiting or standing aside.
+- The AI can search the web for recent news during an analysis and lists the pages it used; Settings can turn this off.
+- The AI no longer sees Python's ready-made entry templates and builds its plan from levels and indicators.
+
 ## [1.1.4] - 2026-10-08
 
 ### Fixed

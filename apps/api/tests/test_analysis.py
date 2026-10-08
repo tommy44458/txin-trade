@@ -466,7 +466,7 @@ def test_strategy_prompt_requires_tool_grounded_public_rationale():
     assert "current_candle" in market_prompt
     assert "盤中累積量" in market_prompt
     assert "非常激進" in market_prompt
-    assert "Python 指標、風險估算和候選情境都是參考資料" in market_prompt
+    assert "Python 指標、價位和風險估算都是參考資料" in market_prompt
     assert "什麼情況會讓你改看法" in market_prompt
     assert "內部思考過程" in market_prompt
     assert "evaluate_positions" in position_prompt

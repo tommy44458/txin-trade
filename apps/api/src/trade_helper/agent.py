@@ -17,6 +17,7 @@ from .current_candle import current_candle_context
 from .derivatives_context import compact_derivatives
 from .entry_decision import validate_entry_decision
 from .indicators import default_tool_trace
+from .local_settings import web_search_allowed
 from .macro_context import build_macro_context
 from .model_providers import ModelProviderError, ModelSession, analysis_timeout_seconds, tool_name
 from .model_report import read_model_report
@@ -33,6 +34,7 @@ from .technical_snapshot import (
     prepare_analysis_evidence,
 )
 from .timeframes import analysis_timeframes, higher_timeframes
+from .trader_question import answer as answer_trader_question
 
 
 def fallback_analysis(request: dict, candles: list[dict], quote: dict, note: str | None = None,
@@ -336,11 +338,12 @@ def agent_context(request: dict, candles: list[dict], quote: dict,
         evidence = {}
         for execution in prepared_trace:
             result = _model_tool_result(execution)
+            # Python's entry templates stay in the report as a fallback; the model
+            # forms its own plan from levels and indicators.
+            if execution["tool"] == "strategy_candidates":
+                continue
             if execution["tool"] == "technical_snapshot":
                 result = compact_technical_snapshot(result)
-            elif execution["tool"] == "strategy_candidates":
-                result = {key: value for key, value in result.items()
-                          if key not in {"current_candle", "follow_up_plan"}}
             evidence[execution["tool"]] = result
         context["precomputed_evidence"] = evidence
     saved_macro = quote.get("macro_interpretation")
@@ -364,11 +367,14 @@ def agent_context(request: dict, candles: list[dict], quote: dict,
         else:
             shared["interpretation"] = None
         context["saved_macro_interpretation"] = shared
-    # Keep facts first in the serialized input. The user's directional hypothesis
-    # is withheld so it cannot anchor the decision; the model assesses long and
-    # short separately and the report compares that with the hypothesis.
+    # Keep facts first in the serialized input; the trader's preferences and question come last.
     context.update({"risk_tolerance": request.get("risk_tolerance"),
-                    "trading_style": request.get("trading_style")})
+                    "trading_style": request.get("trading_style"),
+                    "web_search_allowed": web_search_allowed()})
+    # A chosen direction is the trader's question about that side, answered on the evidence.
+    side = {"bullish": "long", "bearish": "short"}.get(request.get("directional_bias"))
+    if side and request.get("kind") != "positions":
+        context["trader_question"] = {"direction": side}
     return context
 
 
@@ -457,6 +463,7 @@ def _analyze_with_session(request: dict, candles: list[dict], quote: dict,
     usage = {"input_tokens": 0, "output_tokens": 0}
     usage_available = True
     # Precomputed evidence needs no model turn. Optional calls then the final report; no repair.
+    searching = web_search_allowed()
     for turn in range(6):
         remaining = deadline - monotonic()
         if remaining <= 0:
@@ -475,12 +482,12 @@ def _analyze_with_session(request: dict, candles: list[dict], quote: dict,
 
             response = session.analyze_local_agent(instructions=instructions,
                 context=inputs[0]["content"], tools=additional_tool_schemas(snapshot),
-                tool_handler=run_indicator, timeout=remaining, on_text=on_text)
+                tool_handler=run_indicator, timeout=remaining, on_text=on_text, web_search=searching)
         else:
             response = client.responses.create(
                 timeout=min(90, remaining),
                 model=model, instructions=instructions, input=inputs,
-                tools=additional_tool_schemas(snapshot),
+                tools=additional_tool_schemas(snapshot) + ([{"type": "web_search"}] if searching else []),
                 tool_choice="auto" if additional_calls < 4 else "none", parallel_tool_calls=False,
             )
         model_requests += 1
@@ -493,7 +500,8 @@ def _analyze_with_session(request: dict, candles: list[dict], quote: dict,
                 usage_available = False
         calls = [item for item in response.output if item.type == "function_call"]
         if not calls:
-            reasoning = read_model_report(response.output_text, trace, output_locale=bundle.response_locale)
+            reasoning = answer_trader_question(
+                read_model_report(response.output_text, trace, output_locale=bundle.response_locale), request)
             return {"mode": "openai_assisted", "tool_trace": trace,
                 "strategy_decision": reasoning["strategy_decision"],
                 "position_choices": reasoning.get("position_choices", {}),
