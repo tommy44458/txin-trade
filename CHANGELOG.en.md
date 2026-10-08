@@ -4,6 +4,8 @@ The product version is managed in `version.json`. Dates record release preparati
 
 ## [Unreleased]
 
+## [1.1.5] - 2026-10-08
+
 ### Changed
 
 - When a market analysis has a long or short chosen, the AI answers whether that direction fits now and suggests entering, waiting or standing aside.
