@@ -24,6 +24,7 @@ from .discussions import run_once as run_discussion_once
 from .error_locale import analysis_failure_message, model_error_message, system_error_message
 from .events import event_snapshot
 from .fund_flows import fund_flows_context, unavailable_fund_flows
+from .liquidation_context import liquidation_context, unavailable_liquidations
 from .macro_interpretation import analysis_macro_interpretation, ensure_macro_interpretation
 from .market import (
     MAIN_HISTORY_LIMIT,
@@ -171,8 +172,9 @@ def run_once() -> bool:
         cutoff = datetime.fromisoformat(quote["observed_at"])
         # Fund flows come from the cloud in one cached request; fetch them while the
         # derivatives and market reference are read, so they add no waiting.
-        flows_pool = ThreadPoolExecutor(max_workers=1)
+        flows_pool = ThreadPoolExecutor(max_workers=2)
         fund_flows = flows_pool.submit(fund_flows_context, request["market_id"])
+        liquidations = flows_pool.submit(liquidation_context, request["market_id"])
         flows_pool.shutdown(wait=False)
         stage = "derivatives"
         quote["derivatives_context"] = fetch_derivatives_context(
@@ -187,6 +189,10 @@ def run_once() -> bool:
             quote["fund_flows_context"] = fund_flows.result(timeout=FUND_FLOWS_WAIT_SECONDS)
         except TimeoutError:
             quote["fund_flows_context"] = unavailable_fund_flows(request["market_id"])
+        try:
+            quote["liquidation_context"] = liquidations.result(timeout=FUND_FLOWS_WAIT_SECONDS)
+        except TimeoutError:
+            quote["liquidation_context"] = unavailable_liquidations(request["market_id"])
         stage = "news"
         news = news_snapshot(cutoff, request["market_id"])
         news["evidence_pack"] = build_news_evidence_pack(cutoff, request["market_id"])

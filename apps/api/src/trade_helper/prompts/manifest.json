@@ -1,14 +1,14 @@
 {
   "schema_version": "prompt_registry_manifest_v1",
-  "policy_version": "bilingual_trading_policy_v16",
+  "policy_version": "bilingual_trading_policy_v17",
   "locales": {
     "en-US": {
-      "translation_version": "en_prompts_v16",
-      "reviewed_policy_version": "bilingual_trading_policy_v16"
+      "translation_version": "en_prompts_v17",
+      "reviewed_policy_version": "bilingual_trading_policy_v17"
     },
     "zh-TW": {
-      "translation_version": "zh_prompts_v16",
-      "reviewed_policy_version": "bilingual_trading_policy_v16"
+      "translation_version": "zh_prompts_v17",
+      "reviewed_policy_version": "bilingual_trading_policy_v17"
     }
   },
   "policies": {
@@ -85,8 +85,8 @@
       "en-US": "0cc24721f1492526e10791a9b6195c96d325862980bf5e302d0245ee1dc47909"
     },
     "DERIVATIVES_CONTEXT_LIMITS": {
-      "zh-TW": "941caca848b1e444593bbd846a3ff3ffa50534a3cd2245415f89f4575dc9d49c",
-      "en-US": "a1fcec35b6cd0b27bd9a29e4afbf4f090aef81b62665f9d309349cc7cc69e1dc"
+      "zh-TW": "65cd1aa546941594096eb98066d4bda8d3541f66c852dd5da932022ef1091757",
+      "en-US": "fb389a360b9e634b73b22bc5ad8e0c90c0e1f473a0be32bb10be59dff50ab443"
     },
     "MARKET_REFERENCE_CONTEXT": {
       "zh-TW": "f60983c64deb65b431e4dbb2dbc852b4a905e96771ec3604a3ebb9338c83b448",
@@ -201,16 +201,16 @@
       "en-US": "5a8770e0fd080af5b254e1a7ca2b9c5ddf5956f83b7750177926c5e50e9437df"
     }
   },
-  "task_sections_sha256": "cdb5ab35b3e24de1db701eee2e9ff18a8f2cb440d77c402e12515ca0c1494a4b",
+  "task_sections_sha256": "ded9fb66b492d8fb556f635df584f071848b015a79cc021d9963887a6188462f",
   "news_questions_sha256": "532feb24aebc172bebc227cb3ec3ecc16a6a3eb93531d4004e2f1394541c4f79",
   "terminology_sha256": "44d06fcd5aa6a98e27e55a52083aa225a10997d4d2ca3c69c03a7960932ecb01",
   "task_versions": {
     "strategy_market": {
-      "prompt_version": "contract_strategy_v38",
+      "prompt_version": "contract_strategy_v39",
       "schema_version": "strategy_response_v6"
     },
     "strategy_positions": {
-      "prompt_version": "contract_strategy_v38",
+      "prompt_version": "contract_strategy_v39",
       "schema_version": "strategy_response_v6"
     },
     "discussion": {
