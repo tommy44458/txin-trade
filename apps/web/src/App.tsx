@@ -59,7 +59,7 @@ import UpdateDialog from "./UpdateDialog";
 import CloudSignInNotice from "./CloudSignInNotice";
 import UpdateNotice from "./UpdateNotice";
 import LocalCloudMenu from "./LocalCloudMenu";
-import DerivativesContext, { type DerivativesData, type OrderFlowData } from "./DerivativesContext";
+import DerivativesContext, { type DerivativesData, type LiquidationData, type OrderFlowData } from "./DerivativesContext";
 import MarketReference, { type MarketReferenceData } from "./MarketReference";
 import FundFlowsContext, { type FundFlowsContextData } from "./FundFlowsContext";
 import DirectionAssessment from "./DirectionAssessment";
@@ -160,6 +160,7 @@ type Report = {
   derivatives_context?: DerivativesData | null;
   // Absent in reports made before order flow was computed.
   order_flow?: OrderFlowData | null;
+  liquidation_context?: LiquidationData | null;
   market_reference?: MarketReferenceData | null;
   fund_flows_context?: FundFlowsContextData | null;
   market_id: string;
@@ -1443,7 +1444,8 @@ function App({ remoteSection, remoteIdentity, remoteMenu, remoteStatus }: {
                 {report && (
                   <details className="secondary-evidence">
                     <summary>{uiText("衍生品市場背景")}</summary>
-                    <DerivativesContext data={report.derivatives_context} orderFlow={report.order_flow} />
+                    <DerivativesContext data={report.derivatives_context} orderFlow={report.order_flow}
+                      liquidations={report.liquidation_context} />
                   </details>
                 )}{" "}
                 {report && (
@@ -1850,7 +1852,8 @@ function App({ remoteSection, remoteIdentity, remoteMenu, remoteStatus }: {
                     )}
                     <details className="secondary-evidence">
                       <summary>{uiText("衍生品市場背景")}</summary>
-                      <DerivativesContext data={report.derivatives_context} orderFlow={report.order_flow} />
+                      <DerivativesContext data={report.derivatives_context} orderFlow={report.order_flow}
+                      liquidations={report.liquidation_context} />
                     </details>
                   </>
                 )}

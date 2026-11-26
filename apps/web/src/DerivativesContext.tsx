@@ -46,6 +46,55 @@ export type OrderFlowData = {
   context: { timeframe: string; windows: Record<string, FlowWindow> } | null;
 };
 
+type LiquidationTotals = { long_usd: number; short_usd: number; largest_usd: number };
+type LiquidationWindow = {
+  symbol: Record<"binance" | "bybit", LiquidationTotals>;
+  market: Record<"binance" | "bybit", LiquidationTotals>;
+  coverage_pct: Record<"binance" | "bybit", number>;
+};
+/** Positions closed by force on Binance and Bybit, collected by the cloud (liquidation_context v1). */
+export type LiquidationData = {
+  status: "available" | "partial" | "unavailable";
+  symbol: string;
+  windows?: Record<"1h" | "4h" | "24h", LiquidationWindow>;
+};
+
+const LIQUIDATION_WINDOWS = ["1h", "4h", "24h"] as const;
+const both = (side: Record<"binance" | "bybit", LiquidationTotals>, key: "long_usd" | "short_usd") =>
+  side.binance[key] + side.bybit[key];
+
+function Liquidations({ data }: { data: LiquidationData }) {
+  const windows = data.windows;
+  if (data.status === "unavailable" || !windows) return <p>{uiText("資料未取得")}</p>;
+  const day = windows["24h"];
+  return (
+    <>
+      {LIQUIDATION_WINDOWS.map((name) => {
+        const window = windows[name];
+        const partial = window.coverage_pct.binance < 90 || window.coverage_pct.bybit < 90;
+        return (
+          <p key={name}>
+            <b>{uiText("{{p0}} 小時", { p0: name.replace("h", "") })}</b>：{uiText("多單被清算 {{p0}}、空單被清算 {{p1}}", {
+              p0: usd(String(both(window.symbol, "long_usd"))).replace("+", ""),
+              p1: usd(String(both(window.symbol, "short_usd"))).replace("+", ""),
+            })}
+            {partial && <small> · {uiText("連線涵蓋 Binance {{p0}}%、Bybit {{p1}}%", {
+              p0: window.coverage_pct.binance, p1: window.coverage_pct.bybit,
+            })}</small>}
+          </p>
+        );
+      })}
+      <p>
+        <b>{uiText("全市場 24 小時")}</b>：{uiText("多單被清算 {{p0}}、空單被清算 {{p1}}", {
+          p0: usd(String(both(day.market, "long_usd"))).replace("+", ""),
+          p1: usd(String(both(day.market, "short_usd"))).replace("+", ""),
+        })}
+      </p>
+      <p className="note">{uiText("多單被清算是被迫賣出，空單被清算是被迫買進。Binance 每秒每個幣種只回報最大的一筆，連環清算時會低估；連線中斷的時段沒有資料，不代表沒有清算。")}</p>
+    </>
+  );
+}
+
 const usd = (value: string) => new Intl.NumberFormat(uiLocale(), {
   style: "currency", currency: "USD", notation: "compact", maximumFractionDigits: 1, signDisplay: "exceptZero",
 }).format(Number(value));
@@ -81,16 +130,19 @@ function FlowLine({ timeframe, windows }: { timeframe: string; windows: Record<s
 export default function DerivativesContext({
   data,
   orderFlow,
+  liquidations,
 }: {
   data?: DerivativesData | null;
   orderFlow?: OrderFlowData | null;
+  liquidations?: LiquidationData | null;
 }) {
   if (!data) return null;
   const positioning = data.positioning;
   const taker = positioning?.taker_volume;
   return (
     <details className="secondary-evidence">
-      <summary>{positioning || orderFlow ? uiText("合約背景：未平倉量、多空比與主動買賣") : uiText("合約背景：未平倉量")}</summary>
+      <summary>{liquidations ? uiText("合約背景：未平倉量、多空比、主動買賣與清算")
+        : positioning || orderFlow ? uiText("合約背景：未平倉量、多空比與主動買賣") : uiText("合約背景：未平倉量")}</summary>
       <p className="note">{uiText("未平倉量代表仍持有的合約總量，每筆都有多空雙方；不能單靠增加或減少判斷方向，也不是強平熱圖。")}</p>
       {orderedTimeframes("", Object.keys(data.timeframes ?? {})).map((frame) => {
         const value = data.timeframes?.[frame];
@@ -137,6 +189,12 @@ export default function DerivativesContext({
           <FlowLine timeframe={orderFlow.primary.timeframe} windows={orderFlow.primary.windows} />
           {orderFlow.context && <FlowLine timeframe={orderFlow.context.timeframe} windows={orderFlow.context.windows} />}
           <p className="note">{uiText("主動買入減主動賣出，以 USDT 計，取已收盤 K 線。與價格反向可能是掛單吸收，也可能是避險或套利。")}</p>
+        </>
+      )}
+      {liquidations && (
+        <>
+          <h4 className="evidence-subtitle">{uiText("{{p0}} 清算（Binance、Bybit）", { p0: liquidations.symbol })}</h4>
+          <Liquidations data={liquidations} />
         </>
       )}
       <a href={data.source_url} target="_blank" rel="noreferrer">{uiText("Binance 公開統計資料說明")}</a>

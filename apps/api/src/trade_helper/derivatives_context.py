@@ -26,7 +26,8 @@ TAKER_SOURCE = 'takerlongshortRatio'
 INTERPRETATION_LIMIT = (
     'OI is outstanding contracts, not net long/short intent. Long/short ratios are Binance shares of '
     'accounts (all accounts, or the top 20% by margin) or of top-trader position size, not the whole '
-    'market. Taker volume counts market orders that bought or sold on Binance. No liquidation data.')
+    'market. Taker volume counts market orders that bought or sold on Binance. Liquidations are in '
+    'liquidation_context.')
 SOURCE = 'https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data'
 
 
