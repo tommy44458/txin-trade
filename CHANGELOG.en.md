@@ -4,6 +4,10 @@ The product version is managed in `version.json`. Dates record release preparati
 
 ## [Unreleased]
 
+### Changed
+
+- Fund flows now follow daily holdings in the wallets 13 exchanges publish instead of inaccurate transfer counts, and analyses use the same data.
+
 ## [1.1.5] - 2026-10-08
 
 ### Changed

@@ -119,7 +119,7 @@ export function relayTransport(
     // Fund flows are public cloud data, the same for everyone: read them from the cloud
     // directly, so they show even while the computer is asleep or runs an older version.
     // Follow-up snapshots belong to the computer and go through the relay like the rest.
-    const publicFlows = /^\/api\/v1\/smart-money\/(overview|assets(\/[A-Z0-9]{2,12})?)$/.exec(url.pathname);
+    const publicFlows = /^\/api\/v1\/smart-money\/(overview|(?:assets|reserves)(?:\/[A-Z0-9]{2,12})?)$/.exec(url.pathname);
     if (publicFlows && (init.method ?? "GET").toUpperCase() === "GET") {
       try {
         return await fetch(`${CLOUD_ORIGIN}/smart-money/${publicFlows[1]}${url.search}`, { signal: init.signal });
