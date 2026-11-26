@@ -28,6 +28,7 @@ from .indicator_preferences import (
 )
 from .market_catalog import valid_market_id_format
 from .models import OutputLocale, Timeframe
+from .prompts.contracts import TradingStrategy
 
 router = APIRouter(prefix="/api/v1/settings", tags=["Local settings"])
 _PREFERENCES_LOCK = RLock()
@@ -300,6 +301,7 @@ class TradingPreferencesUpdate(BaseModel):
     directional_bias: Literal["bullish", "bearish"] | None = None
     risk_tolerance: Literal["high", "medium", "low"] | None = None
     trading_style: Literal["left", "right"] | None = None
+    trading_strategy: TradingStrategy | None = None
     timeframe: Timeframe = "1h"
     leverage: int = Field(default=5, ge=1, le=125)
     market_id: str | None = Field(default=None, max_length=80)

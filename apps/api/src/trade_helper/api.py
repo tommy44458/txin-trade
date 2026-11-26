@@ -295,6 +295,7 @@ def _same_analysis_input(row: dict, payload: dict, request_hash: str) -> bool:
     saved = json.loads(row["request_json"])
     saved.setdefault("output_locale", "zh-TW")
     saved.setdefault("initial_indicators", None)
+    saved.setdefault("trading_strategy", None)
     # Server-frozen numerical defaults are not submitted controls. They cannot
     # change whether an otherwise identical client request is a retry.
     saved.pop("initial_indicator_parameters", None)

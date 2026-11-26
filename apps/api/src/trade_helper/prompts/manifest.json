@@ -230,5 +230,12 @@
       "schema_version": "typesafe_jev_questions_v1"
     }
   },
-  "machine_contracts_sha256": "5e5b2caadd220131b3ee48ec7726a7bffc005ec097173becbb561716cdbd1710"
+  "machine_contracts_sha256": "5e5b2caadd220131b3ee48ec7726a7bffc005ec097173becbb561716cdbd1710",
+  "skills": {
+    "extreme_reversal": {
+      "version": "extreme_reversal_v2",
+      "zh-TW": "4382379596cda682bd7edfbbabb65ea9d8a69b1fca22384994ece9fc766d00d7",
+      "en-US": "9c8227ab3a15891869eb401751656330ddf9da59db119afd87cc151c39c11070"
+    }
+  }
 }

@@ -490,6 +490,22 @@ select,
 .choice:hover {
   background: var(--surface-subtle);
 }
+.choice:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+.choice:disabled:hover {
+  background: var(--surface);
+}
+.choice.chosen:disabled:hover {
+  background: var(--accent-soft);
+}
+.field-hint {
+  display: block;
+  margin-top: 6px;
+  color: var(--text-tertiary);
+  font-size: 12px;
+}
 .choice.chosen {
   background: var(--accent-soft);
   border-color: var(--accent);

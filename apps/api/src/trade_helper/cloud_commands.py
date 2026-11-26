@@ -54,11 +54,12 @@ def _start_analysis(command: dict, idempotency_key: str) -> dict:
     from .api import create_analysis
 
     saved = trading_preferences()
+    # A saved left/right style is no longer offered; the chosen strategy decides the entry style.
     request = AnalysisRequest(
         kind="market", market_id=command["market_id"], timeframe=command["timeframe"],
         output_locale=command["output_locale"],
         directional_bias=saved.get("directional_bias"), risk_tolerance=saved.get("risk_tolerance"),
-        trading_style=saved.get("trading_style"), leverage=saved.get("leverage") or 5,
+        trading_strategy=saved.get("trading_strategy"), leverage=saved.get("leverage") or 5,
     )
     job = create_analysis(request, idempotency_key=idempotency_key)
     return {"analysis_id": job["id"], "status": job["status"]}

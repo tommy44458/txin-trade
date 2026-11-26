@@ -9,7 +9,7 @@ from copy import deepcopy
 from pathlib import Path
 
 from .contracts import SUPPORTED_LOCALES, SUPPORTED_TASKS, content_hash, machine_contract
-from .registry import validate_catalog
+from .registry import read_skills, validate_catalog
 
 
 def reviewed_manifest(directory: Path, *, policy_version: str | None = None,
@@ -18,12 +18,16 @@ def reviewed_manifest(directory: Path, *, policy_version: str | None = None,
     def read(path):
         return json.loads((directory / path).read_text(encoding="utf-8"))
 
+    def read_text(path):
+        return (directory / path).read_text(encoding="utf-8")
+
     original = read("manifest.json")
     proposed = deepcopy(original)
     catalogs = {locale: read(f"{locale}/policies.json") for locale in SUPPORTED_LOCALES}
     tasks = read("shared/task_sections.json")
     questions = read("shared/news_questions.json")
     terminology = read("shared/terminology.json")
+    skills = read_skills(read, read_text)
     contracts_hash = content_hash({task: machine_contract(task) for task in SUPPORTED_TASKS})
     question_changed = content_hash(questions) != original["news_questions_sha256"]
     if question_changed and tasks["news_classification"]["prompt_version"] == original[
@@ -77,10 +81,20 @@ def reviewed_manifest(directory: Path, *, policy_version: str | None = None,
     proposed["news_questions_sha256"] = content_hash(questions)
     proposed["terminology_sha256"] = content_hash(terminology)
     proposed["machine_contracts_sha256"] = contracts_hash
+    # A strategy skill carries its own version: changed text needs a new one.
+    reviewed_skills = {}
+    for strategy, entry in skills["catalog"].items():
+        hashes = {locale: content_hash(skills["texts"][strategy][locale]) for locale in SUPPORTED_LOCALES}
+        previous = original.get("skills", {}).get(strategy)
+        if previous and previous.get("version") == entry.get("version") and any(
+                previous.get(locale) != hashes[locale] for locale in SUPPORTED_LOCALES):
+            raise ValueError(f"Changed strategy skill needs a new skill version: {strategy}")
+        reviewed_skills[strategy] = {"version": entry.get("version"), **hashes}
+    proposed["skills"] = reviewed_skills
     proposed["task_versions"] = {
         task: {key: config[key] for key in ("prompt_version", "schema_version")}
         for task, config in tasks.items()
     }
     validate_catalog(manifest=proposed, catalogs=catalogs, tasks=tasks,
-                     questions=questions, terminology=terminology)
+                     questions=questions, terminology=terminology, skills=skills)
     return proposed
