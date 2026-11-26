@@ -26,6 +26,12 @@ def cloud(monkeypatch):
             return httpx.Response(200, json={"assets": [{"asset": "BTC"}, {"asset": "ETH"}]})
         if request.url.path == "/smart-money/assets/LINK":
             return httpx.Response(200, json={"asset": "LINK", "window": request.url.params["window"]})
+        if request.url.path == "/smart-money/reserves":
+            return httpx.Response(200, json={"through": 1, "assets": {"BTC": {"amount": 1}}})
+        if request.url.path == "/smart-money/reserves/BTC":
+            return httpx.Response(200, json={"asset": "BTC", "window": request.url.params["window"]})
+        if state.get("old_cloud") and request.url.path.startswith("/smart-money/reserves"):
+            return httpx.Response(404, json={"error": {"code": "not_found"}})
         return httpx.Response(404, json={"error": {"code": "asset_not_tracked"}})
 
     monkeypatch.setattr(smart_money.httpx, "Client",
@@ -99,3 +105,14 @@ def test_a_cloud_without_smart_money_is_unavailable_not_untracked(cloud):
     response = TestClient(app).get("/api/v1/smart-money/overview")
     assert response.status_code == 503
     assert response.json()["detail"] == {"code": "smart_money_unavailable"}
+
+
+def test_reserves_are_relayed_and_an_older_cloud_is_not_mistaken_for_an_untracked_coin(cloud):
+    client = TestClient(app)
+    assert client.get("/api/v1/smart-money/reserves").json()["assets"]["BTC"]["amount"] == 1
+    assert client.get("/api/v1/smart-money/reserves/BTC").json() == {"asset": "BTC", "window": "30d"}
+    assert client.get("/api/v1/smart-money/reserves/BTC?window=1d").status_code == 422
+    assert client.get("/api/v1/smart-money/reserves/TON?window=7d").status_code == 404
+    cloud["old_cloud"] = True
+    smart_money.clear_cache()
+    assert client.get("/api/v1/smart-money/reserves/ETH?window=7d").status_code == 503

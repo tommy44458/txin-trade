@@ -1,14 +1,14 @@
 {
   "schema_version": "prompt_registry_manifest_v1",
-  "policy_version": "bilingual_trading_policy_v14",
+  "policy_version": "bilingual_trading_policy_v15",
   "locales": {
     "en-US": {
-      "translation_version": "en_prompts_v14",
-      "reviewed_policy_version": "bilingual_trading_policy_v14"
+      "translation_version": "en_prompts_v15",
+      "reviewed_policy_version": "bilingual_trading_policy_v15"
     },
     "zh-TW": {
-      "translation_version": "zh_prompts_v14",
-      "reviewed_policy_version": "bilingual_trading_policy_v14"
+      "translation_version": "zh_prompts_v15",
+      "reviewed_policy_version": "bilingual_trading_policy_v15"
     }
   },
   "policies": {
@@ -185,12 +185,12 @@
       "en-US": "230b347f47a01cbbc1c82a4aef51c0a8e911d5e5d2d60c645594673a82219979"
     },
     "FUND_FLOWS_CONTEXT": {
-      "zh-TW": "2da8a76663e9857f717c41ddac713d44d94a0b155dd854e74408684dd8a80fd9",
-      "en-US": "6436f4c3e80ba2f777cbfbb49bbee00696b2e0e533252165114742c9e757e766"
+      "zh-TW": "6b2e109baf695f8cd8d69ca74d891ab8e9c96465391a0ef9db743807eb1c5659",
+      "en-US": "792a3b509dc67910d30052ad99699547cc3f12b642a2a12fb8697f6310427334"
     },
     "DISCUSSION_FUND_FLOW_FACTS": {
-      "zh-TW": "5c499c6575df808031ec1ab10186b11eefa047da4a38620b17dc27a187e770ae",
-      "en-US": "a7e0079f4d58328df32e5a1c6665fb46ead11d981e17779eb5e96c0607cb7e37"
+      "zh-TW": "270115678e4302c7bee5c736c5b637c1ca6e043426d9985df964690c9b2adfbd",
+      "en-US": "29e904ef5101e844e747806214c132eeedcf07bf0c7a8856093c7f2e47e53141"
     },
     "TRADER_DIRECTION_QUESTION": {
       "zh-TW": "e246261129fe64f684f19e307574e9fc882cd91cee32562dfb3de8bc6e1a8fb9",
@@ -201,20 +201,20 @@
       "en-US": "5a8770e0fd080af5b254e1a7ca2b9c5ddf5956f83b7750177926c5e50e9437df"
     }
   },
-  "task_sections_sha256": "ceadebf0329d1db8bcc32e2011ae4c5fc1ecb965bf82515bf94173a66758b6b2",
+  "task_sections_sha256": "ec20a11fc2c8d04034652f02055670f20873c45a3eb57c96139ddd71e20fec14",
   "news_questions_sha256": "532feb24aebc172bebc227cb3ec3ecc16a6a3eb93531d4004e2f1394541c4f79",
   "terminology_sha256": "44d06fcd5aa6a98e27e55a52083aa225a10997d4d2ca3c69c03a7960932ecb01",
   "task_versions": {
     "strategy_market": {
-      "prompt_version": "contract_strategy_v36",
+      "prompt_version": "contract_strategy_v37",
       "schema_version": "strategy_response_v6"
     },
     "strategy_positions": {
-      "prompt_version": "contract_strategy_v36",
+      "prompt_version": "contract_strategy_v37",
       "schema_version": "strategy_response_v6"
     },
     "discussion": {
-      "prompt_version": "professional_discussion_v7",
+      "prompt_version": "professional_discussion_v8",
       "schema_version": "discussion_markdown_v1"
     },
     "macro_interpretation": {

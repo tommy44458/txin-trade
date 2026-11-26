@@ -1010,8 +1010,9 @@ function App({ remoteSection, remoteIdentity, remoteMenu, remoteStatus }: {
         : (pendingJob?.phase ?? "");
   const busyLabel = positionsBusy ? uiText("正在分析持倉…") : uiText("正在分析中…");
   const macroResult = macroInterpretation.data?.interpretation;
-  const flowWindowLabel = (w: FlowWindow) =>
-    ({ "1d": uiText("24 小時"), "7d": uiText("7 天"), "30d": uiText("30 天"), "90d": uiText("90 天") })[w];
+  // Conversations started before reserves replaced the chain monitor may be about one day.
+  const flowWindowLabel = (w: string) =>
+    ({ "1d": uiText("24 小時"), "7d": uiText("7 天"), "30d": uiText("30 天"), "90d": uiText("90 天") } as Record<string, string>)[w] ?? w;
   const analysisMatchesView = (view === "positions" && job?.submitted_input.kind === "positions") ||
     (view === "market" && job?.submitted_input.kind !== "positions");
   const discussionSubject: AnalysisDiscussionProps | null = view === "smartMoney" && flowSnapshot

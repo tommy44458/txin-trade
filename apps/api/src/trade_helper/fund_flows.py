@@ -1,31 +1,40 @@
 """Fund flows for analyses and follow-up questions.
 
-Analyses get a compact summary of the cloud's on-chain monitor: BTC, ETH and
-stablecoins always, and the analyzed pair's coin when the cloud tracks it. It is
-built by code, not by a model, so it adds no model call and only a cached request.
-A follow-up conversation on the fund-flows page is anchored on a snapshot of the
-same data, frozen when the conversation starts.
+Analyses get exchange reserves the cloud reads daily from DefiLlama's CEX transparency
+data: what the largest exchanges hold in the wallets they publish, and how that changed
+over one, seven and thirty days. BTC, ETH and the USDT/USDC stablecoins always, and the
+analyzed pair's coin when it is followed. Holdings are counted, not single transfers, so
+moves between an exchange's own wallets and unlabelled deposit addresses cannot be
+mistaken for flows. It is built by code, not by a model, so it adds no model call and only
+cached requests. A follow-up conversation on the fund-flows page is anchored on a snapshot
+of the same data, frozen when the conversation starts.
 """
 
 import json
 import os
 import re
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
 
 from .config import local_user_id
 from .db import connect, new_id, utc_now
-from .smart_money import WINDOWS, fetch_cloud
+from .smart_money import RESERVE_WINDOWS, fetch_cloud
 
-VERSION = "fund_flows_context_v1"
-SOURCE = "txinTrade cloud on-chain monitor (mempool.space, public Ethereum nodes, Blockscout labels, DefiLlama)"
+VERSION = "fund_flows_context_v3"
+SOURCE = "DefiLlama CEX transparency (wallets each exchange publishes), read daily by the txinTrade cloud"
 REFERENCE_ASSETS = ("BTC", "ETH")
-# The monitor runs every five minutes; thirty quiet minutes means it is behind.
-STALE_AFTER = timedelta(minutes=30)
-EVENTS_IN_ANALYSIS = 5
-EVENTS_IN_SNAPSHOT = 30
+STABLECOINS = ("USDT", "USDC")
+UNITS = ("held and net in the coin's own units; *_usd in US dollars, one day at that day's price and longer "
+         "windows at the latest close's price; net is the change in exchange holdings: positive means coins "
+         "moved onto exchanges, negative means they left")
+NOTES = [
+    ("Holdings are at 00:00 UTC on as_of, in the wallets each exchange publishes; exchanges that publish none, "
+     "such as Coinbase, are not included."),
+    ("A day whose change looked like an update to an exchange's published wallet list rather than coins moving "
+     "is left out of net and counted in excluded_changes_30d."),
+]
 router = APIRouter(prefix="/api/v1/smart-money/snapshots", tags=["smart money"])
 
 
@@ -48,75 +57,50 @@ def _amount(value) -> float:
     return round(value, 2 if abs(value) >= 1 else 6)
 
 
-def _totals(t: dict) -> dict:
-    return {"inflow": _amount(t["inflow"]), "outflow": _amount(t["outflow"]),
-            "net": _amount(t["inflow"] - t["outflow"]),
-            "inflow_usd": _usd(t["inflow_usd"]), "outflow_usd": _usd(t["outflow_usd"]),
-            "net_usd": _usd(t["inflow_usd"] - t["outflow_usd"]),
-            "whale_count": int(t.get("whale_count") or 0), "whale_usd": _usd(t.get("whale_usd"))}
+def _net(change: dict) -> dict:
+    return {"amount": _amount(change["net"]), "usd": _usd(change["net_usd"])}
 
 
-def _daily_net_usd(series: dict) -> list[dict]:
-    """Hourly points folded into UTC days, oldest first: the multi-day trend."""
-    days: dict[str, int] = {}
-    for point in series.get("points", []):
-        day = datetime.fromtimestamp(point["t"] / 1000, UTC).date().isoformat()
-        days[day] = days.get(day, 0) + _usd(point["inflow_usd"]) - _usd(point["outflow_usd"])
-    return [{"date": day, "net_usd": value} for day, value in sorted(days.items())]
+def _reserves(entry: dict) -> dict:
+    """One coin across the followed exchanges: holdings now and the change over 1, 7 and 30 days."""
+    return {"held": _amount(entry["amount"]), "held_usd": _usd(entry["usd"]),
+            "exchanges_reporting": entry["exchanges"],
+            "net_1d": _net(entry["1d"]), "net_7d": _net(entry["7d"]), "net_30d": _net(entry["30d"]),
+            "largest_movers_7d": [{"exchange": m["exchange"], **_net(m)} for m in entry.get("movers_7d") or []],
+            "excluded_changes_30d": len(entry.get("excluded_30d") or [])}
 
 
-def _events(events: list[dict], limit: int) -> list[dict]:
-    largest = sorted(events, key=lambda e: e.get("usd") or 0, reverse=True)[:limit]
-    return [{"kind": e["kind"], "amount": _amount(e["amount"]), "usd": _usd(e["usd"]),
-             "from": e.get("from_entity") or "unlabelled wallet",
-             "to": e.get("to_entity") or "unlabelled wallet", "at": _iso(e["ts"])}
-            for e in largest]
+def _status(summary: dict) -> str:
+    if summary.get("through") is None:
+        return "unavailable"
+    return "stale" if summary.get("stale") else "available"
 
 
-def _last_day(series: dict, events: list[dict], generated_at: int) -> dict:
-    """Twenty-four hours from a seven-day answer: the last 24 hourly points."""
-    points = series.get("points", [])[-24:]
-    since = generated_at - 86_400_000
-    whales = [e for e in events if e["kind"] == "whale" and e["ts"] >= since]
-    return _totals({
-        "inflow": sum(p["inflow"] for p in points), "outflow": sum(p["outflow"] for p in points),
-        "inflow_usd": sum(p["inflow_usd"] for p in points),
-        "outflow_usd": sum(p["outflow_usd"] for p in points),
-        "whale_count": len(whales), "whale_usd": sum(e["usd"] for e in whales),
-    })
+def _header(summary: dict) -> dict:
+    header = {"version": VERSION, "source": SOURCE, "status": _status(summary),
+              "as_of": _iso(summary.get("through")), "units": UNITS, "notes": NOTES}
+    lagging = [item["exchange"] for item in summary.get("lagging") or []]
+    if lagging:
+        header["exchanges_not_updating"] = lagging
+    return header
 
 
-def _sync_status(overview: dict) -> tuple[str, str | None]:
-    times = [s.get("updated_at") for s in (overview.get("sync") or {}).values() if s]
-    latest = max((t for t in times if t), default=None)
-    if overview.get("stale") or latest is None:
-        return "stale", _iso(latest)
-    behind = datetime.now(UTC) - datetime.fromtimestamp(latest / 1000, UTC) > STALE_AFTER
-    return ("stale" if behind else "available"), _iso(latest)
-
-
-def _stablecoins(overview: dict) -> dict:
-    stable = overview.get("stablecoins") or {}
-    exchange = stable.get("exchange") or {}
-    return {"total_supply_usd": _usd(stable.get("total_usd")),
+def _stablecoin_supply() -> dict:
+    """Total stablecoin supply from the cloud's DefiLlama series; left out when unavailable."""
+    try:
+        stable = fetch_cloud("/smart-money/overview").get("stablecoins") or {}
+    except HTTPException:
+        return {}
+    if stable.get("total_usd") is None:
+        return {}
+    return {"total_supply_usd": _usd(stable["total_usd"]),
             "supply_change_1d_usd": _usd(stable.get("change_1d")),
-            "supply_change_7d_usd": _usd(stable.get("change_7d")),
-            "exchange_net_24h_usd": _usd((exchange.get("1d") or {}).get("net_usd")),
-            "exchange_net_7d_usd": _usd((exchange.get("7d") or {}).get("net_usd"))}
+            "supply_change_7d_usd": _usd(stable.get("change_7d"))}
 
 
-def _reference(summary: dict, events_limit: int) -> dict:
-    return {"coverage": summary["coverage"], "24h": _totals(summary["1d"]), "7d": _totals(summary["7d"]),
-            "daily_net_usd": _daily_net_usd(summary["series"]),
-            "largest_24h": _events(summary.get("events") or [], events_limit)}
-
-
-def _asset_detail(detail: dict, events_limit: int) -> dict:
-    events = detail.get("events") or []
-    return {"coverage": detail["coverage"],
-            "24h": _last_day(detail["series"], events, detail["generated_at"]),
-            "7d": _totals(detail["totals"]), "daily_net_usd": _daily_net_usd(detail["series"]),
-            "largest_7d": _events(events, events_limit)}
+def _stablecoins(assets: dict) -> dict:
+    return {"exchange_reserves": {s: _reserves(assets[s]) for s in STABLECOINS if s in assets},
+            **_stablecoin_supply()}
 
 
 def unavailable_fund_flows(market_id: str) -> dict:
@@ -130,29 +114,23 @@ def fund_flows_context(market_id: str) -> dict:
     if os.getenv("TRADE_FUND_FLOWS_ENABLED", "1") == "0":
         return unavailable_fund_flows(market_id)
     try:
-        overview = fetch_cloud("/smart-money/overview")
-        status, synced_at = _sync_status(overview)
+        summary = fetch_cloud("/smart-money/reserves")
+        assets = summary["assets"]
         context = {
-            "version": VERSION, "source": SOURCE, "status": status,
-            "as_of": _iso(overview["generated_at"]), "synced_at": synced_at,
-            "units": "inflow/outflow/net in the coin's own units; *_usd in US dollars at recording time",
-            "assets": {s["asset"]: _reference(s, EVENTS_IN_ANALYSIS) for s in overview["assets"]
-                       if s["asset"] in REFERENCE_ASSETS},
-            "stablecoins": _stablecoins(overview),
+            **_header(summary),
+            "assets": {a: _reserves(assets[a]) for a in REFERENCE_ASSETS if a in assets},
+            "stablecoins": _stablecoins(assets),
         }
     except (HTTPException, KeyError, TypeError, ValueError):
         return unavailable_fund_flows(market_id)
+    if context["status"] == "unavailable":
+        return unavailable_fund_flows(market_id)
     if pair in REFERENCE_ASSETS:
         context["pair_asset"] = {"asset": pair, "status": "same_as_reference"}
-        return context
-    try:
-        detail = fetch_cloud(f"/smart-money/assets/{pair}?window=7d")
-        context["pair_asset"] = {"asset": pair, "status": "tracked", **_asset_detail(detail, EVENTS_IN_ANALYSIS)}
-    except HTTPException as exc:
-        missing = exc.status_code == 404
-        context["pair_asset"] = {"asset": pair, "status": "not_tracked" if missing else "unavailable"}
-    except (KeyError, TypeError, ValueError):
-        context["pair_asset"] = {"asset": pair, "status": "unavailable"}
+    elif pair in assets:
+        context["pair_asset"] = {"asset": pair, "status": "tracked", **_reserves(assets[pair])}
+    else:
+        context["pair_asset"] = {"asset": pair, "status": "not_tracked"}
     return context
 
 
@@ -161,7 +139,7 @@ def fund_flows_context(market_id: str) -> dict:
 class SnapshotInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
     asset: str = Field(pattern=r"^[A-Z0-9]{2,12}$")
-    window: str = Field(pattern="^(" + "|".join(WINDOWS) + ")$")
+    window: str = Field(pattern="^(" + "|".join(RESERVE_WINDOWS) + ")$")
 
 
 def _public(row) -> dict:
@@ -169,28 +147,39 @@ def _public(row) -> dict:
             "as_of": row["generated_at"], "created_at": row["created_at"]}
 
 
+def _focus(detail: dict, window: str) -> dict:
+    """The chosen coin over the chosen window: each day's change and each exchange's part."""
+    return {
+        "asset": detail["asset"], "window": window,
+        "held": _amount(detail["amount"]), "held_usd": _usd(detail["usd"]),
+        "net": _net(detail["totals"]),
+        "daily": [{"date": _iso(point["t"])[:10], "held": _amount(point["amount"]), **_net(point)}
+                  for point in detail["series"]],
+        "exchanges": [{"exchange": e["exchange"], "held": _amount(e["amount"]), "held_usd": _usd(e["usd"]),
+                       "share_pct": round(e["share"] * 100, 1), **_net(e)} for e in detail["exchanges"]],
+        "excluded_changes": [{"exchange": c["exchange"], "date": _iso(c["day"])[:10], **_net(c)}
+                             for c in detail.get("excluded") or []],
+    }
+
+
 @router.post("", status_code=201)
 def create_snapshot(body: SnapshotInput) -> dict:
     """Freeze the fund flows on screen as the basis of a new conversation."""
-    overview = fetch_cloud("/smart-money/overview")
-    detail = fetch_cloud(f"/smart-money/assets/{body.asset}?window={body.window}")
-    status, synced_at = _sync_status(overview)
+    summary = fetch_cloud("/smart-money/reserves")
+    detail = fetch_cloud(f"/smart-money/reserves/{body.asset}?window={body.window}")
+    assets = summary.get("assets") or {}
     payload = {
-        "version": VERSION, "source": SOURCE, "status": status,
-        "as_of": _iso(overview["generated_at"]), "synced_at": synced_at,
-        "units": "inflow/outflow/net in the coin's own units; *_usd in US dollars at recording time",
-        "overview": {s["asset"]: _reference(s, 10) for s in overview["assets"]},
-        "stablecoins": _stablecoins(overview),
-        "focus": {"asset": body.asset, "window": body.window, "coverage": detail["coverage"],
-                  "totals": _totals(detail["totals"]), "daily_net_usd": _daily_net_usd(detail["series"]),
-                  "largest_movements": _events(detail.get("events") or [], EVENTS_IN_SNAPSHOT)},
+        **_header(summary),
+        "overview": {a: _reserves(assets[a]) for a in REFERENCE_ASSETS if a in assets},
+        "stablecoins": _stablecoins(assets),
+        "focus": _focus(detail, body.window),
     }
     row_id, now = new_id("flow"), utc_now()
     with connect() as db:
         db.execute(
             "INSERT INTO fund_flow_snapshots(id,user_id,asset,flow_window,generated_at,payload_json,created_at)"
             " VALUES(?,?,?,?,?,?,?)",
-            (row_id, local_user_id(), body.asset, body.window, payload["as_of"],
+            (row_id, local_user_id(), body.asset, body.window, payload["as_of"] or utc_now(),
              json.dumps(payload, ensure_ascii=False), now),
         )
         row = db.execute("SELECT * FROM fund_flow_snapshots WHERE id=?", (row_id,)).fetchone()
