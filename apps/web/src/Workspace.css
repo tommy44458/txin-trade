@@ -597,6 +597,13 @@
 .secondary-evidence > .event-panel {
   margin-top: 0;
 }
+/* A heading between groups inside one evidence disclosure. */
+.evidence-subtitle {
+  margin: var(--space-4) 0 var(--space-1);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
 .scenarios {
   margin-top: 16px;
   padding: 8px 20px;

@@ -4,6 +4,10 @@ The product version is managed in `version.json`. Dates record release preparati
 
 ## [Unreleased]
 
+### Added
+
+- Analyses now include Binance long/short ratios, taker buy and sell volume, and the cumulative volume delta (CVD), also shown under contract context.
+
 ### Changed
 
 - Fund flows now follow daily holdings in the wallets 13 exchanges publish instead of inaccurate transfer counts, and analyses use the same data.
