@@ -148,7 +148,8 @@ def test_sharing_is_off_until_turned_on_and_sends_only_results_and_versions(monk
                            "market_id", "timeframe", "model", "provider", "prompt_version", "policy_version",
                            "app_version", "report_day", "resolved_at"}
     assert record["result"] == "win" and record["prompt_version"] == "contract_strategy_v33"
-    assert "100" not in json.dumps(record)  # No entry or position prices.
+    # No entry or position prices; the random outcome ID is left out, since its hex digits can read "100".
+    assert "100" not in json.dumps({key: value for key, value in record.items() if key != "outcome_id"})
     assert outcome_upload.upload_once(post=post) == 0  # Each outcome is shared once.
 
     deleted = []
