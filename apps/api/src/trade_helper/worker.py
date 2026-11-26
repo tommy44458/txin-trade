@@ -38,6 +38,7 @@ from .market_reference import fetch_market_reference
 from .model_providers import analysis_timeout_seconds
 from .news import news_snapshot
 from .news_evidence import build_news_evidence_pack
+from .order_flow import order_flow_context
 from .position_advice import compact_positions
 from .risk import configured_cost_scenario
 from .strategy_engine import other_timeframe
@@ -176,6 +177,8 @@ def run_once() -> bool:
         stage = "derivatives"
         quote["derivatives_context"] = fetch_derivatives_context(
             request["market_id"], cutoff, request["timeframe"])
+        quote["order_flow"] = order_flow_context(
+            candles, request["timeframe"], context_candles, other_timeframe(request["timeframe"]))
         stage = "market_reference"
         quote["market_reference"] = fetch_market_reference(
             request["market_id"], request["timeframe"], candles, context_candles, cutoff)
