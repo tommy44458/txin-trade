@@ -1,5 +1,5 @@
 import json
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 
 import pytest
 from fastapi import HTTPException
@@ -9,69 +9,61 @@ from trade_helper import fund_flows
 from trade_helper.api import app
 from trade_helper.db import connect, init_db
 
-NOW = datetime.now(UTC).replace(minute=0, second=0, microsecond=0)
-HOUR = 3_600_000
+DAY = 86_400_000
+TODAY = int(datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0).timestamp() * 1000)
 
 
-def ms(at: datetime) -> int:
-    return int(at.timestamp() * 1000)
+def change(net, price):
+    return {"net": net, "net_usd": net * price}
 
 
-def totals(inflow=0.0, outflow=0.0, price=1.0, whales=0):
-    return {"inflow": inflow, "outflow": outflow, "inflow_usd": inflow * price,
-            "outflow_usd": outflow * price, "whale_count": whales, "whale_usd": whales * 2e6,
-            "net": inflow - outflow, "net_usd": (inflow - outflow) * price}
+def reserve(held, price, d1, d7, d30, movers=(), excluded=0, exchanges=9):
+    return {"amount": held, "usd": held * price, "exchanges": exchanges,
+            "1d": change(d1, price), "7d": change(d7, price), "30d": change(d30, price),
+            "movers_7d": [{"exchange": name, **change(net, price)} for name, net in movers],
+            "excluded_30d": [{"exchange": "OKX", "day": TODAY - i * DAY, "net": 1, "net_usd": 1}
+                             for i in range(excluded)]}
 
 
-def hourly(per_hour_in: float, per_hour_out: float, price: float, hours: int = 168):
-    start = ms(NOW) - (hours - 1) * HOUR
-    return {"step": "hour", "points": [
-        {"t": start + i * HOUR, "inflow": per_hour_in, "outflow": per_hour_out,
-         "inflow_usd": per_hour_in * price, "outflow_usd": per_hour_out * price} for i in range(hours)]}
+def summary(through=TODAY, stale=False, lagging=()):
+    return {"generated_at": TODAY + 3_600_000, "source": "DefiLlama", "through": through, "stale": stale,
+            "lagging": [{"exchange": name, "through": TODAY - 5 * DAY} for name in lagging],
+            "assets": {
+                "BTC": reserve(1_800_000, 60_000, -1200, -8000, -30000, [("Binance", -5000), ("OKX", -2000)], 1),
+                "ETH": reserve(15_000_000, 2_000, 40000, 90000, -100000, [("Bybit", 60000)]),
+                "USDT": reserve(45e9, 1, 3e8, 1.2e9, 2e9),
+                "USDC": reserve(9e9, 1, -1e8, 2e8, 5e8, exchanges=8),
+                "LINK": reserve(60_000_000, 14, 100_000, -500_000, -2_000_000, [("Binance", -400_000)]),
+            }}
 
 
-def event(kind, usd, hours_ago, to_entity=None, from_entity=None):
-    return {"kind": kind, "amount": usd / 2000, "usd": usd, "from_entity": from_entity,
-            "to_entity": to_entity, "from_address": "0xa", "to_address": "0xb", "tx": "0x1",
-            "chain": "eth", "ts": ms(NOW) - hours_ago * HOUR}
-
-
-def overview(sync_minutes_ago=3, stale=False):
-    def summary(asset, price):
-        return {"asset": asset, "coverage": "large_only" if asset == "BTC" else "exchange_and_whales",
-                "1d": totals(240, 120, price, 2), "7d": totals(1680, 1000, price, 9),
-                "series": hourly(10, 5, price),
-                "events": [event("exchange_in", 3e6, 2, to_entity="Binance"), event("whale", 9e6, 5)]}
-    body = {"generated_at": ms(NOW), "assets": [summary("BTC", 80000), summary("ETH", 2000)],
-            "stablecoins": {"total_usd": 3.1e11, "change_1d": 4e8, "change_7d": 4e9, "change_30d": None,
-                            "series": [], "exchange": {"1d": {"inflow_usd": 5e6, "outflow_usd": 2e7, "net_usd": -1.5e7},
-                                                       "7d": {"inflow_usd": 9e7, "outflow_usd": 1e8, "net_usd": -1e7}}},
-            "sync": {chain: {"height": 1, "updated_at": ms(datetime.now(UTC) - timedelta(minutes=sync_minutes_ago))}
-                     for chain in ("btc", "eth")}}
-    if stale:
-        body["stale"] = True
-    return body
-
-
-def link_detail(window="7d"):
-    return {"generated_at": ms(NOW), "asset": "LINK", "window": window, "coverage": "exchange",
-            "totals": totals(7000, 4000, 14), "series": hourly(50, 20, 14),
-            "events": [event("exchange_out", 2e6, 3, from_entity="OKX"), event("exchange_in", 1.5e6, 30, to_entity="Binance"),
-                       event("whale", 1.2e6, 10)], "sync": {}}
+def link_detail(window="30d"):
+    days = {"7d": 7, "30d": 30, "90d": 90}[window]
+    return {"generated_at": TODAY, "asset": "LINK", "window": window, "through": TODAY, "stale": False,
+            "amount": 60_000_000, "usd": 840_000_000, "totals": change(-2_000_000, 14),
+            "series": [{"t": TODAY - (days - 1 - i) * DAY, "amount": 60_000_000, "usd": 840_000_000,
+                        **change(-1000, 14)} for i in range(days)],
+            "exchanges": [{"exchange": "Binance", "amount": 30_000_000, "usd": 420_000_000, "share": 0.5,
+                           **change(-1_500_000, 14)}],
+            "excluded": [{"exchange": "OKX", "day": TODAY - DAY, **change(9_000_000, 14)}]}
 
 
 @pytest.fixture
 def cloud(monkeypatch):
     monkeypatch.setenv("TRADE_FUND_FLOWS_ENABLED", "1")
-    state = {"down": False, "overview": overview(), "calls": []}
+    state = {"down": False, "summary": summary(), "supply": True, "calls": []}
 
     def fetch(path):
         state["calls"].append(path)
         if state["down"]:
             raise HTTPException(503, {"code": "smart_money_unavailable"})
+        if path == "/smart-money/reserves":
+            return state["summary"]
         if path == "/smart-money/overview":
-            return state["overview"]
-        if path.startswith("/smart-money/assets/LINK"):
+            if not state["supply"]:
+                raise HTTPException(503, {"code": "smart_money_unavailable"})
+            return {"stablecoins": {"total_usd": 3.1e11, "change_1d": 4e8, "change_7d": 4e9}}
+        if path.startswith("/smart-money/reserves/LINK"):
             return link_detail(path.rsplit("=", 1)[-1])
         raise HTTPException(404, {"code": "asset_not_tracked"})
 
@@ -85,38 +77,48 @@ def test_markets_name_their_coins():
     assert fund_flows.asset_for_market("binance:perp:1INCHUSDT") == "1INCH"
 
 
-def test_analysis_always_gets_btc_eth_and_stablecoins_and_the_pair_when_tracked(cloud):
+def test_analysis_gets_exchange_reserves_for_btc_eth_stablecoins_and_the_pair(cloud):
     context = fund_flows.fund_flows_context("binance:perp:LINKUSDT")
+    assert context["version"] == "fund_flows_context_v3"
     assert context["status"] == "available"
+    assert context["as_of"] == datetime.fromtimestamp(TODAY / 1000, UTC).isoformat()
     assert set(context["assets"]) == {"BTC", "ETH"}
-    eth = context["assets"]["ETH"]
-    assert eth["24h"] == {"inflow": 240, "outflow": 120, "net": 120, "inflow_usd": 480000,
-                          "outflow_usd": 240000, "net_usd": 240000, "whale_count": 2, "whale_usd": 4000000}
-    assert [day["net_usd"] for day in eth["daily_net_usd"]][-1] > 0
-    assert eth["largest_24h"][0] == {"kind": "whale", "amount": 4500, "usd": 9000000,
-                                     "from": "unlabelled wallet", "to": "unlabelled wallet",
-                                     "at": (NOW - timedelta(hours=5)).isoformat()}
-    assert context["stablecoins"]["exchange_net_24h_usd"] == -15000000
+    assert context["assets"]["BTC"] == {
+        "held": 1800000, "held_usd": 108000000000, "exchanges_reporting": 9,
+        "net_1d": {"amount": -1200, "usd": -72000000}, "net_7d": {"amount": -8000, "usd": -480000000},
+        "net_30d": {"amount": -30000, "usd": -1800000000},
+        "largest_movers_7d": [{"exchange": "Binance", "amount": -5000, "usd": -300000000},
+                              {"exchange": "OKX", "amount": -2000, "usd": -120000000}],
+        "excluded_changes_30d": 1}
+    stable = context["stablecoins"]
+    assert set(stable["exchange_reserves"]) == {"USDT", "USDC"}
+    assert stable["exchange_reserves"]["USDC"]["exchanges_reporting"] == 8
+    assert stable["total_supply_usd"] == 310000000000 and stable["supply_change_7d_usd"] == 4000000000
     link = context["pair_asset"]
     assert link["status"] == "tracked" and link["asset"] == "LINK"
-    # The last 24 hourly points of the seven-day answer: 24 × 50 in, 24 × 20 out.
-    assert link["24h"]["inflow"] == 1200 and link["24h"]["outflow"] == 480
-    assert link["24h"]["whale_count"] == 1
-    assert link["7d"]["net"] == 3000
-    assert [e["usd"] for e in link["largest_7d"]] == [2000000, 1500000, 1200000]
+    assert link["net_7d"] == {"amount": -500000, "usd": -7000000}
+    # One summary answers everything; no per-transfer lists reach the model any more.
+    assert cloud["calls"] == ["/smart-money/reserves", "/smart-money/overview"]
 
 
-def test_untracked_reference_and_outage_cases_are_labelled_not_guessed(cloud):
-    assert fund_flows.fund_flows_context("binance:perp:SOLUSDT")["pair_asset"] == {"asset": "SOL", "status": "not_tracked"}
+def test_missing_supply_leaves_out_only_the_supply(cloud):
+    cloud["supply"] = False
+    stable = fund_flows.fund_flows_context("binance:perp:BTCUSDT")["stablecoins"]
+    assert "total_supply_usd" not in stable and set(stable["exchange_reserves"]) == {"USDT", "USDC"}
+
+
+def test_untracked_stale_and_outage_cases_are_labelled_not_guessed(cloud):
+    assert fund_flows.fund_flows_context("binance:perp:TONUSDT")["pair_asset"] == {"asset": "TON", "status": "not_tracked"}
     assert fund_flows.fund_flows_context("binance:perp:ETHUSDT")["pair_asset"] == {"asset": "ETH", "status": "same_as_reference"}
-    cloud["overview"] = overview(sync_minutes_ago=90)
-    assert fund_flows.fund_flows_context("binance:perp:BTCUSDT")["status"] == "stale"
-    cloud["overview"] = overview(stale=True)
-    assert fund_flows.fund_flows_context("binance:perp:BTCUSDT")["status"] == "stale"
+    cloud["summary"] = summary(stale=True, lagging=("MEXC",))
+    context = fund_flows.fund_flows_context("binance:perp:BTCUSDT")
+    assert context["status"] == "stale" and context["exchanges_not_updating"] == ["MEXC"]
+    unavailable = {"version": fund_flows.VERSION, "source": fund_flows.SOURCE, "status": "unavailable",
+                   "pair_asset": {"asset": "LINK", "status": "unavailable"}}
+    cloud["summary"] = summary(through=None)
+    assert fund_flows.fund_flows_context("binance:perp:LINKUSDT") == unavailable
     cloud["down"] = True
-    assert fund_flows.fund_flows_context("binance:perp:LINKUSDT") == {
-        "version": fund_flows.VERSION, "source": fund_flows.SOURCE, "status": "unavailable",
-        "pair_asset": {"asset": "LINK", "status": "unavailable"}}
+    assert fund_flows.fund_flows_context("binance:perp:LINKUSDT") == unavailable
 
 
 def test_disabled_fund_flows_never_reach_the_cloud(cloud, monkeypatch):
@@ -136,7 +138,7 @@ def test_a_conversation_starts_from_a_frozen_snapshot_and_asks_with_its_data(clo
     snapshot = created.json()
     assert snapshot["asset"] == "LINK" and snapshot["window"] == "30d"
     assert client.get("/api/v1/smart-money/snapshots/latest").json()["snapshot"]["id"] == snapshot["id"]
-    assert cloud["calls"][-1] == "/smart-money/assets/LINK?window=30d"
+    assert "/smart-money/reserves/LINK?window=30d" in cloud["calls"]
 
     sent = client.post(f"/api/v1/discussions/fund_flows/{snapshot['id']}/messages", json={
         "message": "LINK 流出交易所代表什麼？", "request_id": "00000000-0000-4000-8000-000000000001",
@@ -158,7 +160,11 @@ def test_a_conversation_starts_from_a_frozen_snapshot_and_asks_with_its_data(clo
     state = client.get(f"/api/v1/discussions/fund_flows/{snapshot['id']}").json()
     assert state["messages"][-1]["status"] == "completed", state["messages"][-1]
     frozen = seen["input"]["frozen_context"]
-    assert frozen["fund_flows"]["focus"]["asset"] == "LINK"
+    focus = frozen["fund_flows"]["focus"]
+    assert focus["asset"] == "LINK" and focus["window"] == "30d" and len(focus["daily"]) == 30
+    assert focus["exchanges"] == [{"exchange": "Binance", "held": 30000000, "held_usd": 420000000,
+                                   "share_pct": 50.0, "amount": -1500000, "usd": -21000000}]
+    assert focus["excluded_changes"][0]["exchange"] == "OKX"
     assert "live_market" not in seen["input"]
     assert "frozen_context.fund_flows" in seen["instructions"]
 
@@ -166,9 +172,11 @@ def test_a_conversation_starts_from_a_frozen_snapshot_and_asks_with_its_data(clo
 def test_an_unknown_snapshot_or_coin_is_refused(cloud):
     init_db()
     client = TestClient(app)
-    assert client.post("/api/v1/smart-money/snapshots", json={"asset": "link", "window": "1d"}).status_code == 422
+    assert client.post("/api/v1/smart-money/snapshots", json={"asset": "link", "window": "7d"}).status_code == 422
     assert client.post("/api/v1/smart-money/snapshots", json={"asset": "LINK", "window": "2y"}).status_code == 422
-    assert client.post("/api/v1/smart-money/snapshots", json={"asset": "SOL", "window": "1d"}).status_code == 404
+    # Reserves are daily: there is no one-day window to ask about.
+    assert client.post("/api/v1/smart-money/snapshots", json={"asset": "LINK", "window": "1d"}).status_code == 422
+    assert client.post("/api/v1/smart-money/snapshots", json={"asset": "TON", "window": "7d"}).status_code == 404
     response = client.post("/api/v1/discussions/fund_flows/flow_missing/messages", json={
         "message": "hi", "request_id": "00000000-0000-4000-8000-000000000002"})
     assert response.status_code == 404

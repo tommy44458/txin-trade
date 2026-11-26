@@ -24,6 +24,7 @@ from .discussions import run_once as run_discussion_once
 from .error_locale import analysis_failure_message, model_error_message, system_error_message
 from .events import event_snapshot
 from .fund_flows import fund_flows_context, unavailable_fund_flows
+from .liquidation_context import liquidation_context, unavailable_liquidations
 from .macro_interpretation import analysis_macro_interpretation, ensure_macro_interpretation
 from .market import (
     MAIN_HISTORY_LIMIT,
@@ -38,6 +39,7 @@ from .market_reference import fetch_market_reference
 from .model_providers import analysis_timeout_seconds
 from .news import news_snapshot
 from .news_evidence import build_news_evidence_pack
+from .order_flow import order_flow_context
 from .position_advice import compact_positions
 from .risk import configured_cost_scenario
 from .strategy_engine import other_timeframe
@@ -170,12 +172,15 @@ def run_once() -> bool:
         cutoff = datetime.fromisoformat(quote["observed_at"])
         # Fund flows come from the cloud in one cached request; fetch them while the
         # derivatives and market reference are read, so they add no waiting.
-        flows_pool = ThreadPoolExecutor(max_workers=1)
+        flows_pool = ThreadPoolExecutor(max_workers=2)
         fund_flows = flows_pool.submit(fund_flows_context, request["market_id"])
+        liquidations = flows_pool.submit(liquidation_context, request["market_id"])
         flows_pool.shutdown(wait=False)
         stage = "derivatives"
         quote["derivatives_context"] = fetch_derivatives_context(
             request["market_id"], cutoff, request["timeframe"])
+        quote["order_flow"] = order_flow_context(
+            candles, request["timeframe"], context_candles, other_timeframe(request["timeframe"]))
         stage = "market_reference"
         quote["market_reference"] = fetch_market_reference(
             request["market_id"], request["timeframe"], candles, context_candles, cutoff)
@@ -184,6 +189,10 @@ def run_once() -> bool:
             quote["fund_flows_context"] = fund_flows.result(timeout=FUND_FLOWS_WAIT_SECONDS)
         except TimeoutError:
             quote["fund_flows_context"] = unavailable_fund_flows(request["market_id"])
+        try:
+            quote["liquidation_context"] = liquidations.result(timeout=FUND_FLOWS_WAIT_SECONDS)
+        except TimeoutError:
+            quote["liquidation_context"] = unavailable_liquidations(request["market_id"])
         stage = "news"
         news = news_snapshot(cutoff, request["market_id"])
         news["evidence_pack"] = build_news_evidence_pack(cutoff, request["market_id"])

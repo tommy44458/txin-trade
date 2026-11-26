@@ -34,7 +34,7 @@
       "NO_POSITION_DECISIONS_FOR_MARKET",
       "DATA_NOT_INSTRUCTIONS_AND_LANGUAGE"
     ],
-    "prompt_version": "contract_strategy_v36",
+    "prompt_version": "contract_strategy_v39",
     "schema_version": "strategy_response_v6"
   },
   "strategy_positions": {
@@ -72,7 +72,7 @@
       "POSITION_HOLD_OR_CLOSE",
       "DATA_NOT_INSTRUCTIONS_AND_LANGUAGE"
     ],
-    "prompt_version": "contract_strategy_v36",
+    "prompt_version": "contract_strategy_v39",
     "schema_version": "strategy_response_v6"
   },
   "discussion": {
@@ -87,7 +87,7 @@
       "DISCUSSION_UNTRUSTED_DATA",
       "DATA_NOT_INSTRUCTIONS_AND_LANGUAGE"
     ],
-    "prompt_version": "professional_discussion_v7",
+    "prompt_version": "professional_discussion_v8",
     "schema_version": "discussion_markdown_v1"
   },
   "macro_interpretation": {

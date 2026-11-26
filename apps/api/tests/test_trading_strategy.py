@@ -52,7 +52,7 @@ def test_analyses_without_a_strategy_keep_their_prompt_and_other_tasks_never_loa
         resolve_prompt("strategy_market", inputs={"timeframe": "4h"})
     assert resolve_prompt("discussion", inputs=STRATEGY) == resolve_prompt("discussion")
     assert task_prompt_versions("strategy_market") == [
-        "contract_strategy_v36", "contract_strategy_v36:extreme_reversal_v1"]
+        "contract_strategy_v39", "contract_strategy_v39:extreme_reversal_v1"]
     with pytest.raises(ValueError, match="Unsupported prompt input: trading_strategy"):
         resolve_prompt("strategy_market", inputs={"trading_strategy": "breakout"})
 

@@ -59,7 +59,7 @@ import UpdateDialog from "./UpdateDialog";
 import CloudSignInNotice from "./CloudSignInNotice";
 import UpdateNotice from "./UpdateNotice";
 import LocalCloudMenu from "./LocalCloudMenu";
-import DerivativesContext, { type DerivativesData } from "./DerivativesContext";
+import DerivativesContext, { type DerivativesData, type LiquidationData, type OrderFlowData } from "./DerivativesContext";
 import MarketReference, { type MarketReferenceData } from "./MarketReference";
 import FundFlowsContext, { type FundFlowsContextData } from "./FundFlowsContext";
 import DirectionAssessment from "./DirectionAssessment";
@@ -159,6 +159,9 @@ type Report = {
   output_locale?: UiLocale;
   response_locale?: UiLocale;
   derivatives_context?: DerivativesData | null;
+  // Absent in reports made before order flow was computed.
+  order_flow?: OrderFlowData | null;
+  liquidation_context?: LiquidationData | null;
   market_reference?: MarketReferenceData | null;
   fund_flows_context?: FundFlowsContextData | null;
   market_id: string;
@@ -1021,8 +1024,9 @@ function App({ remoteSection, remoteIdentity, remoteMenu, remoteStatus }: {
         : (pendingJob?.phase ?? "");
   const busyLabel = positionsBusy ? uiText("正在分析持倉…") : uiText("正在分析中…");
   const macroResult = macroInterpretation.data?.interpretation;
-  const flowWindowLabel = (w: FlowWindow) =>
-    ({ "1d": uiText("24 小時"), "7d": uiText("7 天"), "30d": uiText("30 天"), "90d": uiText("90 天") })[w];
+  // Conversations started before reserves replaced the chain monitor may be about one day.
+  const flowWindowLabel = (w: string) =>
+    ({ "1d": uiText("24 小時"), "7d": uiText("7 天"), "30d": uiText("30 天"), "90d": uiText("90 天") } as Record<string, string>)[w] ?? w;
   const analysisMatchesView = (view === "positions" && job?.submitted_input.kind === "positions") ||
     (view === "market" && job?.submitted_input.kind !== "positions");
   const discussionSubject: AnalysisDiscussionProps | null = view === "smartMoney" && flowSnapshot
@@ -1448,7 +1452,8 @@ function App({ remoteSection, remoteIdentity, remoteMenu, remoteStatus }: {
                 {report && (
                   <details className="secondary-evidence">
                     <summary>{uiText("衍生品市場背景")}</summary>
-                    <DerivativesContext data={report.derivatives_context} />
+                    <DerivativesContext data={report.derivatives_context} orderFlow={report.order_flow}
+                      liquidations={report.liquidation_context} />
                   </details>
                 )}{" "}
                 {report && (
@@ -1858,7 +1863,8 @@ function App({ remoteSection, remoteIdentity, remoteMenu, remoteStatus }: {
                     )}
                     <details className="secondary-evidence">
                       <summary>{uiText("衍生品市場背景")}</summary>
-                      <DerivativesContext data={report.derivatives_context} />
+                      <DerivativesContext data={report.derivatives_context} orderFlow={report.order_flow}
+                      liquidations={report.liquidation_context} />
                     </details>
                   </>
                 )}

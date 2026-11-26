@@ -8,10 +8,13 @@ The product version is managed in `version.json`. Dates record release preparati
 
 - A trading strategy can be chosen before an analysis, and extreme reversal maps the extreme reversal zones for the next 6 hours to 3 days.
 - AI performance can be grouped by trading strategy.
+- Analyses now include Binance long/short ratios, taker buy and sell volume, and the cumulative volume delta (CVD), also shown under contract context.
+- Analyses now include Bybit and OKX liquidations over the last 1, 4 and 24 hours, with how much of each window was covered.
 
 ### Changed
 
 - The left-side and right-side entry style choice is removed; the chosen trading strategy now decides how to enter.
+- Fund flows now follow daily holdings in the wallets 13 exchanges publish instead of inaccurate transfer counts, and analyses use the same data.
 
 ### Fixed
 

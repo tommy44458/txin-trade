@@ -2,12 +2,12 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   assetForMarket,
-  explorerUrl,
+  closeDate,
+  combine,
   formatAmount,
   formatUsd,
-  lastSynced,
-  seriesScale,
-  shortAddress,
+  netScale,
+  reserveOrder,
 } from '../src/smartMoney.ts';
 
 test('a market names its coin without the quote or the 1000x contract prefix', () => {
@@ -35,19 +35,24 @@ test('coin amounts keep enough precision for their size', () => {
   assert.equal(formatAmount(25_642_066_780, 'en-US'), '25.6B');
 });
 
-test('addresses are shortened to recognisable ends, and transactions link to the right explorer', () => {
-  assert.equal(shortAddress('0x28c6c06298d514db089934071355e5743bf21d60'), '0x28c6…1d60');
-  assert.equal(shortAddress('34xp4vRoCGJym3xR7yCVPFHoCNxv4Twseo'), '34xp4v…wseo');
-  assert.equal(shortAddress('bc1short'), 'bc1short');
-  assert.equal(shortAddress(null), '—');
-  assert.equal(explorerUrl({ chain: 'btc', tx: 'ab' }), 'https://mempool.space/tx/ab');
-  assert.equal(explorerUrl({ chain: 'eth', tx: '0xab' }), 'https://etherscan.io/tx/0xab');
+test('coin changes can carry their sign', () => {
+  assert.equal(formatAmount(-4752.3, 'en-US', true), '-4,752');
+  assert.equal(formatAmount(8684, 'en-US', true), '+8,684');
+  assert.equal(formatAmount(0, 'en-US', true), '0');
 });
 
-test('freshness comes from the latest chain run, and bars share one scale', () => {
-  assert.equal(lastSynced({}), null);
-  assert.equal(lastSynced({ btc: { height: 1, updated_at: 5 }, eth: { height: 2, updated_at: 9 } }), 9);
-  const point = (inflow_usd, outflow_usd) => ({ t: 0, inflow: 0, outflow: 0, inflow_usd, outflow_usd });
-  assert.equal(seriesScale([point(10, 40), point(25, 0)]), 40);
-  assert.equal(seriesScale([point(0, 0)]), 1);
+test('BTC, ETH and the stablecoins lead the coin list, the rest follow alphabetically', () => {
+  assert.deepEqual(reserveOrder(['SOL', 'USDC', 'AAVE', 'ETH', 'USDT', 'BTC']), ['BTC', 'ETH', 'USDT', 'USDC', 'AAVE', 'SOL']);
+});
+
+test('USDT and USDC changes add up, a missing coin counts as nothing, and bars share one scale', () => {
+  assert.deepEqual(combine([{ net: 5, net_usd: 5 }, undefined, { net: -2, net_usd: -2 }]), { net: 3, net_usd: 3 });
+  assert.equal(netScale([{ net: 1, net_usd: -40 }, { net: 1, net_usd: 25 }]), 40);
+  assert.equal(netScale([{ net: 0, net_usd: 0 }]), 1);
+});
+
+test('a close is shown on its UTC day wherever the viewer is', () => {
+  // 00:00 UTC on 26 November is still 25 November in New York.
+  const close = Date.UTC(2026, 10, 26);
+  assert.equal(closeDate(close, 'en-US'), '11/26');
 });

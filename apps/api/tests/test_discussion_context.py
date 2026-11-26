@@ -94,8 +94,8 @@ def test_discussion_prompt_distinguishes_current_observation_and_original_zones(
     from trade_helper.prompts import resolve_prompt
 
     bundle = resolve_prompt("discussion", prompt_locale=locale, response_locale=locale)
-    assert bundle.prompt_version == "professional_discussion_v7"
-    assert bundle.policy_version == "bilingual_trading_policy_v14"
+    assert bundle.prompt_version == "professional_discussion_v8"
+    assert bundle.policy_version == "bilingual_trading_policy_v17"
     assert "live_market" in bundle.instructions
     assert "forming_candle" in bundle.instructions
     assert "cannot be treated as a closed candle" in bundle.instructions if locale == "en-US" else (
