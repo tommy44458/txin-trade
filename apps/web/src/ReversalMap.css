@@ -1,4 +1,4 @@
-/* Shares the AI report card's header and pills; each window reads as a price ladder. */
+/* Shares the AI report card's header and pills: a price map first, then each zone's numbers. */
 .reversal-map {
   padding: 0;
   overflow: hidden;
@@ -25,155 +25,402 @@
   background: var(--warning-soft);
   color: var(--warning);
 }
-.reversal-summary {
+.rmap-summary {
   display: grid;
   gap: 6px;
   padding: 16px 24px 0;
 }
-.reversal-summary p {
+.rmap-summary p {
   margin: 0;
   font-size: 14px;
   line-height: 1.8;
   white-space: pre-line;
 }
-.reversal-summary small {
+.rmap-summary small {
   font-size: 12px;
   color: var(--warning);
 }
-.reversal-windows {
+.rmap-empty {
+  margin: 0;
+  padding: 16px 24px;
+  font-size: 13px;
+  color: var(--text-tertiary);
+}
+
+/* One shared price axis on the left and one column per time window. */
+.rmap-chart {
+  display: grid;
+  grid-template-rows: auto 260px auto;
+  column-gap: 8px;
+  margin: 16px 24px 0;
+  font: 11px/1 var(--font-mono);
+}
+.rmap-chart-heads {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
-  padding: 16px 24px;
-}
-.reversal-window h3,
-.reversal-paths h3 {
-  margin: 0 0 8px;
-  font-size: 13px;
-  font-weight: 600;
+  padding-bottom: 8px;
+  font: 600 12px/1.4 var(--font-system);
   color: var(--text-secondary);
+  text-align: center;
 }
-.reversal-ladder {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.rmap-axis {
+  position: relative;
+  color: var(--text-tertiary);
+}
+.rmap-axis span {
+  position: absolute;
+  right: 0;
+  transform: translateY(-50%);
+  white-space: nowrap;
+}
+.rmap-plot {
+  position: relative;
   display: grid;
-  gap: 8px;
-}
-.reversal-zone {
-  padding: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   background: var(--surface-subtle);
-  min-width: 0;
+  overflow: hidden;
 }
-.reversal-zone.long {
-  box-shadow: inset 3px 0 0 var(--positive);
-}
-.reversal-zone.short {
-  box-shadow: inset 3px 0 0 var(--negative);
-}
-.reversal-zone.invalidated {
+.rmap-grid {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px solid var(--border);
   opacity: 0.6;
 }
-.reversal-zone-head {
+.rmap-col {
+  position: relative;
+  container-type: inline-size;
+}
+.rmap-col + .rmap-col {
+  border-left: 1px solid var(--border);
+}
+.rmap-band {
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  z-index: 1;
+  min-height: 18px;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  border: 1px solid;
+  border-radius: 4px;
+  overflow: hidden;
+  white-space: nowrap;
+  font-weight: 600;
+}
+.rmap-band.short {
+  color: var(--negative);
+  border-color: color-mix(in srgb, var(--negative) 55%, transparent);
+  background: color-mix(in srgb, var(--negative) 16%, var(--surface));
+}
+.rmap-band.long {
+  color: var(--positive);
+  border-color: color-mix(in srgb, var(--positive) 55%, transparent);
+  background: color-mix(in srgb, var(--positive) 16%, var(--surface));
+}
+.rmap-band.second {
+  border-style: dashed;
+  background: var(--surface);
+}
+.rmap-band.triggered {
+  box-shadow: 0 0 0 2px color-mix(in srgb, currentColor 30%, transparent);
+}
+.rmap-band.invalidated {
+  color: var(--text-tertiary);
+  border-color: var(--border);
+  background: var(--surface);
+  text-decoration: line-through;
+}
+.rmap-band.plan {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.rmap-band-edge {
+  display: none;
+}
+@container (max-width: 120px) {
+  .rmap-band-full {
+    display: none;
+  }
+  .rmap-band-edge {
+    display: inline;
+  }
+}
+/* A dashed line from the zone's far edge out to its invalidation price. */
+.rmap-wick {
+  position: absolute;
+  left: 50%;
+  border-left: 1.5px dashed;
+}
+.rmap-wick::after {
+  content: "";
+  position: absolute;
+  left: -5px;
+  width: 9px;
+  border-top: 1.5px solid;
+}
+.rmap-wick.short {
+  color: var(--negative);
+}
+.rmap-wick.short::after {
+  top: 0;
+}
+.rmap-wick.long {
+  color: var(--positive);
+}
+.rmap-wick.long::after {
+  bottom: 0;
+}
+.rmap-quote-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  border-top: 1.5px dashed var(--text-secondary);
+  pointer-events: none;
+}
+.rmap-quote-line span {
+  position: absolute;
+  right: 6px;
+  transform: translateY(-50%);
+  padding: 3px 6px;
+  border-radius: 4px;
+  background: var(--text);
+  color: var(--surface);
+  white-space: nowrap;
+}
+.rmap-legend {
+  grid-column: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  padding-top: 8px;
+  font: 12px/1.5 var(--font-system);
+  color: var(--text-tertiary);
+}
+.rmap-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.rmap-key {
+  display: inline-block;
+  width: 14px;
+  height: 10px;
+  border: 1px solid;
+  border-radius: 2px;
+}
+.rmap-key.short {
+  border-color: var(--negative);
+  background: color-mix(in srgb, var(--negative) 16%, var(--surface));
+}
+.rmap-key.long {
+  border-color: var(--positive);
+  background: color-mix(in srgb, var(--positive) 16%, var(--surface));
+}
+.rmap-key.second {
+  border-style: dashed;
+  border-color: var(--text-tertiary);
+}
+.rmap-key.stop {
+  width: 0;
+  height: 12px;
+  border: 0;
+  border-left: 1.5px dashed var(--text-tertiary);
+  border-radius: 0;
+}
+.rmap-key.plan {
+  border: 2px solid var(--accent);
+}
+
+/* The zone list follows the chart's order: short zones above the snapshot price, long zones below. */
+.rmap-list {
+  list-style: none;
+  margin: 0;
+  padding: 16px 24px;
+  display: grid;
+  gap: 8px;
+}
+.rmap-row {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 12px 14px 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+.rmap-row.short {
+  box-shadow: inset 3px 0 0 var(--negative);
+}
+.rmap-row.long {
+  box-shadow: inset 3px 0 0 var(--positive);
+}
+.rmap-row.plan {
+  border-color: var(--accent);
+}
+.rmap-row.invalidated {
+  opacity: 0.6;
+}
+.rmap-row-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 12px;
+  font-size: 12px;
+}
+.rmap-row-tags {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
 }
-.reversal-status,
-.reversal-confidence {
-  color: var(--text-tertiary);
+.rmap-row-tier {
+  font-weight: 600;
+  color: var(--text-secondary);
 }
-.reversal-status.triggered {
+.rmap-plan-tag {
+  padding: 4px 8px;
+  border-radius: 5px;
+  background: var(--accent-soft);
   color: var(--accent);
   font-weight: 600;
 }
-.reversal-zone-range {
+.rmap-row-status {
+  color: var(--text-tertiary);
+}
+.rmap-row-status.triggered {
+  color: var(--accent);
+  font-weight: 600;
+}
+.rmap-row-prices {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 24px;
+}
+.rmap-row-range {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   gap: 4px 10px;
-  margin: 8px 0 4px;
+  margin: 0;
 }
-.reversal-zone-range strong {
-  font: 600 15px var(--font-mono);
+.rmap-row-range strong {
+  font: 600 16px var(--font-mono);
 }
-.reversal-zone-range span {
+.rmap-row-range span {
   font-size: 12px;
   color: var(--text-tertiary);
 }
-.reversal-zone-plan {
-  display: grid;
-  gap: 2px;
-  margin: 0 0 6px;
+.rmap-row-plan {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+  margin: 0;
   font-size: 13px;
 }
-.reversal-zone-plan div {
+.rmap-row-plan div {
   display: flex;
+  align-items: baseline;
   gap: 8px;
 }
-.reversal-zone-plan dt {
+.rmap-row-plan dt {
   flex: none;
   color: var(--text-tertiary);
 }
-.reversal-zone-plan dd {
+.rmap-row-plan dd {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 12px;
   margin: 0;
   font-family: var(--font-mono);
-  overflow-wrap: anywhere;
 }
-.reversal-zone-plan small {
+.rmap-target {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+}
+.rmap-r {
+  font-size: 11px;
   color: var(--text-tertiary);
 }
-.reversal-zone-text {
-  margin: 4px 0 0;
+.rmap-r.preferred {
+  color: var(--positive);
+  font-weight: 600;
+}
+.rmap-row-note {
+  margin: 0;
   font-size: 13px;
   line-height: 1.7;
   color: var(--text-secondary);
 }
-.reversal-zone-text b {
+.rmap-row-note b {
   margin-right: 6px;
   font-weight: 600;
   color: var(--text);
 }
-/* The snapshot price separates the short zones above from the long zones below. */
-.reversal-quote {
+.rmap-row-window {
+  margin-right: 6px;
+  color: var(--text-tertiary);
+}
+.rmap-quote {
   display: flex;
   align-items: center;
   gap: 8px;
   font: 12px var(--font-mono);
   color: var(--text-tertiary);
 }
-.reversal-quote::before,
-.reversal-quote::after {
+.rmap-quote::before,
+.rmap-quote::after {
   content: "";
   flex: 1;
   border-top: 1px dashed var(--border);
 }
-.reversal-empty {
-  margin: 0;
-  font-size: 13px;
-  color: var(--text-tertiary);
-}
-.reversal-missing {
-  padding: 16px 24px;
-}
-.reversal-paths {
+
+.rmap-paths {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
+  gap: 16px 24px;
   padding: 16px 24px;
   border-top: 1px solid var(--border);
 }
-.reversal-paths p {
+.rmap-path h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.rmap-path h3::before {
+  content: "";
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.rmap-path.short h3::before {
+  background: var(--negative);
+}
+.rmap-path.long h3::before {
+  background: var(--positive);
+}
+.rmap-path p {
   margin: 0;
   font-size: 14px;
   line-height: 1.8;
   white-space: pre-line;
 }
-.reversal-footnotes {
+.rmap-footnotes {
   display: grid;
   gap: 8px;
   margin: 0;
@@ -182,18 +429,18 @@
   font-size: 13px;
   line-height: 1.7;
 }
-.reversal-footnotes div {
+.rmap-footnotes div {
   display: grid;
   grid-template-columns: auto 1fr;
   gap: 12px;
 }
-.reversal-footnotes dt {
+.rmap-footnotes dt {
   color: var(--text-tertiary);
 }
-.reversal-footnotes dd {
+.rmap-footnotes dd {
   margin: 0;
 }
-.reversal-disclaimer {
+.rmap-disclaimer {
   margin: 0;
   padding: 12px 24px 16px;
   border-top: 1px solid var(--border);
@@ -201,22 +448,32 @@
   line-height: 1.7;
   color: var(--text-tertiary);
 }
-@media (max-width: 960px) {
-  .reversal-windows {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
 @media (max-width: 540px) {
-  .reversal-summary,
-  .reversal-windows,
-  .reversal-paths,
-  .reversal-footnotes,
-  .reversal-disclaimer,
-  .reversal-missing {
+  .rmap-summary,
+  .rmap-list,
+  .rmap-paths,
+  .rmap-footnotes,
+  .rmap-disclaimer,
+  .rmap-empty {
     padding-left: 16px;
     padding-right: 16px;
   }
-  .reversal-paths {
+  .rmap-chart {
+    grid-template-rows: auto 220px auto;
+    margin-left: 16px;
+    margin-right: 16px;
+  }
+  .rmap-chart-heads {
+    font-size: 11px;
+  }
+  .rmap-band {
+    left: 6%;
+    right: 6%;
+  }
+  .rmap-legend {
+    grid-column: 1 / -1;
+  }
+  .rmap-paths {
     grid-template-columns: minmax(0, 1fr);
   }
 }

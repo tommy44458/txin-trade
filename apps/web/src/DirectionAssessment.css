@@ -62,11 +62,11 @@
   }
 }
 
-/* The answer to the trader's question leads the card. */
+/* The answer to the trader's question leads the card, inset like the rows below it. */
 .bias-answer {
   display: grid;
   gap: 6px;
-  margin: 0 var(--space-5) var(--space-4);
+  margin: var(--space-4) var(--space-6) 0;
   padding: 12px 14px;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
@@ -93,4 +93,9 @@
 .bias-answer small {
   font-size: 12px;
   color: var(--warning);
+}
+@media (max-width: 540px) {
+  .bias-answer {
+    margin: var(--space-4) var(--space-4) 0;
+  }
 }

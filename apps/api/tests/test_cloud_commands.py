@@ -69,7 +69,8 @@ def test_missing_records_unknown_operations_and_oversized_results_fail_with_rela
 
 def test_remote_analysis_uses_saved_preferences_and_never_duplicates_a_retried_dispatch(monkeypatch):
     monkeypatch.setattr(cloud_commands, "trading_preferences", lambda: {
-        "risk_tolerance": "high", "trading_style": "left", "leverage": 10, "directional_bias": None})
+        "risk_tolerance": "high", "trading_style": "right", "trading_strategy": "extreme_reversal",
+        "leverage": 10, "directional_bias": None})
     command = {"operation": "analyses.start", "market_id": "binance:perp:BTCUSDT", "timeframe": "4h",
                "output_locale": "en-US"}
     first = run_command(command, "cloud:00000000-0000-4000-8000-000000000001")
@@ -80,4 +81,17 @@ def test_remote_analysis_uses_saved_preferences_and_never_duplicates_a_retried_d
     assert len(rows) == 1
     request = json.loads(rows[0]["request_json"])
     assert (request["kind"], request["timeframe"], request["output_locale"]) == ("market", "4h", "en-US")
-    assert (request["risk_tolerance"], request["trading_style"], request["leverage"]) == ("high", "left", 10)
+    assert (request["risk_tolerance"], request["leverage"]) == ("high", 10)
+    # The strategy decides the entry style; the old saved style is not applied.
+    assert (request["trading_strategy"], request["trading_style"]) == ("extreme_reversal", "left")
+
+
+def test_remote_analysis_ignores_a_saved_entry_style_without_a_strategy(monkeypatch):
+    monkeypatch.setattr(cloud_commands, "trading_preferences", lambda: {
+        "risk_tolerance": None, "trading_style": "right", "trading_strategy": None, "leverage": 5,
+        "directional_bias": None})
+    run_command({"operation": "analyses.start", "market_id": "binance:perp:BTCUSDT", "timeframe": "1h",
+                 "output_locale": "zh-TW"}, "cloud:00000000-0000-4000-8000-000000000002")
+    with connect(readonly=True) as db:
+        request = json.loads(db.execute("SELECT request_json FROM analyses").fetchone()["request_json"])
+    assert request["trading_style"] is None and request["trading_strategy"] is None

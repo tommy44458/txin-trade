@@ -9,6 +9,14 @@ The product version is managed in `version.json`. Dates record release preparati
 - A trading strategy can be chosen before an analysis, and extreme reversal maps the extreme reversal zones for the next 6 hours to 3 days.
 - AI performance can be grouped by trading strategy.
 
+### Changed
+
+- The left-side and right-side entry style choice is removed; the chosen trading strategy now decides how to enter.
+
+### Fixed
+
+- In the direction assessment, the answer to your chosen direction no longer sits against the card's title.
+
 ## [1.1.5] - 2026-10-08
 
 ### Changed
