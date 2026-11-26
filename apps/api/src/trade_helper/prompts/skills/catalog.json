@@ -1,6 +1,6 @@
 {
   "extreme_reversal": {
-    "version": "extreme_reversal_v1",
+    "version": "extreme_reversal_v2",
     "tasks": [
       "strategy_market",
       "strategy_positions"

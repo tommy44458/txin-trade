@@ -233,9 +233,9 @@
   "machine_contracts_sha256": "5e5b2caadd220131b3ee48ec7726a7bffc005ec097173becbb561716cdbd1710",
   "skills": {
     "extreme_reversal": {
-      "version": "extreme_reversal_v1",
-      "zh-TW": "ee4d62c864684b8cd41096791be2db7d12916809e39db8c77be79f4297f8795d",
-      "en-US": "d53f6912510d0b4af723f5ea7dd75895773da2b0009c73fd4b4651103188e32d"
+      "version": "extreme_reversal_v2",
+      "zh-TW": "4382379596cda682bd7edfbbabb65ea9d8a69b1fca22384994ece9fc766d00d7",
+      "en-US": "9c8227ab3a15891869eb401751656330ddf9da59db119afd87cc151c39c11070"
     }
   }
 }
