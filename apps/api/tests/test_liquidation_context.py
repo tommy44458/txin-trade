@@ -13,11 +13,11 @@ def totals(long_usd=0.0, short_usd=0.0):
 
 
 def summary(coverage=100.0, bybit_connected=True, stale=False):
-    window = {"symbol": {"binance": totals(1_200_000.4, 300_000), "bybit": totals(2_500_000, 0)},
-              "market": {"binance": totals(40e6, 10e6), "bybit": totals(60e6, 20e6)},
-              "coverage_pct": {"binance": coverage, "bybit": coverage}}
+    window = {"symbol": {"okx": totals(1_200_000.4, 300_000), "bybit": totals(2_500_000, 0)},
+              "market": {"okx": totals(40e6, 10e6), "bybit": totals(60e6, 20e6)},
+              "coverage_pct": {"okx": coverage, "bybit": coverage}}
     return {"generated_at": THROUGH + 60_000, "symbol": "BTCUSDT", "through": THROUGH, "stale": stale,
-            "sources": {"binance": {"connected": True, "complete": False, "follows_symbol": True, "error": None},
+            "sources": {"okx": {"connected": True, "complete": False, "follows_symbol": True, "error": None},
                         "bybit": {"connected": bybit_connected, "complete": True, "follows_symbol": True,
                                   "error": None}},
             "windows": {"1h": window, "4h": window, "24h": window},
@@ -43,10 +43,10 @@ def test_the_pair_and_the_market_per_exchange_and_window(cloud):
     context = liquidation_context("binance:perp:BTCUSDT")
     assert cloud["calls"] == ["/smart-money/liquidations?symbol=BTCUSDT"]
     assert context["status"] == "available" and context["symbol"] == "BTCUSDT"
-    assert context["windows"]["1h"]["symbol"]["binance"] == {
+    assert context["windows"]["1h"]["symbol"]["okx"] == {
         "long_usd": 1200000, "short_usd": 300000, "long_count": 2, "short_count": 1, "largest_usd": 1200000}
     assert context["windows"]["24h"]["market"]["bybit"]["long_usd"] == 60000000
-    assert context["sources"]["binance"] == {"connected": True, "complete": False, "follows_symbol": True}
+    assert context["sources"]["okx"] == {"connected": True, "complete": False, "follows_symbol": True}
     assert len(context["hourly_24h"]) == 24 and context["hourly_24h"][0]["long_usd"] == 10
     assert any("undercount" in note for note in context["notes"])
 
@@ -54,8 +54,10 @@ def test_the_pair_and_the_market_per_exchange_and_window(cloud):
 def test_gaps_and_dropped_streams_make_the_data_partial_not_quiet(cloud):
     cloud["answer"] = summary(coverage=60.0)
     assert liquidation_context("binance:perp:BTCUSDT")["status"] == "partial"
+    # One stream followed through the hour is enough; the dropped one stays visible.
     cloud["answer"] = summary(bybit_connected=False)
-    assert liquidation_context("binance:perp:BTCUSDT")["status"] == "partial"
+    context = liquidation_context("binance:perp:BTCUSDT")
+    assert context["status"] == "available" and context["sources"]["bybit"]["connected"] is False
     cloud["answer"] = summary(stale=True)
     assert liquidation_context("binance:perp:BTCUSDT")["status"] == "partial"
     # Never connected in the whole day: nothing to say about liquidations.

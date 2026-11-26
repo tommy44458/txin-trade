@@ -476,12 +476,12 @@ export const zhTW = {
     "無明顯方向": "無明顯方向",
     "主動買入減主動賣出，以 USDT 計，取已收盤 K 線。與價格反向可能是掛單吸收，也可能是避險或套利。": "主動買入減主動賣出，以 USDT 計，取已收盤 K 線。與價格反向可能是掛單吸收，也可能是避險或套利。",
     "合約背景：未平倉量、多空比、主動買賣與清算": "合約背景：未平倉量、多空比、主動買賣與清算",
-    "{{p0}} 清算（Binance、Bybit）": "{{p0}} 清算（Binance、Bybit）",
+    "{{p0}} 清算（Bybit、OKX）": "{{p0}} 清算（Bybit、OKX）",
     "{{p0}} 小時": "{{p0}} 小時",
     "多單被清算 {{p0}}、空單被清算 {{p1}}": "多單被清算 {{p0}}、空單被清算 {{p1}}",
-    "連線涵蓋 Binance {{p0}}%、Bybit {{p1}}%": "連線涵蓋 Binance {{p0}}%、Bybit {{p1}}%",
+    "連線涵蓋 Bybit {{p0}}%、OKX {{p1}}%": "連線涵蓋 Bybit {{p0}}%、OKX {{p1}}%",
     "全市場 24 小時": "全市場 24 小時",
-    "多單被清算是被迫賣出，空單被清算是被迫買進。Binance 每秒每個幣種只回報最大的一筆，連環清算時會低估；連線中斷的時段沒有資料，不代表沒有清算。": "多單被清算是被迫賣出，空單被清算是被迫買進。Binance 每秒每個幣種只回報最大的一筆，連環清算時會低估；連線中斷的時段沒有資料，不代表沒有清算。"
+    "多單被清算是被迫賣出，空單被清算是被迫買進。OKX 只公開部分清算，Binance 的清算不在其中；連線中斷的時段沒有資料，不代表沒有清算。": "多單被清算是被迫賣出，空單被清算是被迫買進。OKX 只公開部分清算，Binance 的清算不在其中；連線中斷的時段沒有資料，不代表沒有清算。"
   },
   "market": {
     "請求失敗 ({{p0}})": "請求失敗 ({{p0}})",
@@ -1930,12 +1930,12 @@ export const enUS = {
     "無明顯方向": "no clear direction",
     "主動買入減主動賣出，以 USDT 計，取已收盤 K 線。與價格反向可能是掛單吸收，也可能是避險或套利。": "Taker buys minus taker sells in USDT over closed candles. Flow against price can mean absorption by resting orders, or hedging and arbitrage.",
     "合約背景：未平倉量、多空比、主動買賣與清算": "Contract context: open interest, long/short, taker flow and liquidations",
-    "{{p0}} 清算（Binance、Bybit）": "{{p0}} liquidations (Binance, Bybit)",
+    "{{p0}} 清算（Bybit、OKX）": "{{p0}} liquidations (Bybit, OKX)",
     "{{p0}} 小時": "{{p0}}h",
     "多單被清算 {{p0}}、空單被清算 {{p1}}": "longs liquidated {{p0}}, shorts liquidated {{p1}}",
-    "連線涵蓋 Binance {{p0}}%、Bybit {{p1}}%": "connected Binance {{p0}}%, Bybit {{p1}}%",
+    "連線涵蓋 Bybit {{p0}}%、OKX {{p1}}%": "connected Bybit {{p0}}%, OKX {{p1}}%",
     "全市場 24 小時": "Whole market, 24h",
-    "多單被清算是被迫賣出，空單被清算是被迫買進。Binance 每秒每個幣種只回報最大的一筆，連環清算時會低估；連線中斷的時段沒有資料，不代表沒有清算。": "Liquidated longs are forced selling and liquidated shorts forced buying. Binance reports only the largest liquidation per symbol each second, so it undercounts cascades; a time the streams were disconnected has no data, which is not the same as no liquidations."
+    "多單被清算是被迫賣出，空單被清算是被迫買進。OKX 只公開部分清算，Binance 的清算不在其中；連線中斷的時段沒有資料，不代表沒有清算。": "Liquidated longs are forced selling and liquidated shorts forced buying. OKX publishes only part of its liquidations and Binance's are not included; a time the streams were disconnected has no data, which is not the same as no liquidations."
   },
   "market": {
     "請求失敗 ({{p0}})": "Request failed ({{p0}})",
@@ -4336,11 +4336,11 @@ export const textNamespace = {
   "無明顯方向": "common",
   "主動買入減主動賣出，以 USDT 計，取已收盤 K 線。與價格反向可能是掛單吸收，也可能是避險或套利。": "common",
   "合約背景：未平倉量、多空比、主動買賣與清算": "common",
-  "{{p0}} 清算（Binance、Bybit）": "common",
+  "{{p0}} 清算（Bybit、OKX）": "common",
   "{{p0}} 小時": "common",
   "多單被清算 {{p0}}、空單被清算 {{p1}}": "common",
-  "連線涵蓋 Binance {{p0}}%、Bybit {{p1}}%": "common",
+  "連線涵蓋 Bybit {{p0}}%、OKX {{p1}}%": "common",
   "全市場 24 小時": "common",
-  "多單被清算是被迫賣出，空單被清算是被迫買進。Binance 每秒每個幣種只回報最大的一筆，連環清算時會低估；連線中斷的時段沒有資料，不代表沒有清算。": "common"
+  "多單被清算是被迫賣出，空單被清算是被迫買進。OKX 只公開部分清算，Binance 的清算不在其中；連線中斷的時段沒有資料，不代表沒有清算。": "common"
 } as const;
 export type UiTextKey = keyof typeof textNamespace;

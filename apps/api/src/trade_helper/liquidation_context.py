@@ -1,7 +1,8 @@
 """Recent liquidations for the analyzed pair and the whole market.
 
-The cloud keeps Binance's and Bybit's public liquidation streams open and adds them into
-five-minute buckets; this reads one cached summary for the pair. It never raises, so an
+The cloud keeps Bybit's and OKX's public liquidation streams open and adds them into
+five-minute buckets; this reads one cached summary for the pair. Binance refuses the cloud's
+connections, so its liquidations are not included. It never raises, so an
 outage only marks the data unavailable. Coverage is part of the data: a window the
 streams were not connected for is missing, not quiet.
 """
@@ -15,16 +16,17 @@ from .market import symbol_for
 from .smart_money import fetch_cloud
 
 VERSION = "liquidation_context_v1"
-SOURCE = "Binance and Bybit public liquidation streams, collected by the txinTrade cloud"
-EXCHANGES = ("binance", "bybit")
+SOURCE = "Bybit and OKX public liquidation streams, collected by the txinTrade cloud"
+EXCHANGES = ("bybit", "okx")
 WINDOWS = ("1h", "4h", "24h")
-# Below this share of a window connected, the window is reported but marked incomplete.
+# A stream connected for less of the last hour than this does not make the data complete.
 COMPLETE_PCT = 90
 NOTES = [
     ("long_usd is long positions closed by force (forced selling); short_usd is short positions closed "
      "by force (forced buying). Amounts are notional US dollars."),
-    ("Binance sends only the largest liquidation per symbol each second, so its totals undercount during "
-     "cascades; Bybit sends every liquidation, for its 80 USDT perpetuals with the most turnover."),
+    ("Bybit sends every liquidation for its 80 USDT perpetuals with the most turnover (follows_symbol says "
+     "whether this pair is one); OKX publishes only part of its liquidations, so its totals undercount. "
+     "Binance liquidations are not included."),
     ("coverage_pct is how much of each window a stream was connected; missing coverage is missing data, "
      "not a quiet market."),
 ]
@@ -66,7 +68,8 @@ def liquidation_context(market_id: str) -> dict:
     covered = [windows["24h"]["coverage_pct"][e] for e in EXCHANGES]
     if not any(covered):
         return unavailable_liquidations(market_id)
-    complete = all(windows["1h"]["coverage_pct"][e] >= COMPLETE_PCT and sources[e]["connected"]
+    # One exchange followed through the last hour is enough; the other's gaps stay visible.
+    complete = any(windows["1h"]["coverage_pct"][e] >= COMPLETE_PCT and sources[e]["connected"]
                    for e in EXCHANGES)
     return {"version": VERSION, "source": SOURCE,
             "status": "available" if complete and not summary.get("stale") else "partial",

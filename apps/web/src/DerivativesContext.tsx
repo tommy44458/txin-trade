@@ -48,11 +48,11 @@ export type OrderFlowData = {
 
 type LiquidationTotals = { long_usd: number; short_usd: number; largest_usd: number };
 type LiquidationWindow = {
-  symbol: Record<"binance" | "bybit", LiquidationTotals>;
-  market: Record<"binance" | "bybit", LiquidationTotals>;
-  coverage_pct: Record<"binance" | "bybit", number>;
+  symbol: Record<"bybit" | "okx", LiquidationTotals>;
+  market: Record<"bybit" | "okx", LiquidationTotals>;
+  coverage_pct: Record<"bybit" | "okx", number>;
 };
-/** Positions closed by force on Binance and Bybit, collected by the cloud (liquidation_context v1). */
+/** Positions closed by force on Bybit and OKX, collected by the cloud (liquidation_context v1). */
 export type LiquidationData = {
   status: "available" | "partial" | "unavailable";
   symbol: string;
@@ -60,8 +60,8 @@ export type LiquidationData = {
 };
 
 const LIQUIDATION_WINDOWS = ["1h", "4h", "24h"] as const;
-const both = (side: Record<"binance" | "bybit", LiquidationTotals>, key: "long_usd" | "short_usd") =>
-  side.binance[key] + side.bybit[key];
+const both = (side: Record<"bybit" | "okx", LiquidationTotals>, key: "long_usd" | "short_usd") =>
+  side.bybit[key] + side.okx[key];
 
 function Liquidations({ data }: { data: LiquidationData }) {
   const windows = data.windows;
@@ -71,15 +71,15 @@ function Liquidations({ data }: { data: LiquidationData }) {
     <>
       {LIQUIDATION_WINDOWS.map((name) => {
         const window = windows[name];
-        const partial = window.coverage_pct.binance < 90 || window.coverage_pct.bybit < 90;
+        const partial = window.coverage_pct.bybit < 90 || window.coverage_pct.okx < 90;
         return (
           <p key={name}>
             <b>{uiText("{{p0}} 小時", { p0: name.replace("h", "") })}</b>：{uiText("多單被清算 {{p0}}、空單被清算 {{p1}}", {
               p0: usd(String(both(window.symbol, "long_usd"))).replace("+", ""),
               p1: usd(String(both(window.symbol, "short_usd"))).replace("+", ""),
             })}
-            {partial && <small> · {uiText("連線涵蓋 Binance {{p0}}%、Bybit {{p1}}%", {
-              p0: window.coverage_pct.binance, p1: window.coverage_pct.bybit,
+            {partial && <small> · {uiText("連線涵蓋 Bybit {{p0}}%、OKX {{p1}}%", {
+              p0: window.coverage_pct.bybit, p1: window.coverage_pct.okx,
             })}</small>}
           </p>
         );
@@ -90,7 +90,7 @@ function Liquidations({ data }: { data: LiquidationData }) {
           p1: usd(String(both(day.market, "short_usd"))).replace("+", ""),
         })}
       </p>
-      <p className="note">{uiText("多單被清算是被迫賣出，空單被清算是被迫買進。Binance 每秒每個幣種只回報最大的一筆，連環清算時會低估；連線中斷的時段沒有資料，不代表沒有清算。")}</p>
+      <p className="note">{uiText("多單被清算是被迫賣出，空單被清算是被迫買進。OKX 只公開部分清算，Binance 的清算不在其中；連線中斷的時段沒有資料，不代表沒有清算。")}</p>
     </>
   );
 }
@@ -193,7 +193,7 @@ export default function DerivativesContext({
       )}
       {liquidations && (
         <>
-          <h4 className="evidence-subtitle">{uiText("{{p0}} 清算（Binance、Bybit）", { p0: liquidations.symbol })}</h4>
+          <h4 className="evidence-subtitle">{uiText("{{p0}} 清算（Bybit、OKX）", { p0: liquidations.symbol })}</h4>
           <Liquidations data={liquidations} />
         </>
       )}

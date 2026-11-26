@@ -7,7 +7,7 @@ The product version is managed in `version.json`. Dates record release preparati
 ### Added
 
 - Analyses now include Binance long/short ratios, taker buy and sell volume, and the cumulative volume delta (CVD), also shown under contract context.
-- Analyses now include Binance and Bybit liquidations over the last 1, 4 and 24 hours, with how much of each window was covered.
+- Analyses now include Bybit and OKX liquidations over the last 1, 4 and 24 hours, with how much of each window was covered.
 
 ### Changed
 
