@@ -1,5 +1,6 @@
 import { economicMetricLabel } from "./economicLabels";
 import type { BiasAnswer, DirectionAssessmentData } from "./DirectionAssessment";
+import type { ReversalMapData } from "./ReversalMap";
 import { pythonReferenceText } from "./pythonReferenceText";
 import { uiText, uiLocale, languageName, type UiLocale } from "./i18n/index.ts";
 import { useEffect, useState } from "react";
@@ -27,6 +28,8 @@ export type Reasoning = {
   agent_stance?: "long" | "short" | "wait";
   direction_assessment?: DirectionAssessmentData;
   bias_answer?: BiasAnswer;
+  // Only with the extreme reversal strategy; checked against the snapshot.
+  reversal_map?: ReversalMapData;
   // Pages the model read when it searched the web; unverified background.
   web_sources?: { title: string; url: string; published?: string | null }[];
   macro_outlook?: {

@@ -1,0 +1,222 @@
+/* Shares the AI report card's header and pills; each window reads as a price ladder. */
+.reversal-map {
+  padding: 0;
+  overflow: hidden;
+  box-shadow: none;
+  margin: 0 0 var(--space-6);
+}
+.reversal-note {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+.reversal-grade {
+  padding: 4px 8px;
+  border-radius: 5px;
+  background: var(--surface-control);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+}
+.reversal-grade.grade-A {
+  background: var(--positive-soft);
+  color: var(--positive);
+}
+.reversal-grade.grade-B {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+.reversal-summary {
+  display: grid;
+  gap: 6px;
+  padding: 16px 24px 0;
+}
+.reversal-summary p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.8;
+  white-space: pre-line;
+}
+.reversal-summary small {
+  font-size: 12px;
+  color: var(--warning);
+}
+.reversal-windows {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  padding: 16px 24px;
+}
+.reversal-window h3,
+.reversal-paths h3 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.reversal-ladder {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.reversal-zone {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-subtle);
+  min-width: 0;
+}
+.reversal-zone.long {
+  box-shadow: inset 3px 0 0 var(--positive);
+}
+.reversal-zone.short {
+  box-shadow: inset 3px 0 0 var(--negative);
+}
+.reversal-zone.invalidated {
+  opacity: 0.6;
+}
+.reversal-zone-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+.reversal-status,
+.reversal-confidence {
+  color: var(--text-tertiary);
+}
+.reversal-status.triggered {
+  color: var(--accent);
+  font-weight: 600;
+}
+.reversal-zone-range {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  margin: 8px 0 4px;
+}
+.reversal-zone-range strong {
+  font: 600 15px var(--font-mono);
+}
+.reversal-zone-range span {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+.reversal-zone-plan {
+  display: grid;
+  gap: 2px;
+  margin: 0 0 6px;
+  font-size: 13px;
+}
+.reversal-zone-plan div {
+  display: flex;
+  gap: 8px;
+}
+.reversal-zone-plan dt {
+  flex: none;
+  color: var(--text-tertiary);
+}
+.reversal-zone-plan dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  overflow-wrap: anywhere;
+}
+.reversal-zone-plan small {
+  color: var(--text-tertiary);
+}
+.reversal-zone-text {
+  margin: 4px 0 0;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+.reversal-zone-text b {
+  margin-right: 6px;
+  font-weight: 600;
+  color: var(--text);
+}
+/* The snapshot price separates the short zones above from the long zones below. */
+.reversal-quote {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: 12px var(--font-mono);
+  color: var(--text-tertiary);
+}
+.reversal-quote::before,
+.reversal-quote::after {
+  content: "";
+  flex: 1;
+  border-top: 1px dashed var(--border);
+}
+.reversal-empty {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-tertiary);
+}
+.reversal-missing {
+  padding: 16px 24px;
+}
+.reversal-paths {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+}
+.reversal-paths p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.8;
+  white-space: pre-line;
+}
+.reversal-footnotes {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+  line-height: 1.7;
+}
+.reversal-footnotes div {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px;
+}
+.reversal-footnotes dt {
+  color: var(--text-tertiary);
+}
+.reversal-footnotes dd {
+  margin: 0;
+}
+.reversal-disclaimer {
+  margin: 0;
+  padding: 12px 24px 16px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--text-tertiary);
+}
+@media (max-width: 960px) {
+  .reversal-windows {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 540px) {
+  .reversal-summary,
+  .reversal-windows,
+  .reversal-paths,
+  .reversal-footnotes,
+  .reversal-disclaimer,
+  .reversal-missing {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  .reversal-paths {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

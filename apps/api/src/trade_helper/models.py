@@ -6,6 +6,7 @@ from pydantic import AfterValidator, BaseModel, Field, field_validator, model_va
 
 from .indicator_preferences import InitialIndicatorName, normalize_initial_indicators
 from .market_catalog import validate_market_id
+from .prompts.contracts import LEFT_SIDE_STRATEGIES, TradingStrategy
 
 Direction = Literal["long", "short"]
 MarketType = Literal["linear_perpetual"]
@@ -21,6 +22,8 @@ class AnalysisRequest(BaseModel):
     directional_bias: Literal["bullish", "bearish"] | None = None
     risk_tolerance: Literal["low", "medium", "high"] | None = None
     trading_style: Literal["left", "right"] | None = None
+    # The chosen strategy loads its skill into the prompt; none keeps the general analysis.
+    trading_strategy: TradingStrategy | None = None
     leverage: int = Field(default=5, ge=1, le=125)
     position_ids: list[str] = Field(default_factory=list)
     account_equity_usdt: str | None = None
@@ -47,6 +50,13 @@ class AnalysisRequest(BaseModel):
             raise ValueError("Account equity must be a positive finite USDT amount")
         return str(equity)
 
+
+    @model_validator(mode="after")
+    def strategy_sets_entry_style(self):
+        # A left-side strategy decides the entry style, so a stale style cannot contradict it.
+        if self.trading_strategy in LEFT_SIDE_STRATEGIES:
+            self.trading_style = "left"
+        return self
 
     @model_validator(mode="after")
     def validate_positions(self):

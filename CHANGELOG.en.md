@@ -4,6 +4,11 @@ The product version is managed in `version.json`. Dates record release preparati
 
 ## [Unreleased]
 
+### Added
+
+- A trading strategy can be chosen before an analysis; the first, extreme reversal, has the AI look for extreme prices after sharp drops and rallies and map the extreme reversal zones for the next 0–6 hours, 6–24 hours and 1–3 days.
+- AI performance can be grouped by trading strategy.
+
 ## [1.1.5] - 2026-10-08
 
 ### Changed

@@ -20,6 +20,11 @@ SUPPORTED_TASKS = (
     "strategy_market", "strategy_positions", "discussion", "macro_interpretation",
     "macro_translation", "news_classification",
 )
+# A trading strategy the trader can choose; each loads its reviewed skill into the strategy prompt.
+TradingStrategy = Literal["extreme_reversal"]
+TRADING_STRATEGIES = ("extreme_reversal",)
+# Every strategy in this list is a left-side strategy: choosing it fixes the entry style.
+LEFT_SIDE_STRATEGIES = frozenset({"extreme_reversal"})
 
 
 def canonical_json(value: object) -> str:
@@ -43,6 +48,7 @@ class PromptInputs:
     risk_tolerance: str | None = None
     trading_style: str | None = None
     leverage: int | None = None
+    trading_strategy: str | None = None
 
     @classmethod
     def from_mapping(cls, values: Mapping | None = None) -> "PromptInputs":
@@ -56,6 +62,7 @@ class PromptInputs:
             "directional_bias": ("bullish", "bearish"),
             "risk_tolerance": ("low", "medium", "high"),
             "trading_style": ("left", "right"),
+            "trading_strategy": TRADING_STRATEGIES,
         }
         chosen = {key: values.get(key) for key in (*allowed, "leverage")}
         for key, choices in allowed.items():

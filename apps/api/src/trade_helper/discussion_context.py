@@ -16,7 +16,8 @@ VERSION = "professional_discussion_context_v3"
 RECENT_CANDLE_LIMIT = 8
 SUBMITTED_FIELDS = (
     "kind", "market_id", "timeframe", "directional_bias", "risk_tolerance",
-    "trading_style", "leverage", "position_ids", "account_equity_usdt", "output_locale",
+    "trading_style", "trading_strategy", "leverage", "position_ids", "account_equity_usdt",
+    "output_locale",
 )
 POSITION_FIELDS = (
     "id", "version", "market_id", "side", "leverage", "margin_mode", "entry_price",

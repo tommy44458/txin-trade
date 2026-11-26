@@ -25,6 +25,7 @@ from .position_advice import compact_positions
 from .position_reasoning import validate_position_reason
 from .prompts import PromptBundle, resolve_prompt, task_prompt_version
 from .reasoning_evidence import validate_reason_numbers
+from .reversal_map import apply_strategy
 from .strategy_engine import other_timeframe
 from .technical_snapshot import (
     additional_tool_schemas,
@@ -371,6 +372,9 @@ def agent_context(request: dict, candles: list[dict], quote: dict,
     context.update({"risk_tolerance": request.get("risk_tolerance"),
                     "trading_style": request.get("trading_style"),
                     "web_search_allowed": web_search_allowed()})
+    # The chosen strategy's skill is in the instructions; analyses without one are unchanged.
+    if request.get("trading_strategy"):
+        context["trading_strategy"] = request["trading_strategy"]
     # A chosen direction is the trader's question about that side, answered on the evidence.
     side = {"bullish": "long", "bearish": "short"}.get(request.get("directional_bias"))
     if side and request.get("kind") != "positions":
@@ -417,6 +421,12 @@ def _model_tool_result(execution: dict) -> dict:
             for item in result["positions"]
         ],
     }
+
+
+def _atr(trace: list[dict]) -> str | None:
+    """The primary timeframe's ATR the Python candidates were sized with."""
+    return next((run["result"].get("atr14") for run in reversed(trace)
+                 if run["tool"] == "strategy_candidates"), None)
 
 
 def analyze_with_tools(request: dict, candles: list[dict], quote: dict,
@@ -500,8 +510,10 @@ def _analyze_with_session(request: dict, candles: list[dict], quote: dict,
                 usage_available = False
         calls = [item for item in response.output if item.type == "function_call"]
         if not calls:
+            reasoning = read_model_report(response.output_text, trace, output_locale=bundle.response_locale)
+            # The strategy's grade is checked first so the direction answer sees the final plan.
             reasoning = answer_trader_question(
-                read_model_report(response.output_text, trace, output_locale=bundle.response_locale), request)
+                apply_strategy(reasoning, request, quote, _atr(trace)), request)
             return {"mode": "openai_assisted", "tool_trace": trace,
                 "strategy_decision": reasoning["strategy_decision"],
                 "position_choices": reasoning.get("position_choices", {}),

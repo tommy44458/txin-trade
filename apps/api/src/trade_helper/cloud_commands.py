@@ -58,7 +58,8 @@ def _start_analysis(command: dict, idempotency_key: str) -> dict:
         kind="market", market_id=command["market_id"], timeframe=command["timeframe"],
         output_locale=command["output_locale"],
         directional_bias=saved.get("directional_bias"), risk_tolerance=saved.get("risk_tolerance"),
-        trading_style=saved.get("trading_style"), leverage=saved.get("leverage") or 5,
+        trading_style=saved.get("trading_style"), trading_strategy=saved.get("trading_strategy"),
+        leverage=saved.get("leverage") or 5,
     )
     job = create_analysis(request, idempotency_key=idempotency_key)
     return {"analysis_id": job["id"], "status": job["status"]}

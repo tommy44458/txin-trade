@@ -294,6 +294,7 @@ def build_report(request: dict, candles: list[dict], quote: dict, positions: lis
         "metrics": metrics, "strategies": strategies,
         "preference_assessment": {"directional_bias": bias, "risk_tolerance": request.get("risk_tolerance"),
                                   "trading_style": request.get("trading_style"),
+                                  "trading_strategy": request.get("trading_strategy"),
                                   "market_trend": market_state, "primary_trend": trend,
                                   "consistency": consistency,
                                   "hypothesis_assessment": hypothesis_assessment(

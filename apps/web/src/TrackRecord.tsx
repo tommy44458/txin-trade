@@ -14,10 +14,12 @@ const periodLabel = (period: OutcomePeriod) =>
 
 const groupLabel = (group: OutcomeGroup | "") => ({
   "": uiText("不分組"), market: uiText("交易對"), timeframe: uiText("週期"), risk: uiText("風險承擔"),
-  style: uiText("交易風格"), model: uiText("AI 模型"), prompt: uiText("提示詞版本"),
+  style: uiText("交易風格"), strategy: uiText("交易策略"), model: uiText("AI 模型"), prompt: uiText("提示詞版本"),
 })[group];
 
 function groupKey(group: OutcomeGroup, key: string): string {
+  // Reports without a strategy are the general analysis, not a missing record.
+  if (group === "strategy") return key === "extreme_reversal" ? uiText("極端左側反轉") : uiText("不指定策略");
   if (key === "unknown") return uiText("未記錄");
   if (group === "market") return key.split(":").at(-1) ?? key;
   if (group === "risk") return ({ high: uiText("高"), medium: uiText("中"), low: uiText("低") } as Record<string, string>)[key] ?? key;
@@ -128,7 +130,7 @@ export default function TrackRecord({ onOpenAnalysis }: { onOpenAnalysis: (analy
         </label>
         <label className="track-group">{uiText("分組")}
           <select value={group} onChange={(event) => setGroup(event.target.value as OutcomeGroup | "")}>
-            {(["", "market", "timeframe", "risk", "style", "model", "prompt"] as const).map((value) => (
+            {(["", "market", "timeframe", "risk", "style", "strategy", "model", "prompt"] as const).map((value) => (
               <option key={value} value={value}>{groupLabel(value)}</option>
             ))}
           </select>

@@ -22,6 +22,7 @@ from .news_evidence import validate_news_evidence_pack
 from .position_advice import VERSION as POSITION_ADVICE_VERSION
 from .position_advice import build_position_options
 from .position_reasoning import validate_position_reason
+from .prompts.contracts import LEFT_SIDE_STRATEGIES, TRADING_STRATEGIES
 from .reasoning_evidence import validate_reason_numbers
 from .risk import VERSION as RISK_VERSION
 from .risk import validate_cost_scenario
@@ -348,6 +349,10 @@ class AnalysisReportV3(BaseModel):
         style = self.preference_assessment.get("trading_style")
         if style not in {None, "left", "right"}:
             raise ValueError("Report trading style is invalid")
+        strategy = self.preference_assessment.get("trading_strategy")
+        if strategy is not None and (strategy not in TRADING_STRATEGIES or
+                                     (strategy in LEFT_SIDE_STRATEGIES and style != "left")):
+            raise ValueError("Report trading strategy is invalid")
         # Evidence is built without the directional hypothesis, which the model never sees.
         expected = build_candidates(self.metrics, context, None,
                                     self.preference_assessment.get("risk_tolerance"),

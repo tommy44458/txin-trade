@@ -9,7 +9,7 @@ from fastapi import APIRouter, HTTPException, Query
 from .config import local_user_id
 from .db import connect
 from .outcomes import RULES_VERSION
-from .prompts import task_prompt_version
+from .prompts import task_prompt_versions
 
 router = APIRouter(prefix="/api/v1", tags=["Outcomes"])
 PERIODS = {"30d": timedelta(days=30), "90d": timedelta(days=90), "all": None}
@@ -17,14 +17,15 @@ PERIODS = {"30d": timedelta(days=30), "90d": timedelta(days=90), "all": None}
 GROUPS = {
     "market": "$.market_id", "timeframe": "$.timeframe",
     "risk": "$.preference_assessment.risk_tolerance", "style": "$.preference_assessment.trading_style",
+    "strategy": "$.preference_assessment.trading_strategy",
     "model": "$.analysis_execution.model", "prompt": "$.analysis_execution.prompt_version",
 }
 TRADE_RESULTS = {"win", "loss", "expired"}
 
 
 def current_versions() -> list[str]:
-    """The strategy prompts this app version writes reports with."""
-    return sorted({task_prompt_version("strategy_market"), task_prompt_version("strategy_positions")})
+    """The strategy prompts this app version writes reports with, with and without a strategy skill."""
+    return sorted({*task_prompt_versions("strategy_market"), *task_prompt_versions("strategy_positions")})
 
 
 def _rows(db, *, since: datetime | None, market_id: str | None = None, timeframe: str | None = None,

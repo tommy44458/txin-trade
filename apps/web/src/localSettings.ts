@@ -29,6 +29,8 @@ export type TradingPreferences = {
   directional_bias: "bullish" | "bearish" | null;
   risk_tolerance: "high" | "medium" | "low" | null;
   trading_style: "left" | "right" | null;
+  // Absent from a computer that predates trading strategies.
+  trading_strategy?: "extreme_reversal" | null;
   timeframe: AnalysisTimeframe;
   leverage: number;
   market_id: string | null;

@@ -9,7 +9,7 @@ from .risk import costed_risk
 REPORT_FIELDS = frozenset({
     "market", "levels", "strategy", "supporting_evidence", "counter_evidence", "evidence_tools",
     "strategy_decision", "agent_stance", "entry_decision", "direction_assessment", "macro_outlook",
-    "position_decisions",
+    "position_decisions", "reversal_map",
 })
 
 
@@ -148,6 +148,8 @@ def read_model_report(raw: str, trace: list[dict], *, output_locale: str = "zh-T
     # Checked against the request in trader_question.answer.
     result['bias_answer'] = value.get('bias_answer') if isinstance(value.get('bias_answer'), dict) else None
     result['web_sources'] = value.get('web_sources') if isinstance(value.get('web_sources'), list) else []
+    # Checked against the snapshot in reversal_map.apply_strategy.
+    result['reversal_map'] = value.get('reversal_map') if isinstance(value.get('reversal_map'), dict) else None
     supplied = value.get('position_decisions', {})
     result['position_decisions'] = {key: item for key, item in supplied.items()
         if isinstance(item, dict) and item.get('decision') in ('hold', 'close_now') and isinstance(item.get('reason'), str)} if isinstance(supplied, dict) else {}

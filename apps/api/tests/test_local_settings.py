@@ -234,10 +234,11 @@ def test_trading_preferences_defaults_and_partial_merge(credentials):
     client = TestClient(app)
     assert client.get("/api/v1/settings").json()["trading_preferences"] == {
         "directional_bias": None, "risk_tolerance": None, "trading_style": None,
-        "timeframe": "1h", "leverage": 5, "market_id": None,
+        "trading_strategy": None, "timeframe": "1h", "leverage": 5, "market_id": None,
     }
     assert client.put("/api/v1/settings", json={"trading_preferences": {
         "directional_bias": "bearish", "risk_tolerance": "high", "trading_style": "left",
+        "trading_strategy": "extreme_reversal",
         "timeframe": "4h", "leverage": 25, "market_id": "binance:perp:DOGEUSDT",
     }}).status_code == 200
     client.put("/api/v1/settings", json={"trading_preferences": {"risk_tolerance": "low"},
@@ -247,6 +248,7 @@ def test_trading_preferences_defaults_and_partial_merge(credentials):
     actual = client.put("/api/v1/settings", json={"trading_preferences": {"directional_bias": None}}).json()
     assert actual["trading_preferences"] == {
         "directional_bias": None, "risk_tolerance": "low", "trading_style": "left",
+        "trading_strategy": "extreme_reversal",
         "timeframe": "4h", "leverage": 25, "market_id": "binance:perp:DOGEUSDT",
     }
     assert actual["favorite_market_ids"] == ["binance:perp:BTCUSDT"]
@@ -256,6 +258,7 @@ def test_trading_preferences_defaults_and_partial_merge(credentials):
 
 @pytest.mark.parametrize("update", [
     {"risk_tolerance": "aggressive"}, {"directional_bias": "long"}, {"trading_style": "center"},
+    {"trading_strategy": "breakout"},
     {"timeframe": "1m"}, {"leverage": 0}, {"leverage": 126}, {"market_id": "../secrets"},
     {"market_id": "binance:perp:BTCUSDC"}, {"timeframe": None}, {"leverage": None},
 ])

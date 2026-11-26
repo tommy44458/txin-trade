@@ -63,6 +63,7 @@ import DerivativesContext, { type DerivativesData } from "./DerivativesContext";
 import MarketReference, { type MarketReferenceData } from "./MarketReference";
 import FundFlowsContext, { type FundFlowsContextData } from "./FundFlowsContext";
 import DirectionAssessment from "./DirectionAssessment";
+import ReversalMap from "./ReversalMap";
 import SettingsPanel from "./SettingsPanel";
 import {
   readModelConnection,
@@ -212,6 +213,7 @@ type Report = {
     directional_bias: string | null;
     risk_tolerance: string | null;
     trading_style?: "left" | "right" | null;
+    trading_strategy?: TradingStrategy | null;
     consistency: string;
   };
   position_reviews: PositionReview[];
@@ -236,6 +238,7 @@ type Job = {
     directional_bias: string | null;
     risk_tolerance: string | null;
     trading_style?: "left" | "right" | null;
+    trading_strategy?: TradingStrategy | null;
     leverage?: number;
     output_locale?: UiLocale;
     account_equity_usdt?: string | null;
@@ -305,12 +308,54 @@ const optionalPositionPayload = (value: OptionalPositionFields) => ({
   notes: value.notes.trim() || null,
 });
 
-function TradingStyleSelector({
+type TradingStrategy = "extreme_reversal";
+const strategyLabel = (value?: string | null) =>
+  value === "extreme_reversal" ? uiText("極端左側反轉") : uiText("不指定策略");
+
+/** The chosen strategy loads its skill into the AI's instructions. */
+function StrategySelector({
   value,
   onChange,
 }: {
   value: string;
   onChange: (value: string) => void;
+}) {
+  return (
+    <>
+      <span className="field-label" id="strategy-label">{uiText("交易策略")}</span>
+      <div className="choices style-choices" role="group" aria-labelledby="strategy-label">
+        <button
+          type="button"
+          className={value === "" ? "choice chosen" : "choice"}
+          aria-pressed={value === ""}
+          onClick={() => onChange("")}
+        >
+          <strong>{uiText("不指定")}</strong>
+          <small>{uiText("AI 依市場證據自行判斷")}</small>
+        </button>
+        <button
+          type="button"
+          className={value === "extreme_reversal" ? "choice chosen" : "choice"}
+          aria-pressed={value === "extreme_reversal"}
+          onClick={() => onChange(value === "extreme_reversal" ? "" : "extreme_reversal")}
+        >
+          <strong>{uiText("極端左側反轉")}</strong>
+          <small>{uiText("急跌急漲後的極端價位提前伏擊，停損貼近失效點")}</small>
+        </button>
+      </div>
+    </>
+  );
+}
+
+function TradingStyleSelector({
+  value,
+  onChange,
+  locked = false,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  /** A left-side strategy decides the entry style. */
+  locked?: boolean;
 }) {
   return (
     <>
@@ -324,6 +369,7 @@ function TradingStyleSelector({
           type="button"
           className={value === "left" ? "choice chosen" : "choice"}
           aria-pressed={value === "left"}
+          disabled={locked}
           onClick={() => onChange(value === "left" ? "" : "left")}
         >
           <strong>{uiText("左側交易")}</strong>
@@ -333,12 +379,14 @@ function TradingStyleSelector({
           type="button"
           className={value === "right" ? "choice chosen" : "choice"}
           aria-pressed={value === "right"}
+          disabled={locked}
           onClick={() => onChange(value === "right" ? "" : "right")}
         >
           <strong>{uiText("右側交易")}</strong>
           <small>{uiText("確認價格反應後參與")}</small>
         </button>
       </div>
+      {locked && <small className="field-hint">{uiText("此策略固定左側進場")}</small>}
     </>
   );
 }
@@ -412,6 +460,11 @@ function App({ remoteSection, remoteIdentity, remoteMenu, remoteStatus }: {
   const [bias, setBias] = useState("");
   const [risk, setRisk] = useState("");
   const [tradingStyle, setTradingStyle] = useState("");
+  const [tradingStrategy, setTradingStrategy] = useState("");
+  // A computer that predates strategies does not return the preference; keep the choice hidden there.
+  const [strategySupported, setStrategySupported] = useState(false);
+  // A left-side strategy fixes the entry style without changing the saved style preference.
+  const effectiveStyle = tradingStrategy ? "left" : tradingStyle;
   const [leverage, setLeverage] = useState(5);
   const [analysisLeverageValid, setAnalysisLeverageValid] = useState(true);
   const [accountEquity, setAccountEquity] = useState("");
@@ -425,6 +478,8 @@ function App({ remoteSection, remoteIdentity, remoteMenu, remoteStatus }: {
     if (!touched.has("directional_bias")) setBias(saved.directional_bias ?? "");
     if (!touched.has("risk_tolerance")) setRisk(saved.risk_tolerance ?? "");
     if (!touched.has("trading_style")) setTradingStyle(saved.trading_style ?? "");
+    setStrategySupported("trading_strategy" in saved);
+    if (!touched.has("trading_strategy")) setTradingStrategy(saved.trading_strategy ?? "");
     if (!touched.has("leverage")) setLeverage(saved.leverage);
   });
   const [marketData, setMarketData] = useState<MarketContext | null>(null);
@@ -599,7 +654,8 @@ function App({ remoteSection, remoteIdentity, remoteMenu, remoteStatus }: {
       job.submitted_input.timeframe !== timeframe ||
       (job.submitted_input.directional_bias ?? "") !== bias ||
       (job.submitted_input.risk_tolerance ?? "") !== risk ||
-      (job.submitted_input.trading_style ?? "") !== tradingStyle ||
+      (job.submitted_input.trading_style ?? "") !== effectiveStyle ||
+      (job.submitted_input.trading_strategy ?? "") !== tradingStrategy ||
       (job.submitted_input.leverage ?? 5) !== leverage ||
       (job.submitted_input.kind === "positions" &&
         (job.submitted_input.account_equity_usdt ?? "") !== accountEquity));
@@ -668,6 +724,10 @@ function App({ remoteSection, remoteIdentity, remoteMenu, remoteStatus }: {
   function chooseTradingStyle(value: string) {
     setTradingStyle(value);
     tradingPreferences.save({ trading_style: (value || null) as TradingPreferences["trading_style"] });
+  }
+  function chooseTradingStrategy(value: string) {
+    setTradingStrategy(value);
+    tradingPreferences.save({ trading_strategy: (value || null) as TradingPreferences["trading_strategy"] });
   }
   function chooseBias(value: "bullish" | "bearish") {
     const next = bias === value ? null : value;
@@ -769,7 +829,9 @@ function App({ remoteSection, remoteIdentity, remoteMenu, remoteStatus }: {
           leverage,
           directional_bias: bias || null,
           risk_tolerance: risk || null,
-          trading_style: tradingStyle || null,
+          trading_style: effectiveStyle || null,
+          // Sent only when chosen, so a computer that predates strategies still accepts the request.
+          ...(tradingStrategy ? { trading_strategy: tradingStrategy } : {}),
           position_ids: kind === "positions" ? selectedPositionIds : [],
           account_equity_usdt:
             kind === "positions" ? accountEquity || null : null,
@@ -957,7 +1019,7 @@ function App({ remoteSection, remoteIdentity, remoteMenu, remoteStatus }: {
     latestMarketAnalysis.invalidate();
     setManualPositionAnalysisId(null);
     // A delayed preference load must not replace a report being viewed.
-    for (const key of ["market_id", "timeframe", "directional_bias", "risk_tolerance", "trading_style", "leverage"] as const)
+    for (const key of ["market_id", "timeframe", "directional_bias", "risk_tolerance", "trading_style", "trading_strategy", "leverage"] as const)
       tradingPreferences.touched.current.add(key);
     setMarketId(item.submitted_input.market_id);
     if (isAnalysisTimeframe(item.submitted_input.timeframe))
@@ -965,6 +1027,7 @@ function App({ remoteSection, remoteIdentity, remoteMenu, remoteStatus }: {
     setBias(item.submitted_input.directional_bias ?? "");
     setRisk(item.submitted_input.risk_tolerance ?? "");
     setTradingStyle(item.submitted_input.trading_style ?? "");
+    setTradingStrategy(item.submitted_input.trading_strategy ?? "");
     setLeverage(item.submitted_input.leverage ?? 5);
     setAccountEquity(item.submitted_input.account_equity_usdt ?? "");
     setJob(item);
@@ -1218,11 +1281,13 @@ function App({ remoteSection, remoteIdentity, remoteMenu, remoteStatus }: {
                               ? uiText("低風險")
                               : uiText("未設定風險")}{" "}
                         ·{" "}
-                        {tradingStyle === "left"
-                          ? uiText("左側")
-                          : tradingStyle === "right"
-                            ? uiText("右側")
-                            : uiText("未指定風格")}
+                        {tradingStrategy
+                          ? strategyLabel(tradingStrategy)
+                          : tradingStyle === "left"
+                            ? uiText("左側")
+                            : tradingStyle === "right"
+                              ? uiText("右側")
+                              : uiText("未指定風格")}
                       </span>
                     </summary>
                     <section className="panel">
@@ -1247,10 +1312,14 @@ function App({ remoteSection, remoteIdentity, remoteMenu, remoteStatus }: {
                           onClick={() => chooseBias("bearish")}
                         >{uiText("偏空")}</button>
                       </div>
+                      {strategySupported && (
+                        <StrategySelector value={tradingStrategy} onChange={chooseTradingStrategy} />
+                      )}
                       <RiskSelector value={risk} onChange={chooseRisk} />
                       <TradingStyleSelector
-                        value={tradingStyle}
+                        value={effectiveStyle}
                         onChange={chooseTradingStyle}
+                        locked={!!tradingStrategy}
                       />
                     </section>
                   </details>
@@ -1301,6 +1370,9 @@ function App({ remoteSection, remoteIdentity, remoteMenu, remoteStatus }: {
                   {report && (
                     <DirectionAssessment assessment={report.reasoning?.direction_assessment}
                       bias={report.preference_assessment?.directional_bias} answer={report.reasoning?.bias_answer} />
+                  )}{" "}
+                  {report?.preference_assessment?.trading_strategy && report.analysis_mode === "openai_assisted" && (
+                    <ReversalMap data={report.reasoning?.reversal_map} />
                   )}{" "}
                   {report && entryOutcome && <OutcomeLine outcome={entryOutcome} />}
                   {report && (
@@ -1591,10 +1663,14 @@ function App({ remoteSection, remoteIdentity, remoteMenu, remoteStatus }: {
                       </button>
                     </div>
                   )}
+                  {strategySupported && (
+                    <StrategySelector value={tradingStrategy} onChange={chooseTradingStrategy} />
+                  )}
                   <RiskSelector value={risk} onChange={chooseRisk} />
                   <TradingStyleSelector
-                    value={tradingStyle}
+                    value={effectiveStyle}
                     onChange={chooseTradingStyle}
+                    locked={!!tradingStrategy}
                   />
                   <label className="equity-field">{uiText("本次帳戶權益（選填，USDT）")}<input
                       inputMode="decimal"
@@ -1657,7 +1733,9 @@ function App({ remoteSection, remoteIdentity, remoteMenu, remoteStatus }: {
                           : report.preference_assessment.trading_style ===
                               "right"
                             ? uiText("右側")
-                            : uiText("未設定")}{uiText("。AI 依市場證據判斷是否續抱；風險估算僅供參考。")}</div>
+                            : uiText("未設定")}{report.preference_assessment.trading_strategy
+                          ? uiText("；交易策略：{{p0}}", { p0: strategyLabel(report.preference_assessment.trading_strategy) })
+                          : ""}{uiText("。AI 依市場證據判斷是否續抱；風險估算僅供參考。")}</div>
                     )}{" "}
                   {report?.market_id === marketId &&
                     job?.submitted_input.kind === "positions" &&
@@ -1811,6 +1889,9 @@ function App({ remoteSection, remoteIdentity, remoteMenu, remoteStatus }: {
                   <>
                     <DirectionAssessment assessment={report.reasoning?.direction_assessment}
                       bias={report.preference_assessment?.directional_bias} answer={report.reasoning?.bias_answer} />
+                    {report.preference_assessment?.trading_strategy && report.analysis_mode === "openai_assisted" && (
+                      <ReversalMap data={report.reasoning?.reversal_map} />
+                    )}
                     <AnalysisEvidence
                         outputLocale={report.response_locale ?? report.output_locale ?? job?.submitted_input.output_locale ?? "zh-TW"}
                       positionAnalysis

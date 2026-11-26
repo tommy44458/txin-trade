@@ -43,7 +43,7 @@ export type OutcomeSummary = {
   groups?: ({ key: string } & OutcomeStats)[];
 };
 export type OutcomePeriod = "30d" | "90d" | "all";
-export type OutcomeGroup = "market" | "timeframe" | "risk" | "style" | "model" | "prompt";
+export type OutcomeGroup = "market" | "timeframe" | "risk" | "style" | "strategy" | "model" | "prompt";
 // Fewer settled trades than this read as noise, not a record.
 export const MIN_SAMPLE = 20;
 
