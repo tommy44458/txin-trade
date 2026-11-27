@@ -522,7 +522,10 @@ export const zhTW = {
     "美股永續": "美股永續",
     "搜尋 BTC、SOL、TSLA 或交易對": "搜尋 BTC、SOL、TSLA 或交易對",
     "SPY／QQQ 大盤參考": "SPY／QQQ 大盤參考",
-    "依已收盤 K 線計算本交易對與 SPY、QQQ 的連動；連動越強，美股大盤方向越值得作為風險參考。相關係數只描述最近 {{p0}} 根 K 線，不代表未來仍會同步。": "依已收盤 K 線計算本交易對與 SPY、QQQ 的連動；連動越強，美股大盤方向越值得作為風險參考。相關係數只描述最近 {{p0}} 根 K 線，不代表未來仍會同步。"
+    "依已收盤 K 線計算本交易對與 SPY、QQQ 的連動；連動越強，美股大盤方向越值得作為風險參考。相關係數只描述最近 {{p0}} 根 K 線，不代表未來仍會同步。": "依已收盤 K 線計算本交易對與 SPY、QQQ 的連動；連動越強，美股大盤方向越值得作為風險參考。相關係數只描述最近 {{p0}} 根 K 線，不代表未來仍會同步。",
+    "部分取得": "部分取得",
+    "未公布": "未公布",
+    "官方沒有 {{p0}} 的資料可比較，所以沒有公布這期的年增率。": "官方沒有 {{p0}} 的資料可比較，所以沒有公布這期的年增率。"
   },
   "market": {
     "請求失敗 ({{p0}})": "請求失敗 ({{p0}})",
@@ -2054,7 +2057,10 @@ export const enUS = {
     "美股永續": "US stock perpetual",
     "搜尋 BTC、SOL、TSLA 或交易對": "Search BTC, SOL, TSLA or a pair",
     "SPY／QQQ 大盤參考": "SPY/QQQ market reference",
-    "依已收盤 K 線計算本交易對與 SPY、QQQ 的連動；連動越強，美股大盤方向越值得作為風險參考。相關係數只描述最近 {{p0}} 根 K 線，不代表未來仍會同步。": "Linkage of this pair with SPY and QQQ from closed candles; the stronger it is, the more the US market's direction matters as risk context. Correlation describes only the last {{p0}} candles and does not mean they will keep moving together."
+    "依已收盤 K 線計算本交易對與 SPY、QQQ 的連動；連動越強，美股大盤方向越值得作為風險參考。相關係數只描述最近 {{p0}} 根 K 線，不代表未來仍會同步。": "Linkage of this pair with SPY and QQQ from closed candles; the stronger it is, the more the US market's direction matters as risk context. Correlation describes only the last {{p0}} candles and does not mean they will keep moving together.",
+    "部分取得": "Partly synced",
+    "未公布": "Not published",
+    "官方沒有 {{p0}} 的資料可比較，所以沒有公布這期的年增率。": "There is no official {{p0}} data to compare with, so this period's annual change was not published."
   },
   "market": {
     "請求失敗 ({{p0}})": "Request failed ({{p0}})",
@@ -4575,6 +4581,9 @@ export const textNamespace = {
   "美股永續": "common",
   "搜尋 BTC、SOL、TSLA 或交易對": "common",
   "SPY／QQQ 大盤參考": "common",
-  "依已收盤 K 線計算本交易對與 SPY、QQQ 的連動；連動越強，美股大盤方向越值得作為風險參考。相關係數只描述最近 {{p0}} 根 K 線，不代表未來仍會同步。": "common"
+  "依已收盤 K 線計算本交易對與 SPY、QQQ 的連動；連動越強，美股大盤方向越值得作為風險參考。相關係數只描述最近 {{p0}} 根 K 線，不代表未來仍會同步。": "common",
+  "部分取得": "common",
+  "未公布": "common",
+  "官方沒有 {{p0}} 的資料可比較，所以沒有公布這期的年增率。": "common"
 } as const;
 export type UiTextKey = keyof typeof textNamespace;
