@@ -19,7 +19,10 @@ export type Market = {
   quote_asset?: string;
   settlement_asset?: string;
   contract_type?: string;
+  asset_class?: "crypto" | "us_equity";
 };
+
+type AssetFilter = "all" | "crypto" | "us_equity";
 
 function searchKey(value: string) {
   return value.toUpperCase().replace(/[^\p{L}\p{N}]/gu, "");
@@ -59,6 +62,7 @@ export default function MarketPicker({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [favoriteOnly, setFavoriteOnly] = useState(false);
+  const [assetFilter, setAssetFilter] = useState<AssetFilter>("all");
   const [limit, setLimit] = useState(100);
   const [activeId, setActiveId] = useState("");
   const [placement, setPlacement] = useState({
@@ -76,6 +80,7 @@ export default function MarketPicker({
       .filter(
         (market) =>
           (!favoriteOnly || favoriteSet.has(market.id)) &&
+          (assetFilter === "all" || (market.asset_class ?? "crypto") === assetFilter) &&
           (!key ||
             searchKey(market.symbol).includes(key) ||
             searchKey(market.id.split(":").at(-1) ?? "").includes(key)),
@@ -84,7 +89,7 @@ export default function MarketPicker({
         const pinned = Number(favoriteSet.has(b.id)) - Number(favoriteSet.has(a.id));
         return pinned || a.symbol.localeCompare(b.symbol, "en");
       });
-  }, [markets, favoriteOnly, favoriteSet, query]);
+  }, [markets, favoriteOnly, assetFilter, favoriteSet, query]);
   const visible = filtered.slice(0, limit);
   const activeIndex = visible.findIndex((market) => market.id === activeId);
   const effectiveActiveId = activeIndex >= 0 ? activeId : visible[0]?.id;
@@ -247,7 +252,7 @@ export default function MarketPicker({
               aria-activedescendant={effectiveActiveId ? `${id}-${effectiveActiveId}` : undefined}
               autoComplete="off"
               spellCheck={false}
-              placeholder={uiText("搜尋 BTC、SOL 或交易對")}
+              placeholder={uiText("搜尋 BTC、SOL、TSLA 或交易對")}
               value={query}
               onChange={(event) => {
                 setQuery(event.target.value);
@@ -265,6 +270,16 @@ export default function MarketPicker({
               <button type="button" aria-pressed={!favoriteOnly} onClick={() => { setFavoriteOnly(false); setLimit(100); }}>{uiText("全部")}</button>
               <button type="button" aria-pressed={favoriteOnly} onClick={() => { setFavoriteOnly(true); setLimit(100); }}>{uiText("最愛")}{" "}{pinned.length > 0 ? ` ${pinned.length}` : ""}</button>
             </div>
+            {markets.some((market) => market.asset_class === "us_equity") && (
+              <div role="group" aria-label={uiText("資產類別")}>
+                {(["all", "crypto", "us_equity"] as const).map((filter) => (
+                  <button type="button" key={filter} aria-pressed={assetFilter === filter}
+                    onClick={() => { setAssetFilter(filter); setLimit(100); }}>
+                    {filter === "all" ? uiText("所有類別") : filter === "crypto" ? uiText("加密貨幣") : uiText("美股")}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           <div className="market-picker-results">
             <div id={`${id}-list`} role="listbox" aria-label={uiText("合約交易對")}>
@@ -284,7 +299,8 @@ export default function MarketPicker({
                         onClick={() => choose(market.id)}
                       >
                         <span>{market.symbol}</span>
-                        <small>{market.id === value ? uiText("已選擇") : uiText("永續")}</small>
+                        <small>{market.id === value ? uiText("已選擇")
+                          : market.asset_class === "us_equity" ? uiText("美股永續") : uiText("永續")}</small>
                       </button>
                       <button
                         type="button"

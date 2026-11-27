@@ -20,12 +20,13 @@ from .market import (
     fetch_quote,
     fetch_tick_size,
 )
-from .market_catalog import validate_market_id
+from .market_catalog import is_us_equity, validate_market_id
 from .market_store import validate_candle
 from .models import Timeframe
 from .strategy_engine import other_timeframe
 from .support_levels_v3 import annotate_forming_sweep, historical_levels_v3
 from .timeframes import FIXED_SECONDS, analysis_timeframes, higher_timeframes
+from .us_equity_session import session_context
 
 VERSION = "live_market_context_v1"
 CHART_CANDLE_LIMIT = 300
@@ -186,7 +187,11 @@ def collect_market_context(market_id: str, timeframe: str) -> tuple[dict, dict]:
                                  if zone["price_test_state"] != "not_testing"],
         },
         "secondary_timeframe_context": secondary,
+        "asset_class": "us_equity" if is_us_equity(market_id) else "crypto",
     }
+    if context["asset_class"] == "us_equity":
+        context["us_equity_session"] = session_context(datetime.fromisoformat(quote["observed_at"]),
+                                                       candles, timeframe)
     return context, {"candles": candles, "secondary_candles": valid_secondary,
                      "secondary_timeframe": secondary_timeframe, "quote": quote,
                      "tick_size": tick_size, "forming_candle": forming}

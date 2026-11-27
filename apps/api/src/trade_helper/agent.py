@@ -286,6 +286,8 @@ def agent_context(request: dict, candles: list[dict], quote: dict,
     news = quote.get("news_context")
     context = {
         "market_id": request["market_id"], "timeframe": request["timeframe"],
+        "asset_class": quote.get("asset_class", "crypto"),
+        "us_equity_session": quote.get("us_equity_session"),
         "timeframe_plan": {
             "primary_timeframe": request["timeframe"],
             "context_timeframes": list(higher_timeframes(request["timeframe"])),

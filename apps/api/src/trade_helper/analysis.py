@@ -310,6 +310,8 @@ def build_report(request: dict, candles: list[dict], quote: dict, positions: lis
         "order_flow": quote.get("order_flow"),
         "liquidation_context": quote.get("liquidation_context"),
         "liquidation_map": quote.get("liquidation_map"),
+        "asset_class": quote.get("asset_class", "crypto"),
+        "us_equity_session": quote.get("us_equity_session"),
         "market_reference": quote.get("market_reference"),
         "fund_flows_context": quote.get("fund_flows_context"),
         "agent_stance": decision.get("agent_stance"),

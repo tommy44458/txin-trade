@@ -1,5 +1,9 @@
 """Verified Binance USDT perpetual catalog shared by local API and workers.
 
+Crypto perpetuals and the TradFi perpetuals that track US-listed stocks and ETFs are
+listed; each market carries its asset_class so data that only exists for crypto can be
+skipped for stocks.
+
 One exchangeInfo response supplies both listed symbols and their price ticks.
 Successful snapshots survive restarts; failures never invent a supported market.
 """
@@ -24,6 +28,9 @@ BASE_URL = "https://fapi.binance.com"
 CACHE_TTL_SECONDS = 15 * 60
 MAX_STALE_SECONDS = 24 * 60 * 60
 RETRY_DELAY_SECONDS = 30
+# contractType and underlyingType per asset class. Other TradFi kinds (Hong Kong, Korean
+# and Chinese equities, commodities, FX, pre-IPO) are not supported yet.
+ASSET_CLASSES = {("PERPETUAL", None): "crypto", ("TRADIFI_PERPETUAL", "EQUITY"): "us_equity"}
 _lock = threading.Lock()
 _cache = None
 _cache_path = None
@@ -72,8 +79,10 @@ def _parse_exchange_info(payload: object, fetched_at: float) -> CatalogSnapshot:
     for row in payload["symbols"]:
         if not isinstance(row, dict):
             raise TypeError("Invalid exchange symbol")
-        if (row.get("status") != "TRADING" or row.get("contractType") != "PERPETUAL" or
-                row.get("quoteAsset") != "USDT"):
+        contract = row.get("contractType")
+        asset_class = ASSET_CLASSES.get((contract, None) if contract == "PERPETUAL"
+                                        else (contract, row.get("underlyingType")))
+        if row.get("status") != "TRADING" or asset_class is None or row.get("quoteAsset") != "USDT":
             continue
         symbol, base, quote, margin = (row.get(key) for key in
                                       ("symbol", "baseAsset", "quoteAsset", "marginAsset"))
@@ -93,7 +102,8 @@ def _parse_exchange_info(payload: object, fetched_at: float) -> CatalogSnapshot:
         markets.append({"id": market_id, "exchange": "Binance", "symbol": f"{base}/{quote}",
                         "binance_symbol": symbol, "base_asset": base, "quote_asset": quote,
                         "margin_asset": margin, "settlement_asset": margin,
-                        "market_type": "linear_perpetual", "tick_size": str(tick_value)})
+                        "market_type": "linear_perpetual", "tick_size": str(tick_value),
+                        "asset_class": asset_class})
     if not markets:
         raise ValueError("No supported perpetual symbols")
     markets.sort(key=lambda market: market["base_asset"])
@@ -109,9 +119,12 @@ def _load_disk(path: Path) -> CatalogSnapshot | None:
         fetched_at = float(saved["fetched_at"])
         if fetched_at > time.time() + 60:
             return None
+        # Caches written before stocks were listed hold crypto only.
         rows = [{"symbol": row["binance_symbol"], "baseAsset": row["base_asset"],
                  "quoteAsset": row["quote_asset"], "marginAsset": row["margin_asset"],
-                 "status": "TRADING", "contractType": "PERPETUAL",
+                 "status": "TRADING",
+                 **({"contractType": "TRADIFI_PERPETUAL", "underlyingType": "EQUITY"}
+                    if row.get("asset_class") == "us_equity" else {"contractType": "PERPETUAL"}),
                  "filters": [{"filterType": "PRICE_FILTER", "tickSize": row["tick_size"]}]}
                 for row in saved["markets"]]
         return _parse_exchange_info({"symbols": rows}, fetched_at)
@@ -190,6 +203,14 @@ def market_for(market_id: str) -> dict:
     if market is None:
         raise ValueError("This Binance perpetual market is not currently available")
     return market
+
+
+def is_us_equity(market_id: str) -> bool:
+    """Whether the market tracks a US stock or ETF; unknown markets count as crypto."""
+    try:
+        return market_for(market_id).get("asset_class") == "us_equity"
+    except (MarketCatalogUnavailable, ValueError, KeyError):
+        return False
 
 
 def validate_market_id(market_id: str) -> str:

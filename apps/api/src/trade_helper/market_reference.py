@@ -1,4 +1,4 @@
-"""BTC and ETH direction as market-wide risk context for the analyzed pair.
+"""BTC and ETH direction (SPY and QQQ for a US stock) as market-wide risk context for the analyzed pair.
 
 Crypto pairs often move with the two largest markets, so each analysis carries
 their closed-candle trend and structure, plus how closely the analyzed pair
@@ -18,11 +18,14 @@ import httpx
 
 from .higher_timeframes import _structure, calculate_context_metrics
 from .market import fetch_candles
+from .market_catalog import is_us_equity
 from .strategy_engine import other_timeframe
 from .timeframes import advance_candle, closed_history_is_stale
 
 VERSION = 'market_reference_v1'
 REFERENCE_MARKETS = ('binance:perp:BTCUSDT', 'binance:perp:ETHUSDT')
+# A stock is read against the broad US market and its large technology names.
+EQUITY_REFERENCE_MARKETS = ('binance:perp:SPYUSDT', 'binance:perp:QQQUSDT')
 REFERENCE_CANDLES = 300
 CORRELATION_WINDOW = 100
 MIN_ALIGNED_RETURNS = 30
@@ -89,6 +92,7 @@ def fetch_market_reference(market_id: str, timeframe: str, candles: list[dict],
                            context_candles: list[dict], cutoff: datetime) -> dict:
     frames = (timeframe, other_timeframe(timeframe))
     pair_rows = {timeframe: candles, frames[1]: context_candles}
+    references = EQUITY_REFERENCE_MARKETS if is_us_equity(market_id) else REFERENCE_MARKETS
     context = {'version': VERSION, 'market_id': market_id, 'as_of': cutoff.isoformat(),
                'timeframes': list(frames), 'references': {},
                'correlation_window_candles': CORRELATION_WINDOW,
@@ -104,11 +108,11 @@ def fetch_market_reference(market_id: str, timeframe: str, candles: list[dict],
         except (httpx.HTTPError, ValueError, KeyError, TypeError, ArithmeticError):
             return {'status': 'unavailable', 'timeframe': interval, 'reason': 'source_unavailable_or_invalid'}
 
-    jobs = [(reference, interval) for reference in REFERENCE_MARKETS if reference != market_id
+    jobs = [(reference, interval) for reference in references if reference != market_id
             for interval in frames]
     with ThreadPoolExecutor(max_workers=4) as pool:
         results = dict(zip(jobs, pool.map(frame, jobs), strict=True))
-    for reference in REFERENCE_MARKETS:
+    for reference in references:
         context['references'][reference] = (
             {'status': 'self', 'reason': 'analyzed_market'} if reference == market_id else
             {'status': 'available' if all(results[(reference, i)]['status'] == 'available' for i in frames)

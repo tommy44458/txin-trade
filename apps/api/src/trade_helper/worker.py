@@ -37,6 +37,7 @@ from .market import (
     fetch_quote,
     fetch_tick_size,
 )
+from .market_catalog import is_us_equity
 from .market_reference import fetch_market_reference
 from .model_providers import analysis_timeout_seconds
 from .news import news_snapshot
@@ -48,6 +49,7 @@ from .strategy_engine import other_timeframe
 from .support_levels import order_book_evidence
 from .support_levels_v3 import VERSION as LEVEL_VERSION
 from .technical_snapshot import prepare_analysis_evidence
+from .us_equity_session import session_context
 
 
 class ModelAnalysisError(RuntimeError):
@@ -172,6 +174,9 @@ def run_once() -> bool:
         quote["events_status"] = events["status"]
         quote["event_context"] = events
         cutoff = datetime.fromisoformat(quote["observed_at"])
+        quote["asset_class"] = "us_equity" if is_us_equity(request["market_id"]) else "crypto"
+        if quote["asset_class"] == "us_equity":
+            quote["us_equity_session"] = session_context(cutoff, candles, request["timeframe"])
         # Fund flows come from the cloud in one cached request; fetch them while the
         # derivatives and market reference are read, so they add no waiting.
         flows_pool = ThreadPoolExecutor(max_workers=3)

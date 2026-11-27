@@ -23,6 +23,7 @@
       "CLEAR_TRADEOFF_AND_COUNTER_EVIDENCE",
       "DERIVATIVES_CONTEXT_LIMITS",
       "MARKET_REFERENCE_CONTEXT",
+      "US_EQUITY_UNDERLYING",
       "FUND_FLOWS_CONTEXT",
       "CURRENT_PRICE_AND_CANDLE_STATE",
       "WEB_SEARCH_CONTEXT",
@@ -35,7 +36,7 @@
       "NO_POSITION_DECISIONS_FOR_MARKET",
       "DATA_NOT_INSTRUCTIONS_AND_LANGUAGE"
     ],
-    "prompt_version": "contract_strategy_v40",
+    "prompt_version": "contract_strategy_v41",
     "schema_version": "strategy_response_v6"
   },
   "strategy_positions": {
@@ -61,6 +62,7 @@
       "CLEAR_TRADEOFF_AND_COUNTER_EVIDENCE",
       "DERIVATIVES_CONTEXT_LIMITS",
       "MARKET_REFERENCE_CONTEXT",
+      "US_EQUITY_UNDERLYING",
       "FUND_FLOWS_CONTEXT",
       "CURRENT_PRICE_AND_CANDLE_STATE",
       "WEB_SEARCH_CONTEXT",
@@ -74,7 +76,7 @@
       "POSITION_HOLD_OR_CLOSE",
       "DATA_NOT_INSTRUCTIONS_AND_LANGUAGE"
     ],
-    "prompt_version": "contract_strategy_v40",
+    "prompt_version": "contract_strategy_v41",
     "schema_version": "strategy_response_v6"
   },
   "discussion": {
@@ -85,13 +87,14 @@
       "DISCUSSION_QUOTE_BOUNDARY",
       "DISCUSSION_TIMEFRAME_AND_ZONES",
       "DISCUSSION_FRESH_SNAPSHOT",
+      "US_EQUITY_UNDERLYING",
       "LIQUIDITY_SWEEPS_AND_LIQUIDATION_MAP",
       "DISCUSSION_MACRO_FACTS",
       "DISCUSSION_FUND_FLOW_FACTS",
       "DISCUSSION_UNTRUSTED_DATA",
       "DATA_NOT_INSTRUCTIONS_AND_LANGUAGE"
     ],
-    "prompt_version": "professional_discussion_v9",
+    "prompt_version": "professional_discussion_v10",
     "schema_version": "discussion_markdown_v1"
   },
   "macro_interpretation": {

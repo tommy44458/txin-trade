@@ -62,6 +62,7 @@ import LocalCloudMenu from "./LocalCloudMenu";
 import DerivativesContext, { type DerivativesData, type LiquidationData, type OrderFlowData } from "./DerivativesContext";
 import type { LiquidationMapData } from "./LiquidationMap";
 import { levelSweepNotes, type LevelSweepFields } from "./levelSweeps";
+import { usEquitySessionText, type UsEquitySession } from "./usEquitySession";
 import MarketReference, { type MarketReferenceData } from "./MarketReference";
 import FundFlowsContext, { type FundFlowsContextData } from "./FundFlowsContext";
 import DirectionAssessment from "./DirectionAssessment";
@@ -149,6 +150,8 @@ type MarketContext = {
     reference_time: string;
     source_time: string;
   };
+  asset_class?: "crypto" | "us_equity";
+  us_equity_session?: UsEquitySession;
 };
 const EMPTY_CANDLES: Candle[] = [];
 const EMPTY_LEVELS: Level[] = [];
@@ -165,6 +168,8 @@ type Report = {
   order_flow?: OrderFlowData | null;
   liquidation_context?: LiquidationData | null;
   liquidation_map?: LiquidationMapData | null;
+  asset_class?: "crypto" | "us_equity";
+  us_equity_session?: UsEquitySession | null;
   market_reference?: MarketReferenceData | null;
   fund_flows_context?: FundFlowsContextData | null;
   market_id: string;
@@ -1310,6 +1315,9 @@ function App({ remoteSection, remoteIdentity, remoteMenu, remoteStatus }: {
                   {changed && report && (
                     <div className="warning" role="status">{uiText("設定已變更。下方是上次分析，重新分析後更新。")}</div>
                   )}{" "}
+                  {report?.us_equity_session && (
+                    <p className="us-session-note" role="note">{uiText("分析當時：")}{usEquitySessionText(report.us_equity_session)}</p>
+                  )}{" "}
                   {report && (
                     <DirectionAssessment assessment={report.reasoning?.direction_assessment}
                       bias={report.preference_assessment?.directional_bias} answer={report.reasoning?.bias_answer} />
@@ -1380,6 +1388,9 @@ function App({ remoteSection, remoteIdentity, remoteMenu, remoteStatus }: {
                         {quote && (
                           <p className="level-reference">{uiText("以現價 $")}{fmt(quote.price)}{" " + uiText("判斷區間位置 ·") + " "}{when(quote.observed_at)}{" "}{uiText("更新。 區間包含上下邊界；盤中穿越不代表已確認突破。")}</p>
                         )}
+                        {currentMarketData?.us_equity_session && (
+                          <p className="level-reference us-session-note" role="note">{usEquitySessionText(currentMarketData.us_equity_session)}{" · "}{uiText("合約 24 小時交易，美股休市時成交清淡，開盤可能跳空。")}</p>
+                        )}
                         {visibleLevels.length ? (
                           levelLadder(visibleLevels, quote?.price).map((row, i) => row.kind === "now" ? (
                             <div className="level-now" key="now"><span>{uiText("現價")}</span><b>${fmt(row.price)}</b></div>
@@ -1445,11 +1456,11 @@ function App({ remoteSection, remoteIdentity, remoteMenu, remoteStatus }: {
                 )}{" "}
                 {report?.market_reference && (
                   <details className="secondary-evidence">
-                    <summary>{uiText("BTC／ETH 大盤參考")}</summary>
-                    <MarketReference data={report.market_reference} />
+                    <summary>{report.asset_class === "us_equity" ? uiText("SPY／QQQ 大盤參考") : uiText("BTC／ETH 大盤參考")}</summary>
+                    <MarketReference data={report.market_reference} usEquity={report.asset_class === "us_equity"} />
                   </details>
                 )}{" "}
-                {report?.fund_flows_context && (
+                {report?.fund_flows_context && report.fund_flows_context.status !== "not_applicable" && (
                   <details className="secondary-evidence">
                     <summary>{uiText("資金流向")}</summary>
                     <FundFlowsContext data={report.fund_flows_context} />
@@ -1858,11 +1869,11 @@ function App({ remoteSection, remoteIdentity, remoteMenu, remoteStatus }: {
                     </details>
                     {report.market_reference && (
                       <details className="secondary-evidence">
-                        <summary>{uiText("BTC／ETH 大盤參考")}</summary>
-                        <MarketReference data={report.market_reference} />
+                        <summary>{report.asset_class === "us_equity" ? uiText("SPY／QQQ 大盤參考") : uiText("BTC／ETH 大盤參考")}</summary>
+                        <MarketReference data={report.market_reference} usEquity={report.asset_class === "us_equity"} />
                       </details>
                     )}
-                    {report.fund_flows_context && (
+                    {report.fund_flows_context && report.fund_flows_context.status !== "not_applicable" && (
                       <details className="secondary-evidence">
                         <summary>{uiText("資金流向")}</summary>
                         <FundFlowsContext data={report.fund_flows_context} />

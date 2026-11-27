@@ -20,6 +20,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from .config import local_user_id
 from .db import connect, new_id, utc_now
+from .market_catalog import is_us_equity
 from .smart_money import RESERVE_WINDOWS, fetch_cloud
 
 VERSION = "fund_flows_context_v3"
@@ -111,6 +112,10 @@ def unavailable_fund_flows(market_id: str) -> dict:
 def fund_flows_context(market_id: str) -> dict:
     """What the analysis sees; never raises, so a cloud outage only marks the data unavailable."""
     pair = asset_for_market(market_id)
+    if is_us_equity(market_id):
+        # Exchange reserves are crypto holdings; a stock's ticker can collide with a coin's.
+        return {"version": VERSION, "source": SOURCE, "status": "not_applicable", "reason": "us_equity",
+                "pair_asset": {"asset": pair, "status": "not_applicable"}}
     if os.getenv("TRADE_FUND_FLOWS_ENABLED", "1") == "0":
         return unavailable_fund_flows(market_id)
     try:

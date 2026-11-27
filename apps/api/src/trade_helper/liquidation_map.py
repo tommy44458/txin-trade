@@ -17,6 +17,7 @@ from itertools import pairwise
 import httpx
 
 from .market import BASE_URL, fetch_candles, symbol_for
+from .market_catalog import is_us_equity
 
 VERSION = "estimated_liquidation_map_v1"
 PERIOD = "1h"
@@ -25,6 +26,8 @@ HOUR_MS = 3_600_000
 HOURS = 500
 MIN_HOURS = 72
 LEVERAGE_TIERS = ((10, 0.30), (25, 0.30), (50, 0.25), (100, 0.15))
+# Binance lists stock perpetuals at 5x to 20x; their brackets are not public without a key.
+EQUITY_LEVERAGE_TIERS = ((5, 0.30), (10, 0.40), (20, 0.30))
 MAINTENANCE_RATE = 0.005
 BIN_PCT = Decimal("0.25")
 RANGE_PCT = Decimal(15)
@@ -33,14 +36,15 @@ CLUSTER_LIMIT = 5
 NEAR_PCT = 3
 NEAR_LIMIT = 3
 SOURCE = "Binance USD-M openInterestHist (1h) and 1h klines; modelled, not position data"
-ASSUMPTIONS = {
-    "entry": "hourly volume-weighted average price of the hour open interest rose",
-    "sides": "every new contract opens one long and one short",
-    "leverage_tiers": {str(leverage): weight for leverage, weight in LEVERAGE_TIERS},
-    "maintenance_margin_rate": MAINTENANCE_RATE,
-    "closing": "open interest declines not explained by modelled liquidations close every position pro rata",
-    "history": "only positions opened inside the fetched hours; older positions are unknown",
-}
+def assumptions(tiers: tuple = LEVERAGE_TIERS) -> dict:
+    return {
+        "entry": "hourly volume-weighted average price of the hour open interest rose",
+        "sides": "every new contract opens one long and one short",
+        "leverage_tiers": {str(leverage): weight for leverage, weight in tiers},
+        "maintenance_margin_rate": MAINTENANCE_RATE,
+        "closing": "open interest declines not explained by modelled liquidations close every position pro rata",
+        "history": "only positions opened inside the fetched hours; older positions are unknown",
+    }
 INTERPRETATION_LIMIT = (
     "A model of Binance positions from open interest changes and assumed leverage, not real orders, "
     "stops or positions, and not other exchanges. Clusters show where forced selling (long "
@@ -71,7 +75,7 @@ def _pct(value: float) -> str:
 
 def estimate_liquidation_map(candles: list[dict], open_interest: list[dict], symbol: str,
                              reference: Decimal, cutoff: datetime,
-                             tick_size: Decimal | None = None) -> dict:
+                             tick_size: Decimal | None = None, tiers: tuple = LEVERAGE_TIERS) -> dict:
     """The modelled liquidations still outstanding at the cutoff, from closed hourly data only."""
     cutoff_ms = int(cutoff.timestamp() * 1000)
     totals = {}
@@ -116,7 +120,7 @@ def estimate_liquidation_map(candles: list[dict], open_interest: list[dict], sym
             volume, quote = float(candle["volume"]), float(candle.get("quote_volume") or 0)
             entry = quote / volume if quote > 0 and volume > 0 else (
                 (high + low + float(candle["close"])) / 3)
-            for leverage, weight in LEVERAGE_TIERS:
+            for leverage, weight in tiers:
                 coins = change * weight
                 positions.append(["long", entry * (1 - 1 / leverage + MAINTENANCE_RATE), coins, entry])
                 positions.append(["short", entry * (1 + 1 / leverage - MAINTENANCE_RATE), coins, entry])
@@ -193,11 +197,13 @@ def fetch_liquidation_map(market_id: str, cutoff: datetime, reference: Decimal,
         response.raise_for_status()
         candles = (hourly_candles if hourly_candles is not None and len(hourly_candles) >= HOURS
                    else fetch_candles(market_id, PERIOD, limit=HOURS))
-        result = estimate_liquidation_map(candles, response.json(), symbol, reference, cutoff, tick_size)
+        tiers = EQUITY_LEVERAGE_TIERS if is_us_equity(market_id) else LEVERAGE_TIERS
+        result = estimate_liquidation_map(candles, response.json(), symbol, reference, cutoff,
+                                          tick_size, tiers)
     except (httpx.HTTPError, ValueError, KeyError, TypeError, ArithmeticError, OverflowError):
         return unavailable(market_id, cutoff, "source_unavailable_or_invalid")
     return {"market_id": market_id, "as_of": cutoff.isoformat(), "source": SOURCE,
-            "assumptions": ASSUMPTIONS, "interpretation_limit": INTERPRETATION_LIMIT, **result}
+            "assumptions": assumptions(tiers), "interpretation_limit": INTERPRETATION_LIMIT, **result}
 
 
 def compact_liquidation_map(data: dict | None) -> dict | None:
