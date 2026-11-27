@@ -39,6 +39,10 @@ function LiveMarketNote({ evidence, subjectMarketId }: {
         ? <time dateTime={view.observedAt}>{stamp(view.observedAt)}</time> : uiText("時間未提供")}</span>
     </p>
     {view.note && <p className="discussion-live-note">{view.note}</p>}
+    {view.snapshot && <p className="discussion-live-note" data-snapshot={view.snapshot}>{view.snapshot === "available"
+      ? uiText("已重新計算支撐壓力、指標、合約資料、清算與資金流向。")
+      : view.snapshot === "partial" ? uiText("已重新計算盤勢，部分資料未取得。")
+        : uiText("盤勢未能重新計算，這次只有現價與 K 線。")}</p>}
   </div>;
 }
 

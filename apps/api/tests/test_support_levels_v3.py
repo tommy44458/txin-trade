@@ -108,3 +108,71 @@ def test_v3_rejects_missing_candles_and_bad_tick() -> None:
         historical_levels_v3(candles[:30] + candles[31:], "1h", Decimal(100))
     with pytest.raises(ValueError, match="Tick size"):
         historical_levels_v3(candles, "1h", Decimal(100), Decimal(0))
+
+
+def _zone(result: dict, kind: str) -> dict:
+    return next(zone for zone in result["levels"] if zone["kind"] == kind and zone["pivot_count"] == 2)
+
+
+def test_untouched_equal_pivots_mark_untaken_liquidity_beyond_the_zone() -> None:
+    result = historical_levels_v3(candles_with_swings(), "1h", Decimal(100))
+    support, resistance = _zone(result, "support"), _zone(result, "resistance")
+    assert support["liquidity_beyond"] == {
+        "side": "below", "boundary": support["low"], "basis": "equal_pivots", "status": "untaken",
+        "taken_at": None, "label": "inferred_from_price_structure_not_order_data"}
+    assert resistance["liquidity_beyond"]["side"] == "above"
+    assert resistance["liquidity_beyond"]["boundary"] == resistance["high"]
+    assert support["sweep_count"] == 0 and support["sweep_evidence"] == []
+    assert result["context_version"] == "v3_price_location_context_v3"
+
+
+@pytest.mark.parametrize("kind,update,extreme", [
+    ("support", {"low": "93", "volume": "300"}, "93"),
+    ("resistance", {"high": "107", "volume": "300"}, "107"),
+])
+def test_wick_beyond_the_outer_edge_that_closes_back_is_a_sweep(kind, update, extreme) -> None:
+    candles = candles_with_swings()
+    candles[60].update(update)
+    zone = _zone(historical_levels_v3(candles, "1h", Decimal(100)), kind)
+    assert zone["zone_state"] == "active" and zone["consecutive_closes_beyond"] == 0
+    assert zone["sweep_count"] == 1
+    sweep = zone["sweep_evidence"][0]
+    assert (sweep["type"], sweep["extreme"], sweep["close"], sweep["at"]) == (
+        "wick", extreme, "100", candles[60]["close_time"])
+    assert Decimal(sweep["depth_atr"]) > 0
+    assert sweep["relative_volume"] == "3.00"
+    assert zone["liquidity_beyond"]["status"] == "swept"
+    assert zone["liquidity_beyond"]["taken_at"] == candles[60]["close_time"]
+
+
+def test_one_close_beyond_then_a_reclaim_is_a_sweep_and_two_closes_are_not() -> None:
+    candles = candles_with_swings()
+    candles[60].update(open="100", high="100", low="93", close="94")
+    candles[61].update(open="94", high="100", low="93.5", close="100")
+    zone = _zone(historical_levels_v3(candles, "1h", Decimal(100)), "support")
+    assert zone["zone_state"] == "active"
+    sweep = zone["sweep_evidence"][-1]
+    assert (sweep["type"], sweep["extreme"], sweep["at"]) == (
+        "reclaimed_after_one_close", "93", candles[61]["close_time"])
+    assert zone["liquidity_beyond"]["status"] == "swept"
+
+    held = historical_levels_v3(candles[:61], "1h", Decimal(94))
+    zone = next(z for z in held["levels"] if z["id"] == _zone(
+        historical_levels_v3(candles_with_swings(), "1h", Decimal(100)), "support")["id"])
+    assert zone["sweep_count"] == 0
+    assert zone["liquidity_beyond"]["status"] == "closed_beyond"
+
+
+def test_forming_candle_sweep_needs_the_quote_back_on_the_near_side() -> None:
+    from trade_helper.support_levels_v3 import annotate_forming_sweep
+
+    levels = historical_levels_v3(candles_with_swings(), "1h", Decimal(100))["levels"]
+    support = next(level for level in levels if level["kind"] == "support")
+    below = str(Decimal(support["low"]) - 1)
+    forming = {"open": "100", "high": "101", "low": below, "close": "100"}
+    back = annotate_forming_sweep(levels, forming, Decimal(100))
+    still_beyond = annotate_forming_sweep(levels, forming, Decimal(below))
+    unknown = annotate_forming_sweep(levels, None, Decimal(100))
+    assert next(z for z in back if z["id"] == support["id"])["forming_candle_swept"] is True
+    assert next(z for z in still_beyond if z["id"] == support["id"])["forming_candle_swept"] is False
+    assert next(z for z in unknown if z["id"] == support["id"])["forming_candle_swept"] is None

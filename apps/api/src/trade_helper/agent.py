@@ -17,6 +17,7 @@ from .current_candle import current_candle_context
 from .derivatives_context import compact_derivatives
 from .entry_decision import validate_entry_decision
 from .indicators import default_tool_trace
+from .liquidation_map import compact_liquidation_map
 from .local_settings import web_search_allowed
 from .macro_context import build_macro_context
 from .model_providers import ModelProviderError, ModelSession, analysis_timeout_seconds, tool_name
@@ -304,6 +305,7 @@ def agent_context(request: dict, candles: list[dict], quote: dict,
         "derivatives_context": compact_derivatives(quote.get("derivatives_context")),
         "order_flow": quote.get("order_flow"),
         "liquidation_context": quote.get("liquidation_context"),
+        "liquidation_map": compact_liquidation_map(quote.get("liquidation_map")),
         "market_reference": quote.get("market_reference"),
         "fund_flows_context": quote.get("fund_flows_context"),
         "last_closed_candle": candles[-1]["close_time"],

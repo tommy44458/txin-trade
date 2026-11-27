@@ -24,7 +24,7 @@ from .market_catalog import validate_market_id
 from .market_store import validate_candle
 from .models import Timeframe
 from .strategy_engine import other_timeframe
-from .support_levels_v3 import historical_levels_v3
+from .support_levels_v3 import annotate_forming_sweep, historical_levels_v3
 from .timeframes import FIXED_SECONDS, analysis_timeframes, higher_timeframes
 
 VERSION = "live_market_context_v1"
@@ -94,6 +94,11 @@ def _history_metadata(rows: list[dict], timeframe: str) -> dict:
 
 
 def build_market_context(market_id: str, timeframe: str) -> dict:
+    return collect_market_context(market_id, timeframe)[0]
+
+
+def collect_market_context(market_id: str, timeframe: str) -> tuple[dict, dict]:
+    """The chart context, and the validated inputs it was computed from for further evidence."""
     secondary_timeframe = other_timeframe(timeframe)
     # Fetch unconfirmed OHLC before freezing the reference quote, as the Agent
     # worker does. It never joins the closed rows sent to the V3 algorithm.
@@ -129,9 +134,11 @@ def build_market_context(market_id: str, timeframe: str) -> dict:
         raise MarketContextError("LEVEL_CALCULATION_FAILED", "支撐壓力資料暫時無法計算，請重新整理。") from exc
     secondary = {"timeframe": secondary_timeframe, "status": "unavailable",
                  "reason": "MARKET_DATA_UNAVAILABLE", "data": None}
+    valid_secondary = None
     if secondary_rows is not None:
         try:
             _validate_history(secondary_rows, secondary_timeframe, cutoff)
+            valid_secondary = secondary_rows
             data = historical_levels_v3(secondary_rows, secondary_timeframe, reference,
                                         tick_size, market_id)
             secondary = {"timeframe": secondary_timeframe, "status": "available", "data": data,
@@ -148,12 +155,12 @@ def build_market_context(market_id: str, timeframe: str) -> dict:
     current = current_candle_context(candles, quote | {"forming_candle": forming}, timeframe)
     forming = current["candle"]
     chart_candles = candles[-CHART_CANDLE_LIMIT:]
-    levels = calculated["levels"]
+    levels = annotate_forming_sweep(calculated["levels"], forming, reference)
     fingerprint = sha256(json.dumps({"market_id": market_id, "timeframe": timeframe,
                                      "candles": candles, "quote": quote,
                                      "forming_candle": forming},
                                     sort_keys=True, separators=(",", ":")).encode()).hexdigest()
-    return {
+    context = {
         "version": VERSION, "status": "ready", "market_id": market_id, "timeframe": timeframe,
         "analysis_timeframes": list(analysis_timeframes(timeframe)),
         "context_timeframes": list(higher_timeframes(timeframe)),
@@ -167,7 +174,7 @@ def build_market_context(market_id: str, timeframe: str) -> dict:
         "level_metadata": {
             **{key: calculated[key] for key in (
                 "algorithm_version", "context_version", "tick_size", "active_zone_count",
-                "invalidated_zone_count", "invalidation_rule", "quality_flags")},
+                "invalidated_zone_count", "invalidation_rule", "sweep_rule", "quality_flags")},
             "source_time": calculated["as_of"], "reference_price": str(reference),
             "reference_time": quote["observed_at"],
         },
@@ -180,6 +187,9 @@ def build_market_context(market_id: str, timeframe: str) -> dict:
         },
         "secondary_timeframe_context": secondary,
     }
+    return context, {"candles": candles, "secondary_candles": valid_secondary,
+                     "secondary_timeframe": secondary_timeframe, "quote": quote,
+                     "tick_size": tick_size, "forming_candle": forming}
 
 
 @router.get("/market-context")

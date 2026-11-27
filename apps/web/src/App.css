@@ -426,6 +426,11 @@ select,
   font-size: 12px;
   line-height: 1.55;
 }
+/* Sweeps and resting liquidity, on their own line beneath how the zone was confirmed. */
+.level-sweeps {
+  display: block;
+  color: var(--warning);
+}
 .level-now {
   display: flex;
   align-items: center;

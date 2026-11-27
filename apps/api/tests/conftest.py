@@ -65,6 +65,8 @@ def no_public_derivatives_network_in_unit_tests(monkeypatch):
     monkeypatch.setenv('TRADE_MARKET_REFERENCE_ENABLED', '0')
     # Fund flows come from the txinTrade cloud; dedicated tests serve them from a fake.
     monkeypatch.setenv('TRADE_FUND_FLOWS_ENABLED', '0')
+    # The estimated liquidation map reads Binance open interest history.
+    monkeypatch.setenv('TRADE_LIQUIDATION_MAP_ENABLED', '0')
     # Tests never let a model search the web.
     monkeypatch.setenv('TRADE_WEB_SEARCH_ENABLED', '0')
 

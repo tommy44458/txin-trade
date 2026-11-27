@@ -79,7 +79,7 @@ def test_finished_reports_are_enrolled_once_judged_and_summarized():
     # The report was made with an older prompt, so the current version has no results yet.
     current = client.get("/api/v1/outcomes/summary?version=current").json()
     assert current["overall"]["total"] == 0 and current["current_versions"] == [
-        "contract_strategy_v39", "contract_strategy_v39:extreme_reversal_v2"]
+        "contract_strategy_v40", "contract_strategy_v40:extreme_reversal_v3"]
     assert client.get("/api/v1/outcomes?version=current").json()["total"] == 0
     assert summary["assumptions"] == {"resolution": "5m", "same_candle": "loss", "fees_and_slippage": "excluded"}
     assert summary["groups"][0]["key"] == "high"

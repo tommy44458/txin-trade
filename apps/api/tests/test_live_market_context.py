@@ -76,7 +76,8 @@ def test_chart_context_is_fresh_precomputed_v3_and_matches_agent_evidence(feeds)
         assert body["current_candle"]["confirmation"] == "unclosed"
         assert body["secondary_timeframe_context"]["status"] == "available"
         assert sorted(feeds["calls"]) == [("1h", 1000), ("4h", 1000)]
-        expected = support_resistance(feeds["primary"], feeds["quote"] | {"tick_size": "0.01"},
+        expected = support_resistance(feeds["primary"], feeds["quote"] | {
+            "tick_size": "0.01", "forming_candle": feeds["forming"]},
                                       {"timeframe": "1h", "_request": {"market_id": MARKET},
                                        "_context_candles": feeds["secondary"]})
         # Liquidity fields are optional on the analysis endpoint; structural

@@ -461,7 +461,11 @@ def build_discussion_input(context: dict, messages: list[dict]) -> str:
             continue
         turn = {"role": message["role"], "content": message["content"]}
         if message["role"] == "assistant" and isinstance(message.get("live_market"), dict):
-            turn["live_market"] = message["live_market"]
+            # An earlier reply's full snapshot is not resent: its quote and candles identify it,
+            # and only this turn's live_market carries current zones and indicators.
+            earlier = message["live_market"]
+            turn["live_market"] = ({key: value for key, value in earlier.items() if key != "snapshot"}
+                                   | {"snapshot": "omitted_from_history"}) if "snapshot" in earlier else earlier
         conversation.append(turn)
     frozen = {key: value for key, value in context.items() if key != "live_market"}
     projected = _prompt_projection(frozen, conversation)
