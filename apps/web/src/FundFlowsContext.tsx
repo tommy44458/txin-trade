@@ -12,7 +12,7 @@ type Reserves = { held: number; held_usd: number; net_1d: Net; net_7d: Net; net_
 
 export type FundFlowsContextData = {
   version?: string;
-  status: "available" | "stale" | "unavailable";
+  status: "available" | "stale" | "unavailable" | "not_applicable";
   as_of?: string;
   assets?: Record<string, AssetFlows | Reserves>;
   pair_asset?: (AssetFlows | Partial<Reserves>) & { asset: string; status: "tracked" | "not_tracked" | "same_as_reference" | "unavailable" };

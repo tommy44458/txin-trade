@@ -13,6 +13,7 @@ from datetime import UTC, datetime
 from fastapi import HTTPException
 
 from .market import symbol_for
+from .market_catalog import is_us_equity
 from .smart_money import fetch_cloud
 
 VERSION = "liquidation_context_v1"
@@ -48,6 +49,10 @@ def unavailable_liquidations(market_id: str) -> dict:
 
 def liquidation_context(market_id: str) -> dict:
     symbol = symbol_for(market_id)
+    if is_us_equity(market_id):
+        # The cloud follows crypto contracts on Bybit and OKX; it has nothing for stocks.
+        return {"version": VERSION, "source": SOURCE, "status": "not_applicable", "reason": "us_equity",
+                "symbol": symbol}
     if os.getenv("TRADE_LIQUIDATIONS_ENABLED", "1") == "0":
         return unavailable_liquidations(market_id)
     try:

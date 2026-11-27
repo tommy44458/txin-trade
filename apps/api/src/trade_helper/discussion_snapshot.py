@@ -90,6 +90,8 @@ def build_discussion_snapshot(market_id: str, timeframe: str, timeout: float) ->
                                                   "last_funding_rate", "next_funding_time",
                                                   "observed_at")},
         "current_candle": context["current_candle"],
+        "asset_class": context.get("asset_class", "crypto"),
+        "us_equity_session": context.get("us_equity_session"),
         "support_resistance": {
             timeframe: _support_resistance(context["level_metadata"] | {
                 "recently_invalidated_levels": context["recently_invalidated_levels"]},

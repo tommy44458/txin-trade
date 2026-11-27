@@ -47,14 +47,16 @@ function Frame({ frame, value }: { frame: string; value?: ReferenceFrame }) {
   );
 }
 
-export default function MarketReference({ data }: { data?: MarketReferenceData | null }) {
+export default function MarketReference({ data, usEquity = false }: { data?: MarketReferenceData | null; usEquity?: boolean }) {
   if (!data) return null;
   if (!data.references || data.status === "unavailable" && !Object.keys(data.references).length) {
     return <p className="note">{uiText("資料未取得")}</p>;
   }
   return (
     <>
-      <p className="note">{uiText("依已收盤 K 線計算本交易對與 BTC、ETH 的連動；連動越強，大盤方向越值得作為風險參考。相關係數只描述最近 {{p0}} 根 K 線，不代表未來仍會同步。", { p0: data.correlation_window_candles ?? "—" })}</p>
+      <p className="note">{usEquity
+        ? uiText("依已收盤 K 線計算本交易對與 SPY、QQQ 的連動；連動越強，美股大盤方向越值得作為風險參考。相關係數只描述最近 {{p0}} 根 K 線，不代表未來仍會同步。", { p0: data.correlation_window_candles ?? "—" })
+        : uiText("依已收盤 K 線計算本交易對與 BTC、ETH 的連動；連動越強，大盤方向越值得作為風險參考。相關係數只描述最近 {{p0}} 根 K 線，不代表未來仍會同步。", { p0: data.correlation_window_candles ?? "—" })}</p>
       {Object.entries(data.references).map(([marketId, reference]) => (
         <div key={marketId}>
           <strong>{symbol(marketId)}</strong>

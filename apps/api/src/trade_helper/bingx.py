@@ -72,7 +72,9 @@ def _decimal(value: object, field: str, *, positive: bool = True) -> Decimal:
 def normalize_positions(kind: str, rows: list[dict]) -> tuple[list[dict], int]:
     result, skipped = [], 0
     seen: set[str] = set()
-    supported = {market["binance_symbol"]: market for market in get_catalog().markets} if rows else {}
+    # A BingX symbol that matches a Binance stock perpetual may be an unrelated token.
+    supported = {market["binance_symbol"]: market for market in get_catalog().markets
+                 if market.get("asset_class", "crypto") == "crypto"} if rows else {}
     for row in rows:
         if not isinstance(row, dict):
             raise BingXError("BingX 持倉回應格式異常，沒有更新本地紀錄")

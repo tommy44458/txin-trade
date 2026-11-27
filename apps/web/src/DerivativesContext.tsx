@@ -55,7 +55,7 @@ type LiquidationWindow = {
 };
 /** Positions closed by force on Bybit and OKX, collected by the cloud (liquidation_context v1). */
 export type LiquidationData = {
-  status: "available" | "partial" | "unavailable";
+  status: "available" | "partial" | "unavailable" | "not_applicable";
   symbol: string;
   windows?: Record<"1h" | "4h" | "24h", LiquidationWindow>;
 };
@@ -194,7 +194,7 @@ export default function DerivativesContext({
           <p className="note">{uiText("主動買入減主動賣出，以 USDT 計，取已收盤 K 線。與價格反向可能是掛單吸收，也可能是避險或套利。")}</p>
         </>
       )}
-      {liquidations && (
+      {liquidations && liquidations.status !== "not_applicable" && (
         <>
           <h4 className="evidence-subtitle">{uiText("{{p0}} 清算（Bybit、OKX）", { p0: liquidations.symbol })}</h4>
           <Liquidations data={liquidations} />
