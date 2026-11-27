@@ -30,6 +30,9 @@ METRIC_LABEL = {
     "core_pce_yoy": "核心 PCE 物價年增率", "real_gdp_annualized": "實質 GDP 年化季增率",
 }
 EASTERN = ZoneInfo("America/New_York")
+# A year-over-year change is published with the month-over-month change of the same release;
+# when only the monthly change exists, the agency did not publish the annual one.
+SAME_RELEASE_ANCHOR = {"cpi_yoy": "cpi_mom", "core_cpi_yoy": "cpi_mom"}
 
 
 def _decimal(value: object) -> Decimal:
@@ -183,6 +186,8 @@ def parse_bea_release(body: str, url: str, kind: str) -> list[dict]:
     parser = _OfficialHTML()
     parser.feed(body)
     text = " ".join(" ".join(parser.text).split())
+    # Inline markup splits text nodes, so "(<abbr>GDP</abbr>)" reads "(GDP )".
+    text = re.sub(r"\(\s+", "(", re.sub(r"\s+\)", ")", text))
     published = _bea_published(text)
     if kind == "gdp":
         pattern = (r"Real gross domestic product \(GDP\) (increased|decreased) at an annual rate of "
@@ -257,7 +262,9 @@ def _validate_actual(record: dict, cutoff: datetime | None = None) -> None:
             raise ValueError("Macro actual learned after cutoff")
 
 
-def save_actuals(source: str, records: list[dict], observed_at: datetime) -> int:
+def save_actuals(source: str, records: list[dict], observed_at: datetime, *,
+                 partial_error: str | None = None) -> int:
+    """Save new versions; partial_error records that some of the source's releases failed."""
     if source not in {"bls", "bea"} or observed_at.tzinfo is None:
         raise ValueError("Invalid macro source or observation time")
     count = 0
@@ -284,7 +291,8 @@ def save_actuals(source: str, records: list[dict], observed_at: datetime) -> int
             )
             count += 1
         db.execute("INSERT INTO macro_actual_source_checks(source,status,checked_at,error_code) "
-                   "VALUES(?,'ok',?,NULL)", (source, utc_text(observed_at)))
+                   "VALUES(?,?,?,?)", (source, "partial" if partial_error else "ok",
+                                       utc_text(observed_at), partial_error[:80] if partial_error else None))
         db.commit()
     return count
 
@@ -335,6 +343,27 @@ def actuals_as_of(db, cutoff: datetime) -> tuple[list[dict], dict[str, str]]:
     status.update({row["source"]: (row["status"] if cutoff - row["checked_at"] <= timedelta(hours=18)
                                    else "offline") for row in checks})
     return sorted(latest.values(), key=lambda item: (item["kind"], item["metric"])), status
+
+
+def unpublished_actuals(latest: list[dict]) -> list[dict]:
+    """Annual changes the agency left out of the release that carries the latest monthly change.
+
+    BLS did not collect October 2025 prices, so it published no 12-month CPI change for
+    October 2026; the series simply lacks the comparison month.
+    """
+    by_metric = {record["metric"]: record for record in latest}
+    gaps = []
+    for metric, anchor in SAME_RELEASE_ANCHOR.items():
+        reference, own = by_metric.get(anchor), by_metric.get(metric)
+        if reference is None or (own is not None and own["period"] >= reference["period"]):
+            continue
+        gaps.append({"source": reference["source"], "kind": METRIC_KIND[metric], "metric": metric,
+                     "label": METRIC_LABEL[metric], "period": reference["period"],
+                     "comparison_period": _month_before(reference["period"], 12),
+                     "reason": "comparison_period_not_published",
+                     "previous": ({"period": own["period"], "value": own["value"]} if own else None),
+                     "source_url": reference["source_url"]})
+    return gaps
 
 
 def validate_snapshot_actual(record: dict, cutoff: datetime) -> None:

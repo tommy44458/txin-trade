@@ -29,6 +29,22 @@
 .event-sources .source-offline i {
   background: var(--warning);
 }
+.event-sources .source-partial {
+  color: var(--warning);
+}
+.event-sources .source-partial i {
+  background: var(--warning);
+}
+/* An annual change the agency did not publish: no number, and why. */
+.metric-unpublished .metric-value {
+  color: var(--text-tertiary);
+}
+.metric-note {
+  margin: var(--space-3) 0 0;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
 .economic-metrics {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

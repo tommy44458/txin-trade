@@ -10,7 +10,7 @@ from zoneinfo import ZoneInfo
 
 from .db import connect, new_id
 from .fomc_actual import fomc_results_as_of
-from .macro_actuals import actuals_as_of
+from .macro_actuals import actuals_as_of, unpublished_actuals
 from .storage_codec import decode_row, utc_text
 
 EASTERN = ZoneInfo("America/New_York")
@@ -316,6 +316,7 @@ def event_snapshot(cutoff: datetime) -> dict:
             "coverage": {"from": start.isoformat(), "through": end.isoformat()},
             "official_actuals": official_actuals,
             "actual_source_status": actual_source_status,
+            "official_actual_gaps": unpublished_actuals(official_actuals),
             "actual_values_status": ("partial_official" if official_actuals else
                                      "partial_fomc" if any(
                                          event.get("official_result") for event in events)

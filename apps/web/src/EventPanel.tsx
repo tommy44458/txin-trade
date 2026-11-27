@@ -48,7 +48,19 @@ export type EventContext = {
     ingested_at: string;
     method: string;
   }[];
-  actual_source_status?: Record<string, "ok" | "offline">;
+  actual_source_status?: Record<string, "ok" | "partial" | "offline">;
+  /** Annual changes the agency did not publish with the latest monthly release. */
+  official_actual_gaps?: {
+    source: "bls" | "bea";
+    kind: string;
+    metric: string;
+    label: string;
+    period: string;
+    comparison_period: string;
+    reason: "comparison_period_not_published";
+    previous: { period: string; value: string } | null;
+    source_url: string;
+  }[];
   actual_values_status: string;
   news_status: string;
 };
@@ -118,18 +130,35 @@ export default function EventPanel({
           {Object.entries(context.actual_source_status ?? {}).map(
             ([source, status]) => (
               <span
-                className={status === "ok" ? "source-ok" : "source-offline"}
+                className={status === "ok" ? "source-ok" : status === "partial" ? "source-partial" : "source-offline"}
                 key={source}
               >
                 <i />
-                {sources[source] ?? source}{" "}{uiText("數值：")}{" "}{status === "ok" ? uiText("已同步") : uiText("離線／過期")}
+                {sources[source] ?? source}{" "}{uiText("數值：")}{" "}{status === "ok" ? uiText("已同步")
+                  : status === "partial" ? uiText("部分取得") : uiText("離線／過期")}
               </span>
             ),
           )}
         </div>
-        {context.official_actuals?.length ? (
+        {context.official_actuals?.length || context.official_actual_gaps?.length ? (
           <div className="economic-metrics">
-            {context.official_actuals.map((actual) => {
+            {context.official_actual_gaps?.map((gap) => (
+              <article className="economic-metric metric-unpublished" key={`gap:${gap.metric}:${gap.period}`}>
+                <div className="metric-label">
+                  <h3>{economicMetricLabel(gap.label, gap.metric)}</h3>
+                  <span>{sources[gap.source]}</span>
+                </div>
+                <div className="metric-value">{uiText("未公布")}</div>
+                <p className="metric-period">{uiText("資料期間") + " "}{gap.period}</p>
+                <div className="metric-comparison">
+                  <span>{uiText("前一期")}</span>
+                  <strong>{gap.previous ? `${gap.previous.value}%（${gap.previous.period}）` : uiText("未提供")}</strong>
+                </div>
+                <p className="metric-note">{uiText("官方沒有 {{p0}} 的資料可比較，所以沒有公布這期的年增率。", { p0: gap.comparison_period })}</p>
+              </article>
+            ))}
+            {context.official_actuals?.filter((actual) => !context.official_actual_gaps?.some(
+              (gap) => gap.metric === actual.metric)).map((actual) => {
               const unit = actual.unit === "percent" ? "%" : uiText("千人");
               const age = Math.max(
                 0,
