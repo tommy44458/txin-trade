@@ -24,7 +24,14 @@ from starlette.concurrency import run_in_threadpool
 from .config import local_user_id
 from .db import connect, new_id, utc_now
 from .discussion_context import DISCUSSION_INSTRUCTIONS, build_discussion_input, load_subject
-from .discussion_market import NOT_REFRESHED, SOURCE, VERSION, fetch_discussion_market
+from .discussion_market import (
+    NOT_REFRESHED,
+    SNAPSHOT_VERSION,
+    SOURCE,
+    VERSION,
+    fetch_discussion_market,
+    unavailable_snapshot,
+)
 from .model_providers import ModelSession, analysis_timeout_seconds
 from .prompts.registry import resolve_prompt
 from .prompts_artifacts import load_prompt_artifact, save_prompt_artifact
@@ -39,6 +46,9 @@ STREAM_HEARTBEAT_SECONDS = 10
 PREFIX_FLUSH_SECONDS = 0.2
 PREFIX_FLUSH_CHARS = 128
 LIVE_MARKET_MAX_SECONDS = 8.0
+# A follow-up under professional_discussion_v9 or later also gets a fresh market snapshot.
+LIVE_SNAPSHOT_MAX_SECONDS = 25.0
+LIVE_SNAPSHOT_PROMPT_VERSION = 9
 INTERRUPTED_ERROR = (
     "DISCUSSION_RESULT_UNKNOWN",
     "模型回覆中斷，無法確認這次呼叫的用量；請檢查後手動重試。",
@@ -459,15 +469,24 @@ def _persist_live_market(job: dict, market: dict | None) -> bool:
         return bool(result.rowcount)
 
 
-def _supports_live_market(artifact) -> bool:
+def _discussion_prompt_version(artifact) -> int:
     version = re.fullmatch(r"professional_discussion_v(\d+)", artifact.prompt_version) if artifact else None
-    return bool(version and int(version.group(1)) >= 4)
+    return int(version.group(1)) if version else 0
 
 
-def _live_market_unavailable(context: dict, requested_at: str) -> dict:
+def _supports_live_market(artifact) -> bool:
+    return _discussion_prompt_version(artifact) >= 4
+
+
+def _supports_live_snapshot(artifact) -> bool:
+    return _discussion_prompt_version(artifact) >= LIVE_SNAPSHOT_PROMPT_VERSION
+
+
+def _live_market_unavailable(context: dict, requested_at: str, snapshot: bool = False) -> dict:
     subject = context.get("subject") or {}
-    return {
-        "version": VERSION, "status": "unavailable",
+    extra = {"version": SNAPSHOT_VERSION, "snapshot": unavailable_snapshot("LIVE_MARKET_UNAVAILABLE")} if snapshot else {}
+    return extra | {
+        "version": SNAPSHOT_VERSION if snapshot else VERSION, "status": "unavailable",
         "market_id": subject.get("market_id"), "timeframe": subject.get("timeframe"),
         "source": SOURCE, "requested_at": requested_at,
         "observed_at": None, "quote": None, "forming_candle": None,
@@ -578,11 +597,13 @@ def run_once() -> bool:
             if remaining <= 0:
                 raise TimeoutError("Discussion setup exceeded its budget")
             requested_at = utc_now()
+            snapshot = _supports_live_snapshot(artifact)
+            budget = LIVE_SNAPSHOT_MAX_SECONDS if snapshot else LIVE_MARKET_MAX_SECONDS
             try:
                 market = fetch_discussion_market(
-                    context, timeout=min(LIVE_MARKET_MAX_SECONDS, remaining))
+                    context, timeout=min(budget, remaining), **({"snapshot": True} if snapshot else {}))
             except Exception:  # noqa: BLE001 -- never publish upstream payloads
-                market = _live_market_unavailable(context, requested_at)
+                market = _live_market_unavailable(context, requested_at, snapshot)
             if not _persist_live_market(job, market):
                 return True
             if market is not None:

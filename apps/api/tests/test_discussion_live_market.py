@@ -374,3 +374,48 @@ def test_schema_seven_upgrade_preserves_messages_and_adds_null_evidence(client):
         assert db.execute("SELECT * FROM discussion_sessions").fetchone() == session
         assert db.execute("SELECT * FROM analyses").fetchone() == analysis_row
         assert db.execute("PRAGMA user_version").fetchone()["user_version"] == SCHEMA_VERSION
+
+
+@pytest.mark.parametrize("version,snapshot,budget", [(8, False, 8), (9, True, 25)])
+def test_newer_prompts_ask_for_a_fresh_snapshot_with_a_longer_budget(
+        client, monkeypatch, version, snapshot, budget):
+    monkeypatch.setattr(discussions, "resolve_prompt", lambda *_args, **_kwargs: _bundle(version))
+    analysis()
+    calls = []
+
+    def fetch(context, *, timeout, **options):
+        calls.append((timeout, options))
+        market = _market()
+        if options.get("snapshot"):
+            market |= {"version": "discussion_live_market_v2",
+                       "snapshot": {"version": "discussion_market_snapshot_v1", "status": "available"}}
+        return market
+
+    monkeypatch.setattr(discussions, "fetch_discussion_market", fetch)
+    seen = []
+    _reply(monkeypatch, seen)
+    send(client)
+    assert discussions.run_once()
+    (timeout, options), = calls
+    assert 0 < timeout <= budget
+    assert options == ({"snapshot": True} if snapshot else {})
+    saved = _assistant(client)["live_market"]
+    assert ("snapshot" in saved) is snapshot
+    assert seen[0][0]["live_market"] == saved
+
+
+def test_reader_failure_under_a_newer_prompt_saves_an_unavailable_snapshot(client, monkeypatch):
+    monkeypatch.setattr(discussions, "resolve_prompt", lambda *_args, **_kwargs: _bundle(9))
+    analysis()
+
+    def broken(*_args, **_kwargs):
+        raise RuntimeError("private upstream detail")
+
+    monkeypatch.setattr(discussions, "fetch_discussion_market", broken)
+    _reply(monkeypatch, [])
+    send(client)
+    assert discussions.run_once()
+    saved = _assistant(client)["live_market"]
+    assert saved["version"] == "discussion_live_market_v2" and saved["status"] == "unavailable"
+    assert saved["snapshot"]["status"] == "unavailable"
+    assert "private" not in json.dumps(saved)

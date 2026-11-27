@@ -12,7 +12,7 @@ from .position_advice import build_position_options
 from .strategy_engine import compare_timeframes as compare_closed_timeframes
 from .strategy_engine import other_timeframe
 from .support_levels import annotate_liquidity, order_book_evidence, wilder_atr
-from .support_levels_v3 import historical_levels_v3
+from .support_levels_v3 import annotate_forming_sweep, historical_levels_v3
 
 
 def series(candles: list[dict], field: str) -> list[Decimal]:
@@ -116,9 +116,12 @@ def support_resistance(candles: list[dict], quote: dict, params: dict) -> dict:
                  if context_rows and len(context_rows) >= 60 else None)
     return {"method": calculated["algorithm_version"],
             "context_version": calculated["context_version"],
-            "levels": annotate_liquidity(calculated["levels"], evidence),
+            "levels": annotate_forming_sweep(
+                annotate_liquidity(calculated["levels"], evidence),
+                current_candle_context(candles, quote, params["timeframe"])["candle"], reference),
             "recently_invalidated_levels": calculated["recently_invalidated_levels"],
             "invalidation_rule": calculated["invalidation_rule"],
+            "sweep_rule": calculated["sweep_rule"],
             "secondary_timeframe_context": {"timeframe": secondary_timeframe,
                 "status": "available" if secondary else "unavailable",
                 "data": secondary},

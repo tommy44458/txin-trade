@@ -9,14 +9,22 @@ outside its SQLite transaction; both public reads share a hard async deadline.
 import asyncio
 import math
 import time
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import TimeoutError as FutureTimeout
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal, DecimalException, InvalidOperation, localcontext
 
 import httpx
 
+from .discussion_snapshot import NOT_REFRESHED as SNAPSHOT_NOT_REFRESHED
+from .discussion_snapshot import VERSION as SNAPSHOT_MODULE_VERSION
+from .discussion_snapshot import build_discussion_snapshot
 from .timeframes import ANALYSIS_TIMEFRAMES, FIXED_SECONDS, candle_open
 
 VERSION = "discussion_live_market_v1"
+# v2 adds a fresh snapshot: zones, indicators, derivatives, flows and liquidations.
+SNAPSHOT_VERSION = "discussion_live_market_v2"
+SNAPSHOT_MAX_SECONDS = 25.0
 SOURCE = "binance_usdt_perpetual"
 BASE_URL = "https://fapi.binance.com"
 QUOTE_PATH = "/fapi/v2/ticker/price"
@@ -237,13 +245,31 @@ def _comparison(context: dict, quote: dict | None) -> dict | None:
         return None
 
 
-def fetch_discussion_market(context: dict, *, timeout: float = MAX_TIMEOUT_SECONDS) -> dict | None:
-    """Fetch a new small observation without modifying any saved analysis evidence."""
+def unavailable_snapshot(reason: str) -> dict:
+    return {"version": SNAPSHOT_MODULE_VERSION, "status": "unavailable", "reason": reason}
+
+
+def fetch_discussion_market(context: dict, *, timeout: float = MAX_TIMEOUT_SECONDS,
+                            snapshot: bool = False) -> dict | None:
+    """Fetch a new observation without modifying any saved analysis evidence.
+
+    With snapshot, the market's zones, indicators, derivatives and flows are recomputed in
+    parallel within a longer budget; the quote and recent candles keep their own short deadline.
+    """
     pair = _frozen_pair(context)
     if pair is None:
         return None
     market_id, symbol, timeframe = pair
     requested = _now().isoformat()
+    started = time.monotonic()
+    snapshot_budget = (float(min(max(timeout, 0), SNAPSHOT_MAX_SECONDS))
+                       if isinstance(timeout, (int, float)) and not isinstance(timeout, bool)
+                       and (not isinstance(timeout, float) or math.isfinite(timeout)) else 0)
+    snapshot_future = None
+    if snapshot and snapshot_budget > 0:
+        pool = ThreadPoolExecutor(max_workers=1)
+        snapshot_future = pool.submit(build_discussion_snapshot, market_id, timeframe, snapshot_budget)
+        pool.shutdown(wait=False)
     results, errors = {}, {}
     budget = (float(min(max(timeout, 0), MAX_TIMEOUT_SECONDS))
               if isinstance(timeout, (int, float)) and not isinstance(timeout, bool)
@@ -264,7 +290,7 @@ def fetch_discussion_market(context: dict, *, timeout: float = MAX_TIMEOUT_SECON
                     errors.setdefault(component, "NETWORK_ERROR")
     quote, candles = results.get("quote"), results.get("candles", {})
     observations = [result["observed_at"] for result in results.values()]
-    return {"version": VERSION, "status": "available" if len(results) == 2 else (
+    observation = {"version": VERSION, "status": "available" if len(results) == 2 else (
         "partial" if results else "unavailable"), "market_id": market_id, "timeframe": timeframe,
         "source": SOURCE, "requested_at": requested,
         "observed_at": max(observations) if observations else None, "quote": quote,
@@ -272,3 +298,16 @@ def fetch_discussion_market(context: dict, *, timeout: float = MAX_TIMEOUT_SECON
         "recent_closed_candles": candles.get("recent_closed_candles", []),
         "comparison": _comparison(context, quote), "errors": errors,
         "data_basis": "new_public_market_observation", "not_refreshed": list(NOT_REFRESHED)}
+    if not snapshot:
+        return observation
+    fresh = unavailable_snapshot("TIMEOUT")
+    if snapshot_future is not None:
+        try:
+            fresh = snapshot_future.result(timeout=max(0.0, started + snapshot_budget - time.monotonic()))
+        except FutureTimeout:
+            pass
+        except Exception:  # noqa: BLE001 -- never publish upstream payloads
+            fresh = unavailable_snapshot("SNAPSHOT_FAILED")
+    refreshed = fresh.get("status") in {"available", "partial"}
+    return observation | {"version": SNAPSHOT_VERSION, "snapshot": fresh,
+                          "not_refreshed": list(SNAPSHOT_NOT_REFRESHED if refreshed else NOT_REFRESHED)}

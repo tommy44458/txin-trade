@@ -60,6 +60,8 @@ import CloudSignInNotice from "./CloudSignInNotice";
 import UpdateNotice from "./UpdateNotice";
 import LocalCloudMenu from "./LocalCloudMenu";
 import DerivativesContext, { type DerivativesData, type LiquidationData, type OrderFlowData } from "./DerivativesContext";
+import type { LiquidationMapData } from "./LiquidationMap";
+import { levelSweepNotes, type LevelSweepFields } from "./levelSweeps";
 import MarketReference, { type MarketReferenceData } from "./MarketReference";
 import FundFlowsContext, { type FundFlowsContextData } from "./FundFlowsContext";
 import DirectionAssessment from "./DirectionAssessment";
@@ -102,7 +104,7 @@ type Position = {
   contract_type?: "perpetual" | "standard" | null;
   synced_at?: string | null;
 };
-type Level = LevelLocation & {
+type Level = LevelLocation & LevelSweepFields & {
   id?: string;
   kind: string;
   low: string;
@@ -162,6 +164,7 @@ type Report = {
   // Absent in reports made before order flow was computed.
   order_flow?: OrderFlowData | null;
   liquidation_context?: LiquidationData | null;
+  liquidation_map?: LiquidationMapData | null;
   market_reference?: MarketReferenceData | null;
   fund_flows_context?: FundFlowsContextData | null;
   market_id: string;
@@ -1401,6 +1404,9 @@ function App({ remoteSection, remoteIdentity, remoteMenu, remoteStatus }: {
                                   : row.level.touch_count != null
                                     ? " " + uiText("· {{p0}} 次轉折 · 轉折 K 線相對量 {{p1}}×{{p2}}", { p0: row.level.touch_count, p1: row.level.relative_pivot_volume, p2: row.level.order_book_snapshot_overlap ? " " + uiText("· 與掛單快照重疊") : "" })
                                     : " " + uiText("· 版本未標示")}
+                                {levelSweepNotes(row.level, when).length > 0 && (
+                                  <span className="level-sweeps">{levelSweepNotes(row.level, when).join(" · ")}</span>
+                                )}
                               </small>
                             </div>
                           ))
@@ -1453,7 +1459,8 @@ function App({ remoteSection, remoteIdentity, remoteMenu, remoteStatus }: {
                   <details className="secondary-evidence">
                     <summary>{uiText("衍生品市場背景")}</summary>
                     <DerivativesContext data={report.derivatives_context} orderFlow={report.order_flow}
-                      liquidations={report.liquidation_context} />
+                      liquidations={report.liquidation_context}
+                      liquidationMap={report.liquidation_map} />
                   </details>
                 )}{" "}
                 {report && (
@@ -1864,7 +1871,8 @@ function App({ remoteSection, remoteIdentity, remoteMenu, remoteStatus }: {
                     <details className="secondary-evidence">
                       <summary>{uiText("衍生品市場背景")}</summary>
                       <DerivativesContext data={report.derivatives_context} orderFlow={report.order_flow}
-                      liquidations={report.liquidation_context} />
+                      liquidations={report.liquidation_context}
+                      liquidationMap={report.liquidation_map} />
                     </details>
                   </>
                 )}

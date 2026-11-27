@@ -2,8 +2,16 @@ import { uiText } from "./i18n/index.ts";
 import { timeframeCode } from "./timeframes.ts";
 import type { ChartCandle } from "./candlestickData.ts";
 
+/** v2 adds a fresh snapshot: zones, indicators, derivatives, liquidations and fund flows. */
+type DiscussionSnapshot = {
+  status: "available" | "partial" | "unavailable";
+  as_of?: string;
+  reason?: string;
+  errors?: Record<string, string>;
+};
+
 export type DiscussionLiveMarket = {
-  version: "discussion_live_market_v1";
+  version: "discussion_live_market_v1" | "discussion_live_market_v2";
   status: "available" | "partial" | "unavailable";
   market_id: string;
   timeframe: string;
@@ -21,6 +29,7 @@ export type DiscussionLiveMarket = {
   comparison: { analysis_price: string | null; change_since_analysis_pct: string | null } | null;
   errors: Record<string, string>;
   not_refreshed: string[];
+  snapshot?: DiscussionSnapshot;
 };
 
 function decimalParts(value: unknown): { integer: string; fraction: string } | null {
@@ -61,12 +70,14 @@ export type DiscussionLiveMarketView = {
   observedAt: string | null;
   timeBasis: "quote" | "request";
   note: string | null;
+  /** Whether this turn recalculated the market; null for replies from before snapshots. */
+  snapshot: "available" | "partial" | "unavailable" | null;
 };
 
 /** A historical reply keeps its own quote; the selected UI market and today's clock never replace it. */
 export function discussionLiveMarketView(value: DiscussionLiveMarket | null | undefined,
   subjectMarketId?: string): DiscussionLiveMarketView | null {
-  if (!value || value.version !== "discussion_live_market_v1") return null;
+  if (!value || (value.version !== "discussion_live_market_v1" && value.version !== "discussion_live_market_v2")) return null;
   const marketId = subjectMarketId ?? value.market_id;
   const symbol = marketId.match(/^binance:perp:([\p{L}\p{N}_]+)USDT$/u);
   const matches = marketId === value.market_id && value.source === "binance_usdt_perpetual";
@@ -84,5 +95,8 @@ export function discussionLiveMarketView(value: DiscussionLiveMarket | null | un
     timeBasis: quotePrice ? "quote" : "request",
     note: !quotePrice ? uiText("本次未取得現價；原分析價格不是即時報價。")
       : status === "partial" ? uiText("部分行情未取得。") : null,
+    snapshot: value.version === "discussion_live_market_v2" && matches
+      ? value.snapshot?.status === "available" || value.snapshot?.status === "partial" ? value.snapshot.status : "unavailable"
+      : null,
   };
 }

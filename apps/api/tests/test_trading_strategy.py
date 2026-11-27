@@ -42,7 +42,7 @@ def test_a_chosen_strategy_appends_its_skill_and_versions_the_prompt(task, promp
     assert chosen.instructions.startswith(base.instructions.rsplit("\n\n", 1)[0])
     # The selected timeframe plan stays the final section.
     assert json.loads(chosen.instructions.rsplit("\n\n", 1)[1])["selected_timeframe_plan"]
-    assert chosen.prompt_version == f"{base.prompt_version}:extreme_reversal_v2"
+    assert chosen.prompt_version == f"{base.prompt_version}:extreme_reversal_v3"
     assert chosen.template_sha256 != base.template_sha256
     assert chosen.policy_version == base.policy_version
 
@@ -52,7 +52,7 @@ def test_analyses_without_a_strategy_keep_their_prompt_and_other_tasks_never_loa
         resolve_prompt("strategy_market", inputs={"timeframe": "4h"})
     assert resolve_prompt("discussion", inputs=STRATEGY) == resolve_prompt("discussion")
     assert task_prompt_versions("strategy_market") == [
-        "contract_strategy_v39", "contract_strategy_v39:extreme_reversal_v2"]
+        "contract_strategy_v40", "contract_strategy_v40:extreme_reversal_v3"]
     with pytest.raises(ValueError, match="Unsupported prompt input: trading_strategy"):
         resolve_prompt("strategy_market", inputs={"trading_strategy": "breakout"})
 
@@ -112,7 +112,7 @@ def test_a_strategy_job_freezes_left_side_and_the_skill_prompt():
         assert job.json()["submitted_input"]["trading_strategy"] == "extreme_reversal"
         with connect(readonly=True) as db:
             bundle = load_prompt_artifact(db, job.json()["prompt_artifact_id"])
-        assert bundle.prompt_version.endswith(":extreme_reversal_v2")
+        assert bundle.prompt_version.endswith(":extreme_reversal_v3")
         assert "reversal_map" in bundle.instructions
         again = client.post("/api/v1/analyses", json=body, headers={"Idempotency-Key": "strategy-job-1"})
         assert again.json()["id"] == job.json()["id"]

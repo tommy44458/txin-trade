@@ -1,5 +1,6 @@
 import { uiText, uiLocale } from "./i18n/index.ts";
 import { orderedTimeframes, timeframeCode } from "./timeframes";
+import LiquidationMap, { type LiquidationMapData } from "./LiquidationMap";
 
 type Unavailable = { status: "unavailable"; reason?: string };
 type Ratio = { status: "available"; observed_at: string; long_share_pct: string; long_share_24h_ago_pct: string | null };
@@ -131,10 +132,12 @@ export default function DerivativesContext({
   data,
   orderFlow,
   liquidations,
+  liquidationMap,
 }: {
   data?: DerivativesData | null;
   orderFlow?: OrderFlowData | null;
   liquidations?: LiquidationData | null;
+  liquidationMap?: LiquidationMapData | null;
 }) {
   if (!data) return null;
   const positioning = data.positioning;
@@ -195,6 +198,12 @@ export default function DerivativesContext({
         <>
           <h4 className="evidence-subtitle">{uiText("{{p0}} 清算（Bybit、OKX）", { p0: liquidations.symbol })}</h4>
           <Liquidations data={liquidations} />
+        </>
+      )}
+      {liquidationMap && (
+        <>
+          <h4 className="evidence-subtitle">{uiText("估算清算價位（Binance 模型）")}</h4>
+          <LiquidationMap data={liquidationMap} />
         </>
       )}
       <a href={data.source_url} target="_blank" rel="noreferrer">{uiText("Binance 公開統計資料說明")}</a>

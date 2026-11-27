@@ -11,11 +11,13 @@ from statistics import median
 from .timeframes import TIMEFRAME_LADDER, advance_candle
 
 VERSION = "confirmed_pivot_lifecycle_v3"
-CONTEXT_VERSION = "v3_price_location_context_v2"
+CONTEXT_VERSION = "v3_price_location_context_v3"
 PIVOT_WIDTH = 2
 CLUSTER_ATR = Decimal("0.35")
 PADDING_ATR = Decimal("0.15")
 REARM_ATR = Decimal("0.50")
+SWEEP_EVIDENCE_LIMIT = 3
+VOLUME_BASELINE = 20
 
 
 def _round_down(value: Decimal, tick: Decimal) -> Decimal:
@@ -98,7 +100,8 @@ def _new_zone(price: Decimal, kind: str, confirmed_index: int, candles: list[dic
             "created_at": confirmed_at, "confirmed_at": confirmed_at,
             "last_pivot_index": confirmed_index - PIVOT_WIDTH,
             "revision": 1, "pivot_count": 1, "touches": [], "armed": False,
-            "break_streak": 0, "break_evidence": [], "invalidated_at": None}
+            "break_streak": 0, "break_evidence": [], "invalidated_at": None,
+            "sweeps": [], "taken": None}
 
 
 def _merge(zone: dict, price: Decimal, confirmed_index: int, candles: list[dict],
@@ -111,6 +114,74 @@ def _merge(zone: dict, price: Decimal, confirmed_index: int, candles: list[dict]
     zone["last_pivot_index"] = confirmed_index - PIVOT_WIDTH
     zone["pivot_count"] += 1
     zone["revision"] += 1
+
+
+def _boundary(zone: dict) -> Decimal:
+    """The outer edge: stops of the side defending the zone sit beyond it."""
+    return zone["low"] if zone["kind"] == "support" else zone["high"]
+
+
+def _beyond(zone: dict, price: Decimal) -> bool:
+    return price < zone["low"] if zone["kind"] == "support" else price > zone["high"]
+
+
+def _relative_volume(volumes: list[Decimal], index: int) -> str | None:
+    baseline = volumes[max(0, index - VOLUME_BASELINE):index]
+    if len(baseline) < 5 or median(baseline) <= 0:
+        return None
+    return str((volumes[index] / median(baseline)).quantize(Decimal("0.01")))
+
+
+def _sweep(zone: dict, candles: list[dict], index: int, volumes: list[Decimal],
+           previous_streak: int) -> dict | None:
+    """A trade beyond the outer edge that closed back: a wick, or one close beyond then a reclaim."""
+    candle = candles[index]
+    close = Decimal(candle["close"])
+    if _far_close(zone["kind"], close, zone):
+        return None
+    field, pick = ("low", min) if zone["kind"] == "support" else ("high", max)
+    if previous_streak == 1:
+        kind = "reclaimed_after_one_close"
+        extreme = pick(Decimal(candles[index - 1][field]), Decimal(candle[field]))
+    elif _beyond(zone, Decimal(candle[field])):
+        kind = "wick"
+        extreme = Decimal(candle[field])
+    else:
+        return None
+    depth = abs(_boundary(zone) - extreme) / zone["formation_atr"]
+    return {"at": candle["close_time"], "type": kind, "extreme": str(extreme), "close": str(close),
+            "depth_atr": str(depth.quantize(Decimal("0.01"))),
+            "relative_volume": _relative_volume(volumes, index), "revision": zone["revision"]}
+
+
+def _liquidity(zone: dict) -> dict:
+    """Where the zone's stops are presumed to rest, and whether price has taken them since the last pivot."""
+    taken = zone["taken"]
+    fresh = taken is None or taken["index"] <= zone["last_pivot_index"]
+    return {"side": "below" if zone["kind"] == "support" else "above",
+            "boundary": str(_boundary(zone)),
+            "basis": "equal_pivots" if zone["pivot_count"] >= 2 else "single_pivot",
+            "status": "untaken" if fresh else taken["kind"],
+            "taken_at": None if fresh else taken["at"],
+            "label": "inferred_from_price_structure_not_order_data"}
+
+
+def annotate_forming_sweep(levels: list[dict], forming: dict | None, reference: Decimal) -> list[dict]:
+    """Mark zones the unclosed candle has traded beyond while the quote is back on the near side.
+
+    Intrabar only: the candle can still close beyond, so this never changes the zone's lifecycle.
+    """
+    result = []
+    for level in levels:
+        swept = None
+        if isinstance(forming, dict) and level.get("zone_state") == "active":
+            low, high = Decimal(level["low"]), Decimal(level["high"])
+            if level["kind"] == "support":
+                swept = Decimal(forming["low"]) < low and reference >= low
+            else:
+                swept = Decimal(forming["high"]) > high and reference <= high
+        result.append({**level, "forming_candle_swept": swept})
+    return result
 
 
 def _relation(price: Decimal, zone: dict) -> str:
@@ -157,6 +228,10 @@ def _public_zone(zone: dict, timeframe: str, as_of: str, reference: Decimal,
             "independent_touch_count": len(zone["touches"]),
             "last_touch_at": zone["touches"][-1]["at"] if zone["touches"] else None,
             "touch_evidence": zone["touches"],
+            "sweep_count": len(zone["sweeps"]),
+            "last_sweep_at": zone["sweeps"][-1]["at"] if zone["sweeps"] else None,
+            "sweep_evidence": zone["sweeps"][-SWEEP_EVIDENCE_LIMIT:],
+            "liquidity_beyond": _liquidity(zone),
             "formation_atr": str(zone["formation_atr"]), "age_bars": age_bars,
             "evidence_score": str(score.quantize(Decimal("0.01"))),
             "evidence_label": "ranking_heuristic_not_probability",
@@ -171,6 +246,7 @@ def historical_levels_v3(candles: list[dict], timeframe: str, reference_price: D
     if not reference_price.is_finite() or reference_price <= 0:
         raise ValueError("Reference price must be positive")
     atrs = _atr_at_each_close(candles)
+    volumes = [Decimal(candle["volume"]) for candle in candles]
     zones: list[dict] = []
     for index, candle in enumerate(candles):
         high, low, close = (Decimal(candle[field]) for field in ("high", "low", "close"))
@@ -184,8 +260,15 @@ def historical_levels_v3(candles: list[dict], timeframe: str, reference_price: D
                 zone["armed"] = False
             elif not zone["armed"] and _approach_excursion(zone["kind"], close, zone):
                 zone["armed"] = True
-            zone["break_streak"] = zone["break_streak"] + 1 if _far_close(
+            previous_streak = zone["break_streak"]
+            sweep = _sweep(zone, candles, index, volumes, previous_streak)
+            if sweep is not None:
+                zone["sweeps"].append(sweep)
+                zone["taken"] = {"index": index, "at": candle["close_time"], "kind": "swept"}
+            zone["break_streak"] = previous_streak + 1 if _far_close(
                 zone["kind"], close, zone) else 0
+            if zone["break_streak"] == 1:
+                zone["taken"] = {"index": index, "at": candle["close_time"], "kind": "closed_beyond"}
             if zone["break_streak"]:
                 zone["break_evidence"].append({"at": candle["close_time"], "close": str(close),
                                                 "low": str(zone["low"]), "high": str(zone["high"]),
@@ -250,6 +333,7 @@ def historical_levels_v3(candles: list[dict], timeframe: str, reference_price: D
             "recently_invalidated_levels": [_public_zone(zone, timeframe, as_of, reference_price,
                                                          last_close) for zone in recently_invalidated[:4]],
             "invalidation_rule": "two_consecutive_closed_candles_beyond_original_boundary_not_retest_confirmation",
+            "sweep_rule": "trade_beyond_outer_edge_then_close_back_wick_or_one_close_reclaimed",
             "quality_flags": ["closed_candles_only", "price_structure_only",
                               "not_a_reversal_probability", "historical_kind_not_current_price_side",
                               "quote_crossing_does_not_invalidate_zone"]}
