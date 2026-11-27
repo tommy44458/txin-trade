@@ -39,16 +39,22 @@ def sync_once(post_bls=None, get_bea=None) -> dict[str, dict]:
                 if len(index.encode()) > 2_000_000:
                     raise ValueError("BEA release index too large")
                 urls = bea_release_urls(index)
-                records = []
+                records, failed = [], []
+                # One release's format change must not discard the other's new values.
                 for kind, url in urls.items():
-                    body = get_bea(url)
-                    if len(body.encode()) > 2_000_000:
-                        raise ValueError("BEA release body too large")
-                    records.extend(parse_bea_release(body, url, kind))
+                    try:
+                        body = get_bea(url)
+                        if len(body.encode()) > 2_000_000:
+                            raise ValueError("BEA release body too large")
+                        records.extend(parse_bea_release(body, url, kind))
+                    except (httpx.HTTPError, ValueError, KeyError, TypeError, UnicodeError) as exc:
+                        failed.append(f"{kind}:{type(exc).__name__}")
             if not records:
                 raise ValueError("Official macro actuals missing")
-            changed = save_actuals(source, records, checked)
-            results[source] = {"status": "ok", "parsed": len(records), "changed": changed}
+            partial = ",".join(failed) if source == "bea" and failed else None
+            changed = save_actuals(source, records, checked, partial_error=partial)
+            results[source] = {"status": "partial" if partial else "ok", "parsed": len(records),
+                               "changed": changed, **({"failed": failed} if partial else {})}
         except (httpx.HTTPError, ValueError, KeyError, TypeError, UnicodeError) as exc:
             mark_actual_source_offline(source, checked, type(exc).__name__)
             results[source] = {"status": "offline", "error_code": type(exc).__name__}

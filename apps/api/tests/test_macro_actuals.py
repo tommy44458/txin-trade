@@ -141,3 +141,47 @@ def test_sync_keeps_healthy_bls_when_bea_fetch_fails():
     snapshot = event_snapshot(datetime.now(UTC))
     assert snapshot["actual_source_status"] == {"bls": "ok", "bea": "offline"}
     assert {item["kind"] for item in snapshot["official_actuals"]} == {"cpi", "employment"}
+
+
+def test_bea_headline_survives_inline_markup_around_gdp():
+    urls = bea_release_urls(BEA_INDEX)
+    marked_up = GDP.replace("(GDP)", "(<abbr title='gross domestic product'>GDP</abbr> )")
+    assert parse_bea_release(marked_up, urls["gdp"], "gdp")[0]["value"] == "1.5"
+
+
+@pytest.mark.usefixtures("sqlite_db")
+def test_one_failed_bea_release_keeps_the_other_and_marks_the_source_partial():
+    from trade_helper.macro_actual_sync import sync_once
+
+    init_db()
+    pages = {"https://www.bea.gov/news/current-releases": BEA_INDEX,
+             "https://www.bea.gov/news/2026/personal-income-and-outlays-july-2026": PCE,
+             "https://www.bea.gov/news/2026/gdp-second-estimate-and-corporate-profits-2nd-quarter-2026":
+                 GDP.replace("Real gross domestic product", "Output")}
+    result = sync_once(lambda: bls_response(), lambda url: pages[url])
+    assert result["bea"] == {"status": "partial", "parsed": 2, "changed": 2, "failed": ["gdp:ValueError"]}
+    snapshot = event_snapshot(datetime.now(UTC))
+    assert snapshot["actual_source_status"]["bea"] == "partial"
+    with connect(readonly=True) as db:
+        saved = {row["metric"] for row in db.execute(
+            "SELECT metric FROM macro_actual_versions WHERE source='bea'").fetchall()}
+    assert saved == {"pce_yoy", "core_pce_yoy"}
+
+
+def test_an_annual_cpi_change_missing_from_the_latest_release_is_reported_unpublished():
+    from trade_helper.macro_actuals import unpublished_actuals
+
+    def actual(metric, period, value="0.4"):
+        return {"source": "bls", "metric": metric, "period": period, "value": value,
+                "source_url": "https://api.bls.gov/publicAPI/v1/timeseries/data/"}
+
+    latest = [actual("cpi_mom", "2026-10"), actual("cpi_yoy", "2026-09", "3.1"),
+              actual("payroll_change", "2026-10", "165")]
+    gaps = unpublished_actuals(latest)
+    assert [(gap["metric"], gap["period"], gap["comparison_period"]) for gap in gaps] == [
+        ("cpi_yoy", "2026-10", "2025-10"), ("core_cpi_yoy", "2026-10", "2025-10")]
+    assert gaps[0]["previous"] == {"period": "2026-09", "value": "3.1"} and gaps[1]["previous"] is None
+    assert gaps[0]["reason"] == "comparison_period_not_published"
+    assert unpublished_actuals([actual("cpi_mom", "2026-11"), actual("cpi_yoy", "2026-11"),
+                                actual("core_cpi_yoy", "2026-11")]) == []
+    assert unpublished_actuals([actual("payroll_change", "2026-10")]) == []

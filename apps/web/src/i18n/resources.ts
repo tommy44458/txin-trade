@@ -502,7 +502,10 @@ export const zhTW = {
     "累計被掃 {{p0}} 次": "累計被掃 {{p0}} 次",
     "已重新計算支撐壓力、指標、合約資料、清算與資金流向。": "已重新計算支撐壓力、指標、合約資料、清算與資金流向。",
     "已重新計算盤勢，部分資料未取得。": "已重新計算盤勢，部分資料未取得。",
-    "盤勢未能重新計算，這次只有現價與 K 線。": "盤勢未能重新計算，這次只有現價與 K 線。"
+    "盤勢未能重新計算，這次只有現價與 K 線。": "盤勢未能重新計算，這次只有現價與 K 線。",
+    "部分取得": "部分取得",
+    "未公布": "未公布",
+    "官方沒有 {{p0}} 的資料可比較，所以沒有公布這期的年增率。": "官方沒有 {{p0}} 的資料可比較，所以沒有公布這期的年增率。"
   },
   "market": {
     "請求失敗 ({{p0}})": "請求失敗 ({{p0}})",
@@ -2014,7 +2017,10 @@ export const enUS = {
     "累計被掃 {{p0}} 次": "Sweeps so far: {{p0}}",
     "已重新計算支撐壓力、指標、合約資料、清算與資金流向。": "Zones, indicators, derivatives, liquidations and fund flows were recalculated for this reply.",
     "已重新計算盤勢，部分資料未取得。": "The market was recalculated; some data was unavailable.",
-    "盤勢未能重新計算，這次只有現價與 K 線。": "The market could not be recalculated; this reply has only the quote and candles."
+    "盤勢未能重新計算，這次只有現價與 K 線。": "The market could not be recalculated; this reply has only the quote and candles.",
+    "部分取得": "Partly synced",
+    "未公布": "Not published",
+    "官方沒有 {{p0}} 的資料可比較，所以沒有公布這期的年增率。": "There is no official {{p0}} data to compare with, so this period's annual change was not published."
   },
   "market": {
     "請求失敗 ({{p0}})": "Request failed ({{p0}})",
@@ -4515,6 +4521,9 @@ export const textNamespace = {
   "累計被掃 {{p0}} 次": "common",
   "已重新計算支撐壓力、指標、合約資料、清算與資金流向。": "common",
   "已重新計算盤勢，部分資料未取得。": "common",
-  "盤勢未能重新計算，這次只有現價與 K 線。": "common"
+  "盤勢未能重新計算，這次只有現價與 K 線。": "common",
+  "部分取得": "common",
+  "未公布": "common",
+  "官方沒有 {{p0}} 的資料可比較，所以沒有公布這期的年增率。": "common"
 } as const;
 export type UiTextKey = keyof typeof textNamespace;
