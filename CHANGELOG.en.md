@@ -4,12 +4,19 @@ The product version is managed in `version.json`. Dates record release preparati
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-11-27
+
 ### Added
 
 - A trading strategy can be chosen before an analysis, and extreme reversal maps the extreme reversal zones for the next 6 hours to 3 days.
 - AI performance can be grouped by trading strategy.
 - Analyses now include Binance long/short ratios, taker buy and sell volume, and the cumulative volume delta (CVD), also shown under contract context.
 - Analyses now include Bybit and OKX liquidations over the last 1, 4 and 24 hours, with how much of each window was covered.
+- Support and resistance zones mark sweeps that closed back, and whether the stops beyond equal highs or lows are still untaken.
+- Analyses now include a liquidation map estimated from Binance open interest, and contract context shows estimated liquidations within 5% of price.
+- Follow-up questions on a market analysis recalculate the latest zones, indicators, contract data, liquidations and fund flows, not only the price.
+- Binance perpetuals that track US stocks can be analysed, and the market picker can filter to US stocks.
+- US stock analyses consider when the US market is open or closed, and use SPY and QQQ as the market reference.
 
 ### Changed
 
@@ -19,6 +26,8 @@ The product version is managed in `version.json`. Dates record release preparati
 ### Fixed
 
 - In the direction assessment, the answer to your chosen direction no longer sits against the card's title.
+- BEA's GDP and PCE releases update again, and one release failing to load no longer stops the other.
+- When BLS did not publish a CPI annual change for a month, the economic events page says why instead of showing an older month.
 
 ## [1.1.5] - 2026-10-08
 
